@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Deck</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { timeout } from "../lib/util.js";
+import { on, notification, notifications } from "../lib/events.js";
+import { Deck } from "../lib/deck.js";
+
+test("Deck({ now?, speed? })", t => {
+    const deck = Deck();
+    t.equal(deck.speed, 1, "default speed");
+    t.equal(deck.now, 0, "start at 0");
+    t.equal(deck.playing, false, "not playing by default");
+    const d = Deck({ speed: -1, now: 23, intervals: 17, foo: "bar" });
+    t.equal(d.speed, -1, "custom speed");
+    t.equal(d.now, 23, "now is later");
+    t.equal(d.foo, "bar", "custom property");
+    t.equal(d.intervals, [], "did not override internal property");
+});
+
+test("speed", t => {
+    const deck = Deck();
+    t.equal(deck.speed, 1, "is readable");
+    deck.speed = 2;
+    t.equal(deck.speed, 2, "can be set");
+});
+
+test("start()", async t => {
+    const deck = Deck();
+    t.equal(deck.start(), deck, "return self");
+    const { from, to } = await notification(deck, "update");
+    t.equal(from, 0, "interval begin");
+    t.atLeast(to, 0, `interval end (${Math.round(to)})`);
+    t.equal(deck.playing, true, "deck is playing");
+    deck.stop();
+});
+
+test("stop()", async t => {
+    const deck = Deck().start();
+    await notification(deck, "update");
+    t.equal(deck.playing, true, "deck is playing");
+    deck.stop();
+    t.equal(deck.playing, false, "deck is not playing anymore");
+});
+
+test("pause()", async t => {
+    const deck = Deck();
+    t.equal(deck.paused, false, "not paused (stopped)");
+    deck.start();
+    t.equal(deck.paused, false, "not paused (started)");
+    await notification(deck, "update");
+    deck.speed = 2;
+    await notification(deck, "update");
+    deck.pause();
+    t.equal(deck.speed, 0, "speed is zero");
+    t.equal(deck.paused, true, "paused");
+    deck.resume();
+    t.equal(deck.speed, 2, "speed is back to 2");
+    t.equal(deck.paused, false, "unpaused");
+});
+
+test("instantAtTime(t)", async t => {
+    const deck = Deck().start();
+    const { timestamp } = await notification(deck, "update");
+    t.atMost(Math.round(deck.instantAtTime(timestamp) - deck.now), 1, "instantAtTime(now)");
+    deck.stop();
+    const later = timestamp + 17;
+    deck.now = later;
+    t.equal(deck.instantAtTime(later + 23), later, "later (sync)");
+});
+
+test("speed and updates: slowing down", async t => {
+    const deck = Deck().start();
+    await notifications(deck, "update", () => deck.now < 23);
+    t.atLeast(deck.now, 23, `moved at normal speed (${deck.now})`);
+    const phi = performance.now();
+    const target = deck.now + 53;
+    deck.speed = 0.5;
+    await notifications(deck, "update", () => deck.now < target);
+    t.atLeast(performance.now() - phi, 106, `moved slowly to ${deck.now} (${(performance.now() - phi) / 2})`);
+});
+
+test("now (not playing)", t => {
+    const deck = Deck();
+    let updates = [];
+    on(deck, "update", ({ from, to, forward }) => updates.push([from, to, forward]));
+    deck.now = 23;
+    t.equal(updates, [[0, 23, true]], "now (forward)")
+    deck.now = 37;
+    t.equal(updates, [[0, 23, true], [23, 37, true]], "now (still forward)");
+    deck.now = 27;
+    t.equal(updates, [[0, 23, true], [23, 37, true], [37, 27, false]], "now (backward)");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

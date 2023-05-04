@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Tape</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Tape()", t => {
+    const tape = Tape();
+    t.equal(tape.occurrences, [], "No occurrences yet");
+});
+
+test("addOccurrence({ t, forward })", t => {
+    const tape = Tape();
+    let occurrences = [];
+    const forward = (t, interval) => { occurrences.push([t, interval.from, interval.to]); };
+    tape.addOccurrence({ t: 23, forward });
+    tape.addOccurrence({ t: 37, forward });
+    tape.addOccurrence({ t: 31, forward });
+
+    const deck = Deck({ tape });
+    deck.now = 17;
+    t.equal(occurrences, [], "nothing yet");
+    deck.now = 31;
+    t.equal(occurrences, [[23, 17, 31]], "one occurrence");
+    deck.now = 41;
+    t.equal(occurrences, [[23, 17, 31], [31, 31, 41], [37, 31, 41]], "next occurrences");
+});
+
+test("removeOccurrence(occurrence)", t => {
+    const tape = Tape();
+    let occurrences = [];
+    const forward = (t, interval) => { occurrences.push([t, interval.from, interval.to]); };
+    tape.addOccurrence({ t: 23, forward });
+    const toRemove = tape.addOccurrence({ t: 31, forward });
+    tape.addOccurrence({ t: 37, forward });
+
+    const deck = Deck({ tape });
+    deck.now = 31;
+    t.equal(occurrences, [[23, 0, 31]], "one occurrence");
+    t.equal(tape.removeOccurrence(toRemove), toRemove, "removed occurrence is removed");
+    deck.now = 41;
+    t.equal(occurrences, [[23, 0, 31], [37, 31, 41]], "occurrence was removed");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Score</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { Score, Instant, Delay, Seq, Par } from "../lib/score.js";
+
+test("Score()", t => {
+    const score = Score();
+    t.equal(score.show(), "Score/0", "show");
+    t.equal(score.children, [], "no children");
+});
+
+test("Score(xs)", t => {
+    const delay = Delay(23);
+    const instant = Instant();
+    const score = Score([delay, instant]);
+    t.equal(score.show(), "Score/2", "show");
+    t.equal(score.children, [delay, instant], "children");
+    t.equal(delay.parent, score, "parent (1)");
+    t.equal(instant.parent, score, "parent (2)");
+});
+
+test("Score.add(child)", t => {
+    const score = Score();
+    const delay = score.add(Delay(23));
+    const instant = score.add(Instant());
+    t.equal(instant.show(), "Instant", "show added child");
+    t.equal(score.show(), "Score/2", "show after add");
+    t.equal(score.children, [delay, instant], "children after add");
+    t.equal(delay.parent, score, "parent (1)");
+    t.equal(instant.parent, score, "parent (2)");
+});
+
+test("Instant()", t => {
+    const instant = Instant();
+    t.equal(instant.show(), "Instant", "show");
+    t.equal(instant.f(17), 17, "f defaults to I");
+    t.equal(instant.dur, 0, "no duration");
+    t.equal(!instant.failible, true, "infailible");
+});
+
+test("Instant(f)", t => {
+    const instant = Instant(x => x * 2);
+    t.equal(instant.show(), "Instant", "show");
+    t.equal(instant.f(17), 34, "f is set");
+    t.equal(instant.dur, 0, "no duration");
+});
+
+test("Delay(dur)", t => {
+    const delay = Delay(23);
+    t.equal(delay.show(), "Delay<23>", "show");
+    t.equal(delay.dur, 23, "duration");
+    t.equal(!delay.failible, true, "not failible (delay > 0)");
+    t.throws(() => { delay.dur = -19; }, "cannot overwrite dur");
+    t.equal(Delay(0).failible, true, "zero duration delay is failible");
+    t.equal(Delay(-17).failible, true, "negative duration delay is failible");
+});
+
+test("Par()", t => {
+    const par = Par();
+    t.equal(par.show(), "Par/0", "show");
+    t.equal(par.children, [], "no children");
+    t.equal(par.dur, 0, "no duration");
+    t.equal(!par.failible, true, "not failible");
+});
+
+test("Par(xs)", t => {
+    const delay = Delay(17);
+    const instant = Instant(x => x * 2);
+    const par = Par([delay, instant]);
+    t.equal(par.show(), "Par/2", "show");
+    t.equal(par.children, [delay, instant], "children");
+    t.equal(delay.parent, par, "parent (1)");
+    t.equal(instant.parent, par, "parent (2)");
+    t.equal(par.dur, 17, "duration");
+    t.equal(!par.failible, true, "not failible");
+});
+
+test("Par.take", t => {
+    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().dur, 51, "dur with n = ∞");
+    t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().dur,
+        "dur with n = ∞ (but indefinite durations)");
+    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(7).dur, 51,
+        "dur with n > child count");
+     t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(3).dur, 23,
+        "dur with n < child count");
+    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(0).dur, 0,
+        "dur with n = 0");
+});
+
+test("Par.map(g)", t => {
+    const par = Par.map(Delay);
+    t.equal(par.show(), "Par/map", "show");
+    t.typeof(par.g, "function", "g function");
+    t.undefined(par.dur, "unresolved duration");
+    t.equal(!par.failible, true, "not failible");
+    t.equal(par.take(0).dur, 0, "down to zero with take(0)");
+});
+
+test("Seq()", t => {
+    const seq = Seq();
+    t.equal(seq.show(), "Seq/0", "show");
+    t.equal(seq.children, [], "no children");
+    t.equal(seq.dur, 0, "zero duration");
+});
+
+test("Seq(xs)", t => {
+    const delay = Delay(17);
+    const instant = Instant(x => x * 2);
+    const seq = Seq([delay, instant]);
+    t.equal(seq.show(), "Seq/2", "show");
+    t.equal(seq.children, [delay, instant], "children");
+    t.equal(delay.parent, seq, "parent (1)");
+    t.equal(instant.parent, seq, "parent (2)");
+    t.equal(seq.dur, 17, "duration");
+});
+
+test("Seq.fold(g, z)", t => {
+    const fold = Seq.fold(x => Instant(y => x + y), 0);
+    t.equal(fold.show(), "Seq/fold", "show");
+    t.typeof(fold.g, "function", "g function");
+    t.equal(fold.z, 0, "initial accumulator value");
+    t.undefined(fold.dur, "unresolved duration");
+    t.equal(fold.take(0).dur, 0, "down to zero with take(0)");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

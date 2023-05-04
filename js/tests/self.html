@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Self testin’</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { on } from "../lib/events.js";
+import { nop } from "../lib/util.js";
+import { test } from "./test.js";
+
+const expectations = {
+    successes: 0,
+    failures: 0,
+    skips: 0,
+    timeouts: 0,
+};
+
+function pass(title, f) {
+    test(`[pass] ${title}`, f);
+    expectations.successes += 1;
+}
+
+function fail(title, f) {
+    test(`[fail] ${title}`, f);
+    expectations.failures += 1;
+}
+
+function skip(title, f) {
+    test(`[skip] ${title}`, f);
+    expectations.skips += 1;
+}
+
+function timeout(title, f, timeoutMs) {
+    test(`[timeout] ${title}`, f, timeoutMs);
+    expectations.timeouts += 1;
+}
+
+pass("t.match", t => { t.match("foo", /^fo+$/, "Regex match"); });
+fail("t.match", t => { t.match("bar", /^fo+$/, "Regex does not match"); });
+
+pass("t.not", t => { t.not.equal(true, false, "not equal"); });
+pass("t.not", t => { t.not.not.equal(true, true, "not not equal"); });
+fail("t.not", t => { t.not.above(23, 17, "not above"); });
+
+pass("t.throws", t => {
+    t.throws(() => {
+        throw new Error("This is expected");
+    }, "Did throw");
+});
+
+fail("t.throws()", t => { t.throws(nop, "Did not throw"); });
+
+pass("t.undefined()", t => { t.undefined(nop(), "nop() returns nothing"); });
+fail("t.undefined()", t => { t.undefined("something", "String is not undefined"); });
+
+skip("t.skip()", t => { t.skip(); });
+
+fail("console.assert failure", t => { console.assert(false); });
+
+pass("no timeout", async t => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    t.ok("no timeout", "no timeout!");
+});
+
+timeout("timeout", async t => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    t.ok("no timeout", "no timeout?!");
+});
+
+timeout("timeout (custom)", async t => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    t.ok("no timeout", "no timeout?!");
+}, 50);
+
+on(window, "tests:done", ({ handler }) => {
+    const use = document.querySelector(".status .icon use");
+    if (["successes", "failures", "skips", "timeouts"].every(p => expectations[p] === handler[p])) {
+        use.setAttribute("href", use.getAttribute("href").replace(/#.*$/, "#pass"));
+    } else {
+        console.error("Failed to match expectations", expectations, handler);
+        use.setAttribute("href", use.getAttribute("href").replace(/#.*$/, "#fail"));
+    }
+});
+
+window.addEventListener("message", function displayIcons(e) {
+    const data = JSON.parse(e.data);
+    if (data.type === "ready") {
+        window.removeEventListener("message", displayIcons);
+        const p = document.body.appendChild(document.createElement("p"));
+        p.innerHTML = `Key: ${["pass", "running", "pending", "skip", "timeout", "fail"].map(
+            id => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon"><use href="icons.svg#${id}"/></svg> ${id}`
+        ).join(", ")}.`;
+    }
+});
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
