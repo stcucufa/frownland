@@ -5,8 +5,8 @@
 
 Frownland is an experimental Web framework for the development of rich user interactions. This is very
 much a work in progress and this document will evolve to reflect changes in design and implementation.
-RYIL [SMIL](https://www.w3.org/AudioVideo/), [synchronous programming
-languages](https://en.wikipedia.org/wiki/Synchronous_programming_language),
+RIYL [SMIL](https://www.w3.org/AudioVideo/), [synchronous
+programming](https://en.wikipedia.org/wiki/Synchronous_programming_language),
 [Max](https://cycling74.com/products/max)/[PureData](https://puredata.info), HyperCard, or Captain
 Beefheart.
 
@@ -54,6 +54,33 @@ choice([
         Video(src)
     ])
 ]);
+```
+
+Another example is [ABRO](http://www1.cs.columbia.edu/~sedwards/classes/2002/w4995-02/esterel.pdf), the
+“Hello, world!” of the synchronous programming language [Esterel](https://en.wikipedia.org/wiki/Esterel).
+The task is described as follows: ”The output O should occur when inputs A and B have both arrived. The R
+input should restart this behavior.” This can be implemented practically with a state machine, but
+requiring additional inputs to arrive would make the automaton grow exponentially. In Frownland, as in
+Esterel, the solution only grows linearly:
+
+```
+choice(
+    Seq([
+        Par([Receive(A), Receive(B)]),
+        Send(O),
+        Delay(Infinity)
+    ]),
+    Receive(R)
+).repeat()
+```
+
+Again, `choice()` here allows receiving the event R to reset the system (which keeps running forever thanks
+to the `repeat()` modifier). The `Delay(Infinity)` ensures that after sending O, further A and B events
+are ignored until R is received. And requiring additional events before sending O is simply a matter of
+modifying the Par element, so this can turn into ABCRO with:
+
+```
+Par([Receive(A), Receive(B), Receive(C)])
 ```
 
 ## Timing and synchronization model
