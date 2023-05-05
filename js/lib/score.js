@@ -104,13 +104,33 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // A par with no children has no duration.
     get dur() {
         const n = Capacity.get(this);
-        if (n === 0 || this.children.length === 0) {
+        if (n === 0) {
             return 0;
         }
-        if (isFinite(n)) {
-            return itemsByDuration(this.children, n).at(-1)[0];
+        const children = itemsByDuration(this.children, n);
+        if (children.length === 0) {
+            return 0;
         }
-        return this.children.map(child => child.dur).reduce(max, -Infinity);
+        if (children.some(([dur]) => dur === Infinity)) {
+            return Infinity;
+        }
+        if (children.every(([dur]) => isNumber(dur))) {
+            if (isFinite(n)) {
+                // The children are sorted by duration and all durations are
+                // resolved so the last one is the longest.
+                return children.at(-1)[0];
+            }
+            let dur = 0;
+            for (let i = 0; i < children.length; ++i) {
+                const d = children[i][0];
+                if (isNaN(d)) {
+                    // If any duration is unresolved, the max is unresolved.
+                    return;
+                }
+                dur = Math.max(dur, d);
+            }
+            return dur;
+        }
     },
 
     // Fail if not enough children can be instantiated.
@@ -366,10 +386,25 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     repeat,
     f: I,
 
+    // The duration of a Seq is the sum of the duration of its children.
+    // Addition of course gets a little more involved when we take into account
+    // unresolved durations (such as folds and maps) and indefinite durations
+    // (unbounded repetitions).
     get dur() {
         let dur = 0;
-        for (let i = 0; i < this.children.length && isFinite(dur); ++i) {
-            dur += this.children[i].dur;
+        for (let i = 0; i < this.children.length; ++i) {
+            const d = this.children[i].dur;
+            if (d === Infinity) {
+                // If any duration is indefinite, the total is indefinite.
+                return Infinity;
+            }
+            if (isNaN(d)) {
+                // If either duration is unresolved, the sum is unresolved.
+                dur = d;
+            } else if (!isNaN(dur)) {
+                // Simply add two resolved durations.
+                dur += d;
+            }
         }
         return dur;
     },
@@ -477,6 +512,7 @@ const Fold = {
     take,
     f: I,
 
+    // Duration is unresolved, unless it is modified by take(0).
     get dur() {
         if (Capacity.get(this) === 0) {
             return 0;
@@ -564,6 +600,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
     take,
     f: I,
 
+    // Duration is indefinite, unless it is modified by take.
     get dur() {
         const repeats = Capacity.get(this);
         return repeats === 0 ? 0 : repeats > 0 ? this.child.dur * repeats : Infinity;
@@ -728,16 +765,23 @@ function min(x, y) {
 }
 
 // Maximum function accepting an undefined value as its second argument, which
-// is considered higher than any number (for unresolved durations).
+// is considered higher than any definite number (for unresolved durations).
 function max(x, y) {
-    return isNumber(y) ? Math.max(x, y) : y;
+    return isNumber(y) ? Math.max(x, y) : x === Infinity ? x : y;
 }
 
-// Rank a list of items by their duration, capping the list at a maximum of n
-// items. Failible items (at instantiation) are filtered out first.
+// Sort a list of items by their duration, optionally capping the list at a
+// maximum of n items. Failible items (at instantiation) are filtered out first.
+// When an item has an unresolved duration, no sorting occurs and the cap is not
+// applied as the eventual order is unknown yet.
 function itemsByDuration(items, n) {
-    const sortedItems = items.filter(item => !item.failible).map(item => [item.dur, item]);
-    sortedItems.sort(([a], [b]) => a - b);
-    return n < sortedItems.length && isNumber(sortedItems.at(-1)[0]) ?
-        sortedItems.slice(0, n) : sortedItems;
+    const itemsWithDuration = items.filter(item => !item.failible).map(item => [item.dur, item]);
+    if (itemsWithDuration.some(([dur]) => !isNumber(dur))) {
+        return itemsWithDuration;
+    }
+    if (isFinite(n) && n > itemsWithDuration.length) {
+        return [];
+    }
+    itemsWithDuration.sort(([a], [b]) => a - b);
+    return n < itemsWithDuration.length ? itemsWithDuration.slice(0, n) : itemsWithDuration;
 }
