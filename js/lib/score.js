@@ -157,9 +157,9 @@ export const Par = assign(children => create().call(Par, { children: children ??
         return extend(this, ParMap, { g });
     },
 
-    // A par instance is an interval (unless all of its children have no
+    // A Par instance is an interval (unless all of its children have zero
     // duration), and needs no occurrence of its own (because the children have
-    // their own occurrences scheduled accordingly), unless it is empty. Fails
+    // their own occurrences scheduled as needed), unless it is empty. Fails
     // if enough children fail that the capacity of the map cannot be
     // fulfilled.
     instantiate(instance, t) {
@@ -409,11 +409,21 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         return dur;
     },
 
+    // Create a new Fold object with the given generator function and initial
+    // accumulator value.
     fold(g, z) {
         console.assert(this === Seq);
         return extend(Fold, { g, z });
     },
 
+    // A Seq instance is an interval (unless all of its children have zero
+    // duration), and needs no occurrence of its own (because the children have
+    // their own occurrences scheduled as needed), unless it is empty. Fails
+    // if any child fails.
+    // Instantiate children as long as they have a definite duration. The next
+    // children will be instantiated later when resolving the child with an
+    // unresolved, or never if the child has an indefinite duration (which is
+    // perfectly cromulent and not a failure).
     instantiate(instance, t) {
         instance.children = [];
         const begin = t;
@@ -444,16 +454,26 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         instance.currentChildIndex = 0;
     },
 
+    // A child with an unresolved duration becomes solved, so the following
+    // siblings can now be instantiated (this happens after a Par.map or
+    // Seq.fold gets evaluated and the children are created).
     childInstanceEndWasResolved(childInstance, t) {
         const instance = childInstance.parent;
         console.assert(instance.item === this);
         console.assert(instance.children.at(-1) === childInstance);
         const n = min(this.children.length, Capacity.get(this));
-        for (let i = instance.children.length; i < n && isNumber(t); ++i) {
-            t = endOf(push(instance.children, Object.assign(
-                instance.tape.instantiate(this.children[i], t),
-                { parent: instance }
-            )));
+        const m = instance.children.length;
+        for (let i = m; i < n && isFinite(t); ++i) {
+            const childInstance = instance.tape.instantiate(this.children[i], t);
+            if (!childInstance) {
+                for (let j = m; j < i; ++j) {
+                    instance.children[j].item.pruneInstance(instance.children[j]);
+                }
+                instance.children.length = m;
+                failed(instance, t);
+                return;
+            }
+            t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
         }
 
         if (instance.children.length === n && isNumber(t)) {
@@ -464,18 +484,28 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
                 instance.end = t;
             }
             instance.parent?.item.childInstanceDidEnd(instance, t);
+        } else if (t === Infinity) {
+            instance.end = t;
         }
     },
 
+    // Feed the input of the preceding child to the current child, or that of
+    // the Seq itself for the first child, which can be requested from the
+    // parent.
     inputForChildInstance(childInstance) {
         const instance = childInstance.parent;
+        console.assert(instance.item === this);
         return instance.currentChildIndex === 0 ?
             instance.parent?.item.inputForChildInstance(instance) :
             instance.children[instance.currentChildIndex - 1].value;
     },
 
+    // Move to the next child when a child finishes by keeping track of the
+    // index of the current child in the list of children. Done if the last
+    // child of the list ended.
     childInstanceDidEnd(childInstance, t) {
         const instance = childInstance.parent;
+        console.assert(instance.item === this);
         console.assert(instance.children[instance.currentChildIndex] === childInstance);
         instance.currentChildIndex += 1;
         if (instance.currentChildIndex === min(this.children.length, Capacity.get(this))) {
@@ -590,7 +620,6 @@ const Fold = {
 
     childInstanceDidFail: Seq.childInstanceDidFail,
     cancelInstance: Seq.cancelInstance,
-    pruneInstance: Seq.pruneInstance,
 };
 
 const Repeat = assign(child => extend(Repeat, { child }), {

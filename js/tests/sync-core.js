@@ -367,7 +367,6 @@ test("Par may recover from failing child", t => {
     ]), 17)
 
     Deck({ tape }).now = 41;
-    console.log(dump(instance));
     t.equal(dump(instance),
 `* Seq-0 [17, 40[ <23,19>
   * Instant-1 @17 <23,19>
@@ -425,6 +424,41 @@ test("Seq(xs); zero duration", t => {
 
     Deck({ tape }).now = 18;
     t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
+});
+
+test("Seq(xs); child with infinite duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(), Instant(), Delay(23).repeat(), Delay(-31)]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 [17, ∞[
+  * Instant-1 @17 <undefined>
+  * Instant-2 @17 <undefined>
+  * Seq/repeat-3 [17, ∞[
+    * Delay-4 [17, 40[`, "dump matches");
+});
+
+test("Seq(xs); child with unresolved duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([23])), Par.map(Delay), Instant()]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(seq),
+`* Seq-0 [17, 40[ <23>
+  * Instant-1 @17 <23>
+  * Par/map-2 [17, 40[ <23>
+    * Delay-3 [17, 40[ <23>
+  * Instant-4 @40 <23>`, "dump matches");
+});
+
+test("Seq(xs); child with unresolved duration; failure once the end is resolved", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([23])), Par.map(Delay), Instant(), Delay(-31)]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(seq),
+`* Seq-0 [17, 40[ (failed)
+  * Instant-1 @17 <23>
+  * Par/map-2 [17, 40[ <23>
+    * Delay-3 [17, 40[ <23>`, "dump matches");
 });
 
 test("Seq(xs).take(n = ∞)", t => {
