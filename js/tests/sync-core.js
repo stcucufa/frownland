@@ -549,7 +549,13 @@ test("Seq.map(g)", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay)]), 17);
     Deck({ tape }).now = 91;
-    console.log(dump(seq));
+    t.equal(dump(seq),
+`* Seq-0 [17, 90[ <23>
+  * Instant-1 @17 <31,19,23>
+  * Seq/map-2 [17, 90[ <23>
+    * Delay-3 [17, 48[ <31>
+    * Delay-4 [48, 67[ <19>
+    * Delay-5 [67, 90[ <23>`, "dump matches");
 });
 
 test("Seq.fold(g); child of Seq", t => {
@@ -709,11 +715,12 @@ test("Seq.fold().take(0)", t => {
     const instance = tape.instantiate(seq, 17);
 
     Deck({ tape }).now = 41;
+    console.log(dump(instance));
     t.equal(dump(instance),
-`* Seq-0 [17, 40[ <undefined>
+`* Seq-0 [17, 40[ <1,2,3,4,5>
   * Instant-1 @17 <1,2,3,4,5>
-  * Seq/fold-2 @17 <undefined>
-  * Delay-3 [17, 40[ <undefined>`, "dump matches");
+  * Seq/fold-2 @17 <0>
+  * Delay-3 [17, 40[ <1,2,3,4,5>`, "dump matches");
 });
 
 test("Nesting", t => {
