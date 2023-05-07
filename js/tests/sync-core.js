@@ -545,6 +545,13 @@ test("Seq(xs).take(n); failure in child after nth", t => {
     t.equal(seq.value, "ok", "correct value");
 });
 
+test("Seq.map(g)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay)]), 17);
+    Deck({ tape }).now = 91;
+    console.log(dump(seq));
+});
+
 test("Seq.fold(g); child of Seq", t => {
     const tape = Tape();
     const seq = Seq([Instant(K([1, 2, 3])), Seq.fold(x => Instant(y => x + y), 0)]);

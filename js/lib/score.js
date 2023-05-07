@@ -277,7 +277,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
 
 // Par/map is similar to Par but its children are produced by mapping its
 // input through the g function. The initial instantiation is an interval
-// with no end time and an occurrence to instantiate the contents.
+// with an unresolved end time and an occurrence to instantiate the contents.
 export const ParMap = {
     tag: "Par/map",
 
@@ -409,11 +409,17 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         return dur;
     },
 
-    // Create a new Fold object with the given generator function and initial
+    // Create a new SeqMap object with the given generator function.
+    map(g) {
+        console.assert(this === Seq);
+        return extend(SeqMap, { g });
+    },
+
+    // Create a new SeqFold object with the given generator function and initial
     // accumulator value.
     fold(g, z) {
         console.assert(this === Seq);
-        return extend(Fold, { g, z });
+        return extend(SeqFold, { g, z });
     },
 
     // A Seq instance is an interval (unless all of its children have zero
@@ -516,6 +522,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         }
     },
 
+    // Fail if a child fails.
     childInstanceDidFail(childInstance, t) {
         const instance = childInstance.parent;
         console.assert(instance.currentChildIndex === instance.children.length - 1);
@@ -523,6 +530,9 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         failed(instance, t);
     },
 
+    // Cancel the current child instance and prune the following ones. There is
+    // no occurrence to remove (as there must be children) so do not call
+    // cancelled(), but mark the instance as cancelled.
     cancelInstance(instance, t) {
         const currentChild = instance.children[instance.currentChildIndex];
         currentChild.item.cancelInstance(currentChild, t);
@@ -536,7 +546,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     }
 });
 
-const Fold = {
+const SeqFold = {
     tag: "Seq/fold",
     show,
     take,
@@ -621,6 +631,14 @@ const Fold = {
     childInstanceDidFail: Seq.childInstanceDidFail,
     cancelInstance: Seq.cancelInstance,
 };
+
+// Seq/map is similar to Seq but its children are produced by mapping its
+// input through the g function. The initial instantiation is an interval
+// with an unresolved end time and an occurrence to instantiate the contents.
+export const SeqMap = extend(SeqFold, {
+    tag: "Seq/map",
+    inputForChildInstance: Seq.inputForChildInstance
+});
 
 const Repeat = assign(child => extend(Repeat, { child }), {
     tag: "Seq/repeat",
