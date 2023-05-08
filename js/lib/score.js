@@ -554,7 +554,11 @@ const SeqFold = {
     tag: "Seq/fold",
     show,
     take,
-    f: I,
+
+    // In the case where we take zero inputs, return the initial value.
+    f() {
+        return this.item.z;
+    },
 
     // Duration is unresolved, unless it is modified by take(0).
     get dur() {
@@ -566,7 +570,6 @@ const SeqFold = {
     // Schedule instantiation of the contents.
     instantiate(instance, t) {
         if (Capacity.get(this) === 0) {
-            instance.value = this.z;
             return Object.assign(instance, { t, forward });
         }
 
@@ -604,8 +607,8 @@ const SeqFold = {
         if (instance.begin === t) {
             delete instance.begin;
             instance.t = t;
+            instance.value = this.z;
             if (instance.children.length === 0) {
-                instance.value = this.z;
                 instance.parent?.item.childInstanceDidEnd(instance, t);
             }
         } else {
@@ -670,7 +673,9 @@ const Repeat = assign(child => extend(Repeat, { child }), {
     show,
     init,
     take,
-    f: I,
+    f() {
+        return this.z;
+    },
 
     // Duration is indefinite, unless it is modified by take.
     get dur() {
