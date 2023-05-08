@@ -277,7 +277,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
 
 // Par/map is similar to Par but its children are produced by mapping its
 // input through the g function. The initial instantiation is an interval
-// with no end time and an occurrence to instantiate the contents.
+// with an unresolved end time and an occurrence to instantiate the contents.
 export const ParMap = {
     tag: "Par/map",
 
@@ -409,11 +409,17 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         return dur;
     },
 
-    // Create a new Fold object with the given generator function and initial
+    // Create a new SeqMap object with the given generator function.
+    map(g) {
+        console.assert(this === Seq);
+        return extend(SeqMap, { g });
+    },
+
+    // Create a new SeqFold object with the given generator function and initial
     // accumulator value.
     fold(g, z) {
         console.assert(this === Seq);
-        return extend(Fold, { g, z });
+        return extend(SeqFold, { g, z });
     },
 
     // A Seq instance is an interval (unless all of its children have zero
@@ -516,6 +522,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         }
     },
 
+    // Fail if a child fails.
     childInstanceDidFail(childInstance, t) {
         const instance = childInstance.parent;
         console.assert(instance.currentChildIndex === instance.children.length - 1);
@@ -523,6 +530,9 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         failed(instance, t);
     },
 
+    // Cancel the current child instance and prune the following ones. There is
+    // no occurrence to remove (as there must be children) so do not call
+    // cancelled(), but mark the instance as cancelled.
     cancelInstance(instance, t) {
         const currentChild = instance.children[instance.currentChildIndex];
         currentChild.item.cancelInstance(currentChild, t);
@@ -536,11 +546,19 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     }
 });
 
-const Fold = {
+// Seq/fold is similar to Seq but its children are produced by mapping its
+// input through the g function, and the initial value of the fold is given by
+// z. The initial instantiation is an interval with an unresolved end time and
+// an occurrence to instantiate the contents.
+const SeqFold = {
     tag: "Seq/fold",
     show,
     take,
-    f: I,
+
+    // In the case where we take zero inputs, return the initial value.
+    f() {
+        return this.item.z;
+    },
 
     // Duration is unresolved, unless it is modified by take(0).
     get dur() {
@@ -549,7 +567,12 @@ const Fold = {
         }
     },
 
+    // Schedule instantiation of the contents.
     instantiate(instance, t) {
+        if (Capacity.get(this) === 0) {
+            return Object.assign(instance, { t, forward });
+        }
+
         instance.begin = t;
         return extend(instance, { t, forward(t) {
             if (instance.item.instantiateChildren(
@@ -560,6 +583,7 @@ const Fold = {
         } });
     },
 
+    // Actually instantiate the children from the input.
     instantiateChildren(instance, xs, t) {
         console.assert(t === instance.begin);
         if (!Array.isArray(xs)) {
@@ -569,18 +593,22 @@ const Fold = {
         const n = min(xs.length, Capacity.get(this));
         instance.input = xs.slice(0, n);
         instance.children = [];
-        for (let i = 0; i < n && isNumber(t); ++i) {
-            t = endOf(push(instance.children, Object.assign(
-                instance.tape.instantiate(this.g(xs[i]), t),
-                { parent: instance }
-            )));
+        for (let i = 0; i < n && isFinite(t); ++i) {
+            const childInstance = instance.tape.instantiate(this.g(xs[i]), t);
+            if (!childInstance) {
+                for (const childInstance of instance.children) {
+                    childInstance.item.pruneInstance(childInstance, t);
+                }
+                throw Fail;
+            }
+            t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
         }
 
         if (instance.begin === t) {
             delete instance.begin;
             instance.t = t;
+            instance.value = this.z;
             if (instance.children.length === 0) {
-                instance.value = void 0;
                 instance.parent?.item.childInstanceDidEnd(instance, t);
             }
         } else {
@@ -593,34 +621,52 @@ const Fold = {
         if (isNumber(t)) {
             instance.parent?.item.childInstanceEndWasResolved(instance, t);
         }
+        instance.currentChildIndex = 0;
     },
 
+    // Feed the input of the preceding child to the current child, or that of
+    // the Seq itself for the first child, which can be requested from the
+    // parent.
     inputForChildInstance(childInstance) {
         const instance = childInstance.parent;
-        if (instance.lastChildIndex >= 0) {
-            console.assert(instance.children[instance.lastChildIndex + 1] === childInstance);
-            return instance.children[instance.lastChildIndex].value;
-        }
-        console.assert(instance.children[0] === childInstance);
-        return this.z;
+        console.assert(instance.item === this);
+        return instance.currentChildIndex === 0 ?
+            this.z :
+            instance.children[instance.currentChildIndex - 1].value;
     },
 
+    // Move to the next child when a child finishes by keeping track of the
+    // index of the current child in the list of children. Done if the last
+    // child of the list ended.
     childInstanceDidEnd(childInstance, t) {
         const instance = childInstance.parent;
         console.assert(instance.item === this);
-        instance.lastChildIndex = instance.lastChildIndex >= 0 ? instance.lastChildIndex + 1 : 0;
-        console.assert(instance.children[instance.lastChildIndex] === childInstance);
-        const n = min(instance.input.length, Capacity.get(this));
-        if (instance.lastChildIndex === n - 1) {
+        console.assert(instance.children[instance.currentChildIndex] === childInstance);
+        instance.currentChildIndex += 1;
+        if (instance.currentChildIndex === min(instance.input.length, Capacity.get(this))) {
             instance.value = childInstance.value;
             instance.end = t;
             instance.parent?.item.childInstanceDidEnd(instance, t);
+            delete instance.currentChildIndex;
         }
     },
 
     childInstanceDidFail: Seq.childInstanceDidFail,
     cancelInstance: Seq.cancelInstance,
 };
+
+// Seq/map is just like Seq/fold but taking its initial input from its parent,
+// like a normal Seq.
+export const SeqMap = extend(SeqFold, {
+    tag: "Seq/map",
+
+    // Each successive child gets the next input from the Seq/map parent.
+    inputForChildInstance(childInstance) {
+        const instance = childInstance.parent;
+        console.assert(instance.item === this);
+        return instance.input[instance.currentChildIndex];
+    },
+});
 
 const Repeat = assign(child => extend(Repeat, { child }), {
     tag: "Seq/repeat",

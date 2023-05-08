@@ -115,7 +115,7 @@ elements by default.
       same as just `Seq(xs)`.
     * It is possible to limit the number of occurrences of `repeat()` with `take(n)`:
       `x.repeate().take(3)` is the same as `Seq([x, x, x])`.
-* `Par.map(g)` maps the function _g_ to an input list in parallel.
+* `Par.map(g)` and `Seq.map(g)` map the function _g_ to an input list in parallel or in sequence.
 * `Seq.fold(g, z)` folds over an input list with the function _g_ and an initial value _z_ in sequence.
 
 In SMIL, presentations are static in that their content is always the same (the user may influence the

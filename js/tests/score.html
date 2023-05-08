@@ -138,6 +138,14 @@ test("Seq duration (unresolved and indefinite child durations)", t => {
     t.undefined(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
 });
 
+test("Seq.map(g)", t => {
+    const map = Seq.map(Delay);
+    t.equal(map.show(), "Seq/map", "show");
+    t.typeof(map.g, "function", "g function");
+    t.undefined(map.dur, "unresolved duration");
+    t.equal(map.take(0).dur, 0, "down to zero with take(0)");
+});
+
 test("Seq.fold(g, z)", t => {
     const fold = Seq.fold(x => Instant(y => x + y), 0);
     t.equal(fold.show(), "Seq/fold", "show");

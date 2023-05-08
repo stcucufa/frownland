@@ -545,6 +545,29 @@ test("Seq(xs).take(n); failure in child after nth", t => {
     t.equal(seq.value, "ok", "correct value");
 });
 
+test("Seq.map(g)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay)]), 17);
+    Deck({ tape }).now = 91;
+    t.equal(dump(seq),
+`* Seq-0 [17, 90[ <23>
+  * Instant-1 @17 <31,19,23>
+  * Seq/map-2 [17, 90[ <23>
+    * Delay-3 [17, 48[ <31>
+    * Delay-4 [48, 67[ <19>
+    * Delay-5 [67, 90[ <23>`, "dump matches");
+});
+
+test("Seq.map(g); no input", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([])), Seq.map(Delay)]), 17);
+    Deck({ tape }).now = 91;
+    t.equal(dump(seq),
+`* Seq-0 @17 <undefined>
+  * Instant-1 @17 <>
+  * Seq/map-2 @17 <undefined>`, "dump matches");
+});
+
 test("Seq.fold(g); child of Seq", t => {
     const tape = Tape();
     const seq = Seq([Instant(K([1, 2, 3])), Seq.fold(x => Instant(y => x + y), 0)]);
@@ -597,6 +620,22 @@ test("Seq.fold(g); child of Par", t => {
       * Instant-7 @17 <6>`, "dump matches");
 });
 
+test("Seq.fold(); no input", t => {
+    const tape = Tape();
+    const seq = Seq([
+        Instant(K([])),
+        Seq.fold(Delay, 31),
+        Delay(23)
+    ]);
+    const instance = tape.instantiate(seq, 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <31>
+  * Instant-1 @17 <>
+  * Seq/fold-2 @17 <31>
+  * Delay-3 [17, 40[ <31>`, "dump matches");
+});
+
 test("Seq.fold(g) failure; child of Seq", t => {
     const tape = Tape();
     const seq = Seq([
@@ -625,7 +664,6 @@ test("Seq.fold(g) failure; child of Par", t => {
   * Par-2 @17 (failed)
     * Delay-3 @17 (cancelled)
     * Seq/fold-4 @17 (failed)`, "dump matches");
-
 });
 
 test("Seq.fold().take(n = ∞)", t => {
@@ -700,13 +738,12 @@ test("Seq.fold().take(0)", t => {
         Delay(23)
     ]);
     const instance = tape.instantiate(seq, 17);
-
     Deck({ tape }).now = 41;
     t.equal(dump(instance),
-`* Seq-0 [17, 40[ <undefined>
+`* Seq-0 [17, 40[ <0>
   * Instant-1 @17 <1,2,3,4,5>
-  * Seq/fold-2 @17 <undefined>
-  * Delay-3 [17, 40[ <undefined>`, "dump matches");
+  * Seq/fold-2 @17 <0>
+  * Delay-3 [17, 40[ <0>`, "dump matches");
 });
 
 test("Nesting", t => {
