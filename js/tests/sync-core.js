@@ -629,7 +629,6 @@ test("Seq.fold(); no input", t => {
     ]);
     const instance = tape.instantiate(seq, 17);
     Deck({ tape }).now = 41;
-    console.log(dump(instance));
     t.equal(dump(instance),
 `* Seq-0 [17, 40[ <31>
   * Instant-1 @17 <>
