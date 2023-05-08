@@ -673,9 +673,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
     show,
     init,
     take,
-    f() {
-        return this.z;
-    },
+    f: I,
 
     // Duration is indefinite, unless it is modified by take.
     get dur() {
