@@ -51,6 +51,18 @@ test("Instant(f)", t => {
     t.equal(instant.dur, 0, "no duration");
 });
 
+test("Instant.repeat()", t => {
+    const instant = Instant();
+    const repeat = instant.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, instant, "repeat child");
+    t.equal(repeat.dur, Infinity, "repeat dur");
+    t.equal(repeat.failible, true, "unlimited repetitions fail");
+    const limitedRepeats = repeat.take(3);
+    t.equal(limitedRepeats.dur, 0, "repeat dur (limited)");
+    t.equal(limitedRepeats.failible, false, "limited repetitions do not fail");
+});
+
 test("Delay(dur)", t => {
     const delay = Delay(23);
     t.equal(delay.show(), "Delay<23>", "show");
@@ -59,6 +71,18 @@ test("Delay(dur)", t => {
     t.throws(() => { delay.dur = -19; }, "cannot overwrite dur");
     t.equal(Delay(0).failible, true, "zero duration delay is failible");
     t.equal(Delay(-17).failible, true, "negative duration delay is failible");
+});
+
+test("Delay.repeat()", t => {
+    const delay = Delay(23);
+    const repeat = delay.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, delay, "repeat child");
+    t.equal(repeat.dur, Infinity, "repeat dur");
+    t.equal(repeat.failible, false, "unlimited repetitions do not fail");
+    const limitedRepeats = repeat.take(3);
+    t.equal(limitedRepeats.dur, 69, "repeat dur (limited)");
+    t.equal(limitedRepeats.failible, false, "limited repetitions do not fail");
 });
 
 test("Par()", t => {
@@ -89,7 +113,7 @@ test("Par duration", t => {
     t.undefined(Par([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
 });
 
-test("Par.take", t => {
+test("Par.take(n)", t => {
     t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().dur, 51, "dur with n = ∞");
     t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().dur,
         "dur with n = ∞ (but indefinite durations)");
@@ -103,6 +127,13 @@ test("Par.take", t => {
         "dur with n = 0");
 });
 
+test("Par.repeat()", t => {
+    const par = Par();
+    const repeat = par.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, par, "repeat child");
+});
+
 test("Par.map(g)", t => {
     const par = Par.map(Delay);
     t.equal(par.show(), "Par/map", "show");
@@ -110,6 +141,16 @@ test("Par.map(g)", t => {
     t.undefined(par.dur, "unresolved duration");
     t.equal(!par.failible, true, "not failible");
     t.equal(par.take(0).dur, 0, "down to zero with take(0)");
+});
+
+test("Par.map(g).repeat()", t => {
+    const par = Par.map(Delay);
+    const repeat = par.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, par, "repeat child");
+    t.equal(repeat.dur, Infinity, "indefinite duration");
+    t.equal(repeat.failible, false, "not failible");
+    t.undefined(repeat.take(3).dur, "repeat dur (limited)");
 });
 
 test("Seq()", t => {
@@ -138,12 +179,29 @@ test("Seq duration (unresolved and indefinite child durations)", t => {
     t.undefined(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
 });
 
+test("Seq.repeat()", t => {
+    const seq = Seq();
+    const repeat = seq.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, seq, "repeat child");
+});
+
 test("Seq.map(g)", t => {
     const map = Seq.map(Delay);
     t.equal(map.show(), "Seq/map", "show");
     t.typeof(map.g, "function", "g function");
     t.undefined(map.dur, "unresolved duration");
     t.equal(map.take(0).dur, 0, "down to zero with take(0)");
+});
+
+test("Seq.map(g).repeat()", t => {
+    const seq = Seq.map(Delay);
+    const repeat = seq.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, seq, "repeat child");
+    t.equal(repeat.dur, Infinity, "indefinite duration");
+    t.equal(repeat.failible, false, "not failible");
+    t.undefined(repeat.take(3).dur, "repeat dur (limited)");
 });
 
 test("Seq.fold(g, z)", t => {
@@ -153,6 +211,16 @@ test("Seq.fold(g, z)", t => {
     t.equal(fold.z, 0, "initial accumulator value");
     t.undefined(fold.dur, "unresolved duration");
     t.equal(fold.take(0).dur, 0, "down to zero with take(0)");
+});
+
+test("Seq.fold(g, z).repeat()", t => {
+    const seq = Seq.fold(Delay, 1);
+    const repeat = seq.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, seq, "repeat child");
+    t.equal(repeat.dur, Infinity, "indefinite duration");
+    t.equal(repeat.failible, false, "not failible");
+    t.undefined(repeat.take(3).dur, "repeat dur (limited)");
 });
 
         </script>
