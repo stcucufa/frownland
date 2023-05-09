@@ -39,7 +39,7 @@ test("Score.add(child)", t => {
 test("Instant()", t => {
     const instant = Instant();
     t.equal(instant.show(), "Instant", "show");
-    t.equal(instant.f(17), 17, "f defaults to I");
+    t.equal(instant.valueForInstance(17), 17, "valueForInstance defaults to I");
     t.equal(instant.dur, 0, "no duration");
     t.equal(!instant.failible, true, "infailible");
 });
@@ -47,7 +47,7 @@ test("Instant()", t => {
 test("Instant(f)", t => {
     const instant = Instant(x => x * 2);
     t.equal(instant.show(), "Instant", "show");
-    t.equal(instant.f(17), 34, "f is set");
+    t.equal(instant.valueForInstance(17), 34, "valueForInstance is set");
     t.equal(instant.dur, 0, "no duration");
 });
 

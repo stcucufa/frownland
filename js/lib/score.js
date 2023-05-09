@@ -25,11 +25,10 @@ export const Score = Object.assign(children => create().call(Score, { children: 
 
 // Instant(f) evaluates f instantly. f should not have any side effect and
 // defaults to I (identity). Repeatable, cannot fail.
-export const Instant = assign(f => f ? extend(Instant, { f }) : Instant, {
+export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) : Instant, {
     tag: "Instant",
     show,
     repeat,
-    f: I,
 
     // An instant has no duration.
     get dur() {
@@ -40,6 +39,7 @@ export const Instant = assign(f => f ? extend(Instant, { f }) : Instant, {
     // generic forward function.
     instantiate: (instance, t) => Object.assign(instance, { t, forward }),
 
+    valueForInstance: I,
     cancelInstance: cancelled,
     pruneInstance: pruned,
 });
@@ -71,7 +71,6 @@ export const Delay = Object.assign(createDelay, {
     },
 
     repeat,
-    f: I,
 
     // The instance for a delay is an interval, with an occurrence at the end
     // of the interval. Fails if the duration is not greater than zero.
@@ -84,6 +83,7 @@ export const Delay = Object.assign(createDelay, {
         return Object.assign(instance, { t: instance.end, forward });
     },
 
+    valueForInstance: I,
     cancelInstance: cancelled,
     pruneInstance: pruned,
 });
@@ -145,7 +145,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
     },
 
     // Collect the values of the children as the value of the par itself.
-    f() {
+    valueForInstance() {
         const value = (Capacity.has(this.item) ? this.finished : this.children).map(child => child.value);
         delete this.finished;
         return value;
@@ -215,7 +215,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
                     child.item.cancelInstance(child, t);
                 }
             }
-            ended(instance, t, this.f.call(instance));
+            ended(instance, t, this.valueForInstance.call(instance));
         }
     },
 
@@ -384,7 +384,6 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     init,
     take,
     repeat,
-    f: I,
 
     // The duration of a Seq is the sum of the duration of its children.
     // Addition of course gets a little more involved when we take into account
@@ -543,7 +542,9 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         instance.children.length = instance.currentChildIndex + 1;
         ended(instance, t);
         instance.cancelled = true;
-    }
+    },
+
+    valueForInstance: I
 });
 
 // Seq/fold is similar to Seq but its children are produced by mapping its
@@ -558,7 +559,7 @@ const SeqFold = {
 
     // Return the last child value, but in the case of no inputs, return the
     // initial accumulator value.
-    f() {
+    valueForInstance() {
         return this.children?.at(-1)?.value ?? this.item.z;
     },
 
@@ -646,7 +647,7 @@ const SeqFold = {
         console.assert(instance.children[instance.currentChildIndex] === childInstance);
         instance.currentChildIndex += 1;
         if (instance.currentChildIndex === min(instance.input.length, Capacity.get(this))) {
-            instance.value = this.f.call(instance);
+            instance.value = this.valueForInstance.call(instance);
             instance.end = t;
             instance.parent?.item.childInstanceDidEnd(instance, t);
             delete instance.currentChildIndex;
@@ -663,7 +664,7 @@ export const SeqMap = extend(SeqFold, {
     tag: "Seq/map",
 
     // Collect the values of the children as the value of the map itself.
-    f() {
+    valueForInstance() {
         return this.children.map(child => child.value);
     },
 
@@ -682,7 +683,6 @@ const Repeat = assign(child => extend(Repeat, { child }), {
     show,
     init,
     take,
-    f: I,
 
     // Duration is indefinite, unless it is modified by take in which case it
     // is a product of the number of iterations by the duration of the item
@@ -763,6 +763,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
         failed(instance, t);
     },
 
+    valueForInstance: I,
     childInstanceEndWasResolved: nop,
 });
 
@@ -826,7 +827,7 @@ function forward(t, interval) {
     }
 
     const item = instance.item;
-    instance.value = item.f.call(
+    instance.value = item.valueForInstance.call(
         instance, instance.parent?.item.inputForChildInstance(instance), t, interval
     );
     instance.parent?.item.childInstanceDidEnd(instance, endOf(instance));
