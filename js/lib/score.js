@@ -749,6 +749,14 @@ const Repeat = assign(child => extend(Repeat, { child }), {
         }
     },
 
+    // Fail if the child fails.
+    childInstanceDidFail(childInstance, t) {
+        const instance = childInstance.parent;
+        console.assert(instance.item === this);
+        console.assert(childInstance === instance.children.at(-1));
+        failed(instance, t);
+    },
+
     childInstanceEndWasResolved: nop,
 });
 
