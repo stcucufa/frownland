@@ -556,9 +556,10 @@ const SeqFold = {
     take,
     repeat,
 
-    // In the case where we take zero inputs, return the initial value.
+    // Return the last child value, but in the case of no inputs, return the
+    // initial accumulator value.
     f() {
-        return this.item.z;
+        return this.children?.at(-1)?.value ?? this.item.z;
     },
 
     // Duration is unresolved, unless it is modified by take(0).
@@ -645,7 +646,7 @@ const SeqFold = {
         console.assert(instance.children[instance.currentChildIndex] === childInstance);
         instance.currentChildIndex += 1;
         if (instance.currentChildIndex === min(instance.input.length, Capacity.get(this))) {
-            instance.value = childInstance.value;
+            instance.value = this.f.call(instance);
             instance.end = t;
             instance.parent?.item.childInstanceDidEnd(instance, t);
             delete instance.currentChildIndex;
@@ -657,9 +658,14 @@ const SeqFold = {
 };
 
 // Seq/map is just like Seq/fold but taking its initial input from its parent,
-// like a normal Seq.
+// like a normal Seq, and returns a list of its outputs in order.
 export const SeqMap = extend(SeqFold, {
     tag: "Seq/map",
+
+    // Collect the values of the children as the value of the map itself.
+    f() {
+        return this.children.map(child => child.value);
+    },
 
     // Each successive child gets the next input from the Seq/map parent.
     inputForChildInstance(childInstance) {

@@ -628,9 +628,9 @@ test("Seq.map(g)", t => {
     const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay)]), 17);
     Deck({ tape }).now = 91;
     t.equal(dump(seq),
-`* Seq-0 [17, 90[ <23>
+`* Seq-0 [17, 90[ <31,19,23>
   * Instant-1 @17 <31,19,23>
-  * Seq/map-2 [17, 90[ <23>
+  * Seq/map-2 [17, 90[ <31,19,23>
     * Delay-3 [17, 48[ <31>
     * Delay-4 [48, 67[ <19>
     * Delay-5 [67, 90[ <23>`, "dump matches");
@@ -650,7 +650,38 @@ test("Seq.map(g).repeat()", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay).repeat()]), 17);
     Deck({ tape }).now = 111;
-    console.log(dump(seq));
+    t.equal(dump(seq),
+`* Seq-0 [17, ∞[
+  * Instant-1 @17 <19,23>
+  * Seq/repeat-2 [17, ∞[
+    * Seq/map-3 [17, 59[ <19,23>
+      * Delay-4 [17, 36[ <19>
+      * Delay-5 [36, 59[ <23>
+    * Seq/map-6 [59, 101[ <19,23>
+      * Delay-7 [59, 78[ <19>
+      * Delay-8 [78, 101[ <23>
+    * Seq/map-9 [101, 143[
+      * Delay-10 [101, 120[
+      * Delay-11 [120, 143[`, "dump matches");
+});
+
+test("Seq.map(g).repeat().take(n)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay).repeat().take(3)]), 17);
+    Deck({ tape }).now = 144;
+    t.equal(dump(seq),
+`* Seq-0 [17, 143[ <19,23>
+  * Instant-1 @17 <19,23>
+  * Seq/repeat-2 [17, 143[ <19,23>
+    * Seq/map-3 [17, 59[ <19,23>
+      * Delay-4 [17, 36[ <19>
+      * Delay-5 [36, 59[ <23>
+    * Seq/map-6 [59, 101[ <19,23>
+      * Delay-7 [59, 78[ <19>
+      * Delay-8 [78, 101[ <23>
+    * Seq/map-9 [101, 143[ <19,23>
+      * Delay-10 [101, 120[ <19>
+      * Delay-11 [120, 143[ <23>`, "dump matches");
 });
 
 test("Seq.fold(g); child of Seq", t => {
