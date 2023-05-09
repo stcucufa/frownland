@@ -684,7 +684,7 @@ test("Seq.map(g).repeat().take(n)", t => {
       * Delay-11 [120, 143[ <23>`, "dump matches");
 });
 
-test("Seq.fold(g); child of Seq", t => {
+test("Seq.fold(g, z); child of Seq", t => {
     const tape = Tape();
     const seq = Seq([Instant(K([1, 2, 3])), Seq.fold(x => Instant(y => x + y), 0)]);
     const instance = tape.instantiate(seq, 17);
@@ -699,7 +699,7 @@ test("Seq.fold(g); child of Seq", t => {
     * Instant-5 @17 <6>`, "dump matches");
 });
 
-test("Seq.fold(g); child of Seq, siblings", t => {
+test("Seq.fold(g, z); child of Seq, siblings", t => {
     const tape = Tape();
     const seq = Seq([
         Instant(K([1, 2, 3])),
@@ -719,7 +719,7 @@ test("Seq.fold(g); child of Seq, siblings", t => {
   * Delay-6 [17, 40[ <6>`, "dump matches");
 });
 
-test("Seq.fold(g); child of Par", t => {
+test("Seq.fold(g, z); child of Par", t => {
     const tape = Tape();
     const seq = Seq([Instant(K([1, 2, 3])), Par([Delay(23), Seq.fold(x => Instant(y => x + y), 0)])]);
     const instance = tape.instantiate(seq, 17);
@@ -736,7 +736,7 @@ test("Seq.fold(g); child of Par", t => {
       * Instant-7 @17 <6>`, "dump matches");
 });
 
-test("Seq.fold(); no input", t => {
+test("Seq.fold(g, z); no input", t => {
     const tape = Tape();
     const seq = Seq([
         Instant(K([])),
@@ -752,7 +752,7 @@ test("Seq.fold(); no input", t => {
   * Delay-3 [17, 40[ <31>`, "dump matches");
 });
 
-test("Seq.fold(g) failure; child of Seq", t => {
+test("Seq.fold(g, z) failure; child of Seq", t => {
     const tape = Tape();
     const seq = Seq([
         Instant(K("oops")),
@@ -768,7 +768,7 @@ test("Seq.fold(g) failure; child of Seq", t => {
   * Seq/fold-2 @17 (failed)`, "dump matches");
 });
 
-test("Seq.fold(g) failure; child of Par", t => {
+test("Seq.fold(g, z) failure; child of Par", t => {
     const tape = Tape();
     const seq = Seq([Instant(K("oops")), Par([Delay(23), Seq.fold(x => Instant(y => x + y), 0)])]);
     const instance = tape.instantiate(seq, 17);
@@ -782,7 +782,24 @@ test("Seq.fold(g) failure; child of Par", t => {
     * Seq/fold-4 @17 (failed)`, "dump matches");
 });
 
-test("Seq.fold().take(n = ∞)", t => {
+test("Seq.fold(g, z).repeat(); failure", t => {
+    const tape = Tape();
+    const seq = Seq([Instant(K([1, 2, 3])), Seq.fold(x => Instant(y => x + y), 0).repeat()]);
+    const instance = tape.instantiate(seq, 17);
+
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <1,2,3>
+  * Seq/repeat-2 @17 (failed)
+    * Seq/fold-3 @17 <6>
+      * Instant-4 @17 <1>
+      * Instant-5 @17 <3>
+      * Instant-6 @17 <6>
+    * Seq/fold-7 @17 (failed)`, "dump matches");
+});
+
+test("Seq.fold(g, z).take(n = ∞)", t => {
     const tape = Tape();
     const seq = Seq([
         Instant(K([1, 2, 3, 4, 5])),
@@ -804,7 +821,7 @@ test("Seq.fold().take(n = ∞)", t => {
   * Delay-8 [17, 40[ <15>`, "dump matches");
 });
 
-test("Seq.fold().take; n > child count", t => {
+test("Seq.fold(g, z).take; n > child count", t => {
     const tape = Tape();
     const seq = Seq([
         Instant(K([1, 2, 3, 4, 5])),
@@ -826,7 +843,7 @@ test("Seq.fold().take; n > child count", t => {
   * Delay-8 [17, 40[ <15>`, "dump matches");
 });
 
-test("Seq.fold().take; n < child count", t => {
+test("Seq.fold(g, z).take; n < child count", t => {
     const tape = Tape();
     const seq = Seq([
         Instant(K([1, 2, 3, 4, 5])),
@@ -846,7 +863,7 @@ test("Seq.fold().take; n < child count", t => {
   * Delay-6 [17, 40[ <6>`, "dump matches");
 });
 
-test("Seq.fold().take(0)", t => {
+test("Seq.fold(g, z).take(0)", t => {
     const tape = Tape();
     const seq = Seq([
         Instant(K([1, 2, 3, 4, 5])),
