@@ -494,7 +494,6 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             } else {
                 instance.end = t;
             }
-            instance.parent?.item.childInstanceDidEnd(instance, t);
         } else if (t === Infinity) {
             instance.end = t;
         }
