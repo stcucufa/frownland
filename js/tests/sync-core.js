@@ -454,6 +454,13 @@ test("Seq(xs)", t => {
     t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
 });
 
+test("Seq value", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23)]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(seq.value, "ok", "Seq value");
+});
+
 test("Seq()", t => {
     const tape = Tape();
     const seq = Seq();
@@ -640,10 +647,7 @@ test("Seq.map(g); no input", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq([Instant(K([])), Seq.map(Delay)]), 17);
     Deck({ tape }).now = 91;
-    t.equal(dump(seq),
-`* Seq-0 @17 <undefined>
-  * Instant-1 @17 <>
-  * Seq/map-2 @17 <undefined>`, "dump matches");
+    t.equal(seq.value, [], "empty list");
 });
 
 test("Seq.map(g).repeat()", t => {
