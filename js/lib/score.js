@@ -25,11 +25,10 @@ export const Score = Object.assign(children => create().call(Score, { children: 
 
 // Instant(f) evaluates f instantly. f should not have any side effect and
 // defaults to I (identity). Repeatable, cannot fail.
-export const Instant = assign(f => f ? extend(Instant, { f }) : Instant, {
+export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) : Instant, {
     tag: "Instant",
     show,
     repeat,
-    f: I,
 
     // An instant has no duration.
     get dur() {
@@ -40,6 +39,13 @@ export const Instant = assign(f => f ? extend(Instant, { f }) : Instant, {
     // generic forward function.
     instantiate: (instance, t) => Object.assign(instance, { t, forward }),
 
+    // valueForInstance is called with the instance as `this` instead of an
+    // instance parameter (so the first paremeter is the input value for the
+    // item).
+    valueForInstance: I,
+
+    // Other “instance” functions are called with the item as `this` and the
+    // instance as the first parameter (and often t as the second parameter).
     cancelInstance: cancelled,
     pruneInstance: pruned,
 });
@@ -71,7 +77,6 @@ export const Delay = Object.assign(createDelay, {
     },
 
     repeat,
-    f: I,
 
     // The instance for a delay is an interval, with an occurrence at the end
     // of the interval. Fails if the duration is not greater than zero.
@@ -84,6 +89,7 @@ export const Delay = Object.assign(createDelay, {
         return Object.assign(instance, { t: instance.end, forward });
     },
 
+    valueForInstance: I,
     cancelInstance: cancelled,
     pruneInstance: pruned,
 });
@@ -145,7 +151,9 @@ export const Par = assign(children => create().call(Par, { children: children ??
     },
 
     // Collect the values of the children as the value of the par itself.
-    f() {
+    // The values are in the order of the children, unless modified by take()
+    // in which case they are in the order in which the children ended.
+    valueForInstance() {
         const value = (Capacity.has(this.item) ? this.finished : this.children).map(child => child.value);
         delete this.finished;
         return value;
@@ -167,14 +175,12 @@ export const Par = assign(children => create().call(Par, { children: children ??
             throw Fail;
         }
 
-        instance.children = [];
-        instance.finished = [];
+        instance.children = []; // children in instantiation order
+        instance.finished = []; // children in ending order
 
         const n = Capacity.get(this);
-        let children = n === 0 ? [] : isFinite(n) ? itemsByDuration(this.children, n) : this.children;
-        if (isFinite(n)) {
-            children = children.map(([_, item]) => item);
-        }
+        const children = n === 0 ? [] :
+            isFinite(n) ? (xs => xs.map(([_, x]) => x))(itemsByDuration(this.children, n)) : this.children;
 
         const end = children.reduce((end, child) => max(end, endOf(Object.assign(
             push(instance.children, instance.tape.instantiate(child, t)),
@@ -215,7 +221,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
                     child.item.cancelInstance(child, t);
                 }
             }
-            ended(instance, t, this.f.call(instance));
+            ended(instance, t, this.valueForInstance.call(instance));
         }
     },
 
@@ -352,7 +358,7 @@ export const ParMap = {
             delete instance.begin;
             instance.t = t;
             if (instance.children.length === 0) {
-                instance.value = [];
+                instance.value = this.valueForInstance.call(instance);
                 instance.parent?.item.childInstanceDidEnd(instance, t);
             }
         } else {
@@ -384,7 +390,6 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     init,
     take,
     repeat,
-    f: I,
 
     // The duration of a Seq is the sum of the duration of its children.
     // Addition of course gets a little more involved when we take into account
@@ -515,7 +520,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         console.assert(instance.children[instance.currentChildIndex] === childInstance);
         instance.currentChildIndex += 1;
         if (instance.currentChildIndex === min(this.children.length, Capacity.get(this))) {
-            instance.value = childInstance.value;
+            instance.value = this.valueForInstance.call(instance);
             instance.end = t;
             instance.parent?.item.childInstanceDidEnd(instance, t);
             delete instance.currentChildIndex;
@@ -543,6 +548,11 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         instance.children.length = instance.currentChildIndex + 1;
         ended(instance, t);
         instance.cancelled = true;
+    },
+
+    // The value of a Seq is the value of its last child.
+    valueForInstance() {
+        return this.children?.at(-1)?.value;
     }
 });
 
@@ -558,7 +568,7 @@ const SeqFold = {
 
     // Return the last child value, but in the case of no inputs, return the
     // initial accumulator value.
-    f() {
+    valueForInstance() {
         return this.children?.at(-1)?.value ?? this.item.z;
     },
 
@@ -609,7 +619,7 @@ const SeqFold = {
         if (instance.begin === t) {
             delete instance.begin;
             instance.t = t;
-            instance.value = this.z;
+            instance.value = this.valueForInstance.call(instance);
             if (instance.children.length === 0) {
                 instance.parent?.item.childInstanceDidEnd(instance, t);
             }
@@ -646,7 +656,7 @@ const SeqFold = {
         console.assert(instance.children[instance.currentChildIndex] === childInstance);
         instance.currentChildIndex += 1;
         if (instance.currentChildIndex === min(instance.input.length, Capacity.get(this))) {
-            instance.value = this.f.call(instance);
+            instance.value = this.valueForInstance.call(instance);
             instance.end = t;
             instance.parent?.item.childInstanceDidEnd(instance, t);
             delete instance.currentChildIndex;
@@ -663,7 +673,7 @@ export const SeqMap = extend(SeqFold, {
     tag: "Seq/map",
 
     // Collect the values of the children as the value of the map itself.
-    f() {
+    valueForInstance() {
         return this.children.map(child => child.value);
     },
 
@@ -682,7 +692,6 @@ const Repeat = assign(child => extend(Repeat, { child }), {
     show,
     init,
     take,
-    f: I,
 
     // Duration is indefinite, unless it is modified by take in which case it
     // is a product of the number of iterations by the duration of the item
@@ -763,6 +772,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
         failed(instance, t);
     },
 
+    valueForInstance: I,
     childInstanceEndWasResolved: nop,
 });
 
@@ -826,7 +836,7 @@ function forward(t, interval) {
     }
 
     const item = instance.item;
-    instance.value = item.f.call(
+    instance.value = item.valueForInstance.call(
         instance, instance.parent?.item.inputForChildInstance(instance), t, interval
     );
     instance.parent?.item.childInstanceDidEnd(instance, endOf(instance));
@@ -875,15 +885,11 @@ function ended(...args) {
 
 // Minimum function accepting an undefined value as its second argument, for
 // use with Capacity.get().
-function min(x, y) {
-    return isNumber(y) ? Math.min(x, y) : x;
-}
+const min = (x, y) => isNumber(y) ? Math.min(x, y) : x;
 
 // Maximum function accepting an undefined value as its second argument, which
 // is considered higher than any definite number (for unresolved durations).
-function max(x, y) {
-    return isNumber(y) ? Math.max(x, y) : x === Infinity ? x : y;
-}
+const max = (x, y) => isNumber(y) ? Math.max(x, y) : x === Infinity ? x : y;
 
 // Sort a list of items by their duration, optionally capping the list at a
 // maximum of n items. Failible items (at instantiation) are filtered out first.
