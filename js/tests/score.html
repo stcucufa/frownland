@@ -36,33 +36,6 @@ test("Score.add(child)", t => {
     t.equal(instant.parent, score, "parent (2)");
 });
 
-test("Instant()", t => {
-    const instant = Instant();
-    t.equal(instant.show(), "Instant", "show");
-    t.equal(instant.valueForInstance(17), 17, "valueForInstance defaults to I");
-    t.equal(instant.dur, 0, "no duration");
-    t.equal(!instant.failible, true, "infailible");
-});
-
-test("Instant(f)", t => {
-    const instant = Instant(x => x * 2);
-    t.equal(instant.show(), "Instant", "show");
-    t.equal(instant.valueForInstance(17), 34, "valueForInstance is set");
-    t.equal(instant.dur, 0, "no duration");
-});
-
-test("Instant.repeat()", t => {
-    const instant = Instant();
-    const repeat = instant.repeat();
-    t.equal(repeat.show(), "Seq/repeat", "show");
-    t.equal(repeat.child, instant, "repeat child");
-    t.equal(repeat.dur, Infinity, "repeat dur");
-    t.equal(repeat.failible, true, "unlimited repetitions fail");
-    const limitedRepeats = repeat.take(3);
-    t.equal(limitedRepeats.dur, 0, "repeat dur (limited)");
-    t.equal(limitedRepeats.failible, false, "limited repetitions do not fail");
-});
-
 test("Delay(dur)", t => {
     const delay = Delay(23);
     t.equal(delay.show(), "Delay<23>", "show");

@@ -4,35 +4,6 @@ import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
-test("Instant(f)", t => {
-    const tape = Tape();
-    const instant = Instant(K("ok"));
-    const instance = tape.instantiate(instant, 17);
-    t.equal(instance.tape, tape, "instance.tape is set");
-    t.equal(instance.item, instant, "instance.item is set");
-    t.equal(instance.t, 17, "instance.t is set");
-
-    Deck({ tape }).now = 18;
-    t.equal(instance.value, "ok", "instance value");
-});
-
-test("Instant(f).repeat().take(n); n finite", t => {
-    const tape = Tape();
-    const repeat = tape.instantiate(Instant(K("ok")).repeat().take(3), 17);
-    Deck({ tape }).now = 18;
-    t.equal(dump(repeat),
-`* Seq/repeat-0 @17 <ok>
-  * Instant-1 @17 <ok>
-  * Instant-2 @17 <ok>
-  * Instant-3 @17 <ok>`, "dump matches");
-});
-
-test("Instant(f).repeat().take() failure", t => {
-    const tape = Tape();
-    const repeat = tape.instantiate(Instant(K("ok")).repeat(), 17);
-    t.undefined(repeat, "Instantiation failure");
-});
-
 test("Delay(d)", t => {
     const tape = Tape();
     const delay = Delay(23);

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Instant</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Instant()", t => {
+    const instant = Instant();
+    t.equal(instant.show(), "Instant", "show");
+    t.equal(instant.valueForInstance(17), 17, "valueForInstance defaults to I");
+    t.equal(instant.dur, 0, "zero duration");
+    t.equal(!instant.failible, true, "infailible (at instantiation)");
+});
+
+test("Instant(f)", t => {
+    const instant = Instant(x => x * 2);
+    t.equal(instant.valueForInstance(17), 34, "valueForInstance is set");
+});
+
+test("Instant.repeat(); must be limited by take()", t => {
+    const instant = Instant();
+    const repeat = instant.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, instant, "repeat child");
+    t.equal(repeat.dur, Infinity, "repeat dur");
+    t.equal(repeat.failible, true, "unlimited repetitions fail");
+    const limitedRepeats = repeat.take(3);
+    t.equal(limitedRepeats.dur, 0, "repeat dur (limited)");
+    t.equal(limitedRepeats.failible, false, "limited repetitions do not fail");
+});
+
+test("Instantiatiation", t => {
+    const tape = Tape();
+    const instant = Instant(K("ok"));
+    const instance = tape.instantiate(instant, 17);
+    t.equal(instance.tape, tape, "instance.tape is set");
+    t.equal(instance.item, instant, "instance.item is set");
+    t.equal(instance.t, 17, "instance.t is set");
+    Deck({ tape }).now = 18;
+    t.equal(instance.value, "ok", "instance value");
+});
+
+test("Instant(f).repeat().take(n = ∞)", t => {
+    const tape = Tape();
+    const repeat = tape.instantiate(Instant(K("ok")).repeat(), 17);
+    t.undefined(repeat, "Instantiation failure");
+});
+
+test("Instant(f).repeat().take(n); n finite", t => {
+    const tape = Tape();
+    const repeat = tape.instantiate(Instant(K("ok")).repeat().take(3), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(repeat),
+`* Seq/repeat-0 @17 <ok>
+  * Instant-1 @17 <ok>
+  * Instant-2 @17 <ok>
+  * Instant-3 @17 <ok>`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>
