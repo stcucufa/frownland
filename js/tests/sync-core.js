@@ -883,6 +883,30 @@ test("Seq.fold(g, z).take(0)", t => {
   * Delay-3 [17, 40[ <0>`, "dump matches");
 });
 
+test("Repeat with unresolved duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay)]).repeat(), 17);
+    Deck({ tape }).now = 111;
+    console.log(dump(seq));
+    t.equal(dump(seq),
+`* Seq/repeat-0 [17, ∞[
+  * Seq-1 [17, 59[ <19,23>
+    * Instant-2 @17 <19,23>
+    * Seq/map-3 [17, 59[ <19,23>
+      * Delay-4 [17, 36[ <19>
+      * Delay-5 [36, 59[ <23>
+  * Seq-6 [59, 101[ <19,23>
+    * Instant-7 @59 <19,23>
+    * Seq/map-8 [59, 101[ <19,23>
+      * Delay-9 [59, 78[ <19>
+      * Delay-10 [78, 101[ <23>
+  * Seq-11 [101, 143[
+    * Instant-12 @101 <19,23>
+    * Seq/map-13 [101, 143[
+      * Delay-14 [101, 120[
+      * Delay-15 [120, 143[`, "dump matches");
+});
+
 test("Nesting", t => {
     const tape = Tape();
     const par = Par([
