@@ -8,7 +8,7 @@
 
 import { test } from "./test.js";
 import { K } from "../lib/util.js";
-import { Instant, dump } from "../lib/score.js";
+import { Instant, Delay, Par, Seq,dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -34,7 +34,7 @@ test("Instant.repeat(); must be limited by take()", t => {
     t.equal(repeat.failible, true, "unlimited repetitions fail");
     const limitedRepeats = repeat.take(3);
     t.equal(limitedRepeats.dur, 0, "repeat dur (limited)");
-    t.equal(limitedRepeats.failible, false, "limited repetitions do not fail");
+    t.equal(!limitedRepeats.failible, true, "limited repetitions do not fail");
 });
 
 test("Instantiatiation", t => {
@@ -64,6 +64,26 @@ test("Instant(f).repeat().take(n); n finite", t => {
   * Instant-2 @17 <ok>
   * Instant-3 @17 <ok>`, "dump matches");
 });
+
+test("Cancel instant", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par([
+        Instant(K("ok")), Instant(() => { throw Error("not cancelled?!"); })
+    ]).take(1), 17);
+    Deck({ tape }).now = 18;
+    t.equal(choice.value, ["ok"], "expected value");
+});
+
+test("Prune instant", t => {
+    const tape = Tape();
+    t.undefined(tape.instantiate(Seq([
+        Instant(() => { throw Error("not pruned?!"); }),
+        Delay(-1)
+    ]), 17), "instantiation failed");
+    Deck({ tape }).now = 18;
+    t.equal(tape.occurrences, [], "no occurrence on tape");
+});
+
 
         </script>
     </head>

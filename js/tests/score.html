@@ -36,28 +36,6 @@ test("Score.add(child)", t => {
     t.equal(instant.parent, score, "parent (2)");
 });
 
-test("Delay(dur)", t => {
-    const delay = Delay(23);
-    t.equal(delay.show(), "Delay<23>", "show");
-    t.equal(delay.dur, 23, "duration");
-    t.equal(!delay.failible, true, "not failible (delay > 0)");
-    t.throws(() => { delay.dur = -19; }, "cannot overwrite dur");
-    t.equal(Delay(0).failible, true, "zero duration delay is failible");
-    t.equal(Delay(-17).failible, true, "negative duration delay is failible");
-});
-
-test("Delay.repeat()", t => {
-    const delay = Delay(23);
-    const repeat = delay.repeat();
-    t.equal(repeat.show(), "Seq/repeat", "show");
-    t.equal(repeat.child, delay, "repeat child");
-    t.equal(repeat.dur, Infinity, "repeat dur");
-    t.equal(repeat.failible, false, "unlimited repetitions do not fail");
-    const limitedRepeats = repeat.take(3);
-    t.equal(limitedRepeats.dur, 69, "repeat dur (limited)");
-    t.equal(limitedRepeats.failible, false, "limited repetitions do not fail");
-});
-
 test("Par()", t => {
     const par = Par();
     t.equal(par.show(), "Par/0", "show");

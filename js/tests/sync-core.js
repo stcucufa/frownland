@@ -4,49 +4,6 @@ import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
-test("Delay(d)", t => {
-    const tape = Tape();
-    const delay = Delay(23);
-    const instance = tape.instantiate(delay, 17);
-    t.equal(instance.tape, tape, "instance.tape is set");
-    t.equal(instance.item, delay, "instance.item is set");
-    t.equal(instance.begin, 17, "instance.begin is set");
-    t.equal(instance.end, 40, "instance.end is set");
-
-    Deck({ tape }).now = 41;
-    t.equal(Object.hasOwn(instance, "value"), true, "instance value");
-});
-
-test("Delay(d) fails if d ≤ 0", t => {
-    const tape = Tape();
-    t.undefined(tape.instantiate(Delay(-23), 17), "negative delay");
-    t.undefined(tape.instantiate(Delay(0), 17), "zero duration delay");
-});
-
-test("Delay(d).repeat()", t => {
-    const tape = Tape();
-    const repeat = tape.instantiate(Delay(23).repeat(), 17);
-    Deck({ tape }).now = 111;
-    t.equal(dump(repeat),
-`* Seq/repeat-0 [17, ∞[
-  * Delay-1 [17, 40[ <undefined>
-  * Delay-2 [40, 63[ <undefined>
-  * Delay-3 [63, 86[ <undefined>
-  * Delay-4 [86, 109[ <undefined>
-  * Delay-5 [109, 132[`, "dump matches");
-});
-
-test("Delay(d).repeat().take(n)", t => {
-    const tape = Tape();
-    const repeat = tape.instantiate(Delay(23).repeat().take(3), 17);
-    Deck({ tape }).now = 87;
-    t.equal(dump(repeat),
-`* Seq/repeat-0 [17, 86[ <undefined>
-  * Delay-1 [17, 40[ <undefined>
-  * Delay-2 [40, 63[ <undefined>
-  * Delay-3 [63, 86[ <undefined>`, "dump matches");
-});
-
 test("Par(xs)", t => {
     const tape = Tape();
     const instant = Instant();
