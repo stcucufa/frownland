@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Par.take</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, Delay, Par, Seq,dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Par(xs).take(n = ∞)", t => {
+    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().dur, 51, "dur with n = ∞");
+    t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().dur,
+        "dur with n = ∞ (but indefinite durations)");
+    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(7).dur, 0,
+        "zero dur with n > child count (failure)");
+     t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(3).dur, 23,
+        "dur with n < child count");
+     t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Delay(19)]).take(3).dur,
+        "dur with n < child count, but unresolved duration");
+    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(0).dur, 0,
+        "dur with n = 0");
+});
+
+test("Instantiation; n = ∞", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23)]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23)]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]).take(), 17);
+    Deck({ tape }).now = 49;
+    t.equal(par.value, ["B", "D", "A", "C"], "dynamic value");
+});
+
+test("Instantiation fails when n > xs.length", t => {
+    const tape = Tape();
+    t.undefined(tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23)]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23)]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]).take(7), 17), "not enough children");
+});
+
+test("Instantiation; n < xs.length", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
+        Seq([Instant(K("D")), Delay(19), Instant(x => x + "*")]),
+    ]).take(1), 17);
+    Deck({ tape }).now = 49;
+    t.equal(par.value, ["B"], "dynamic value");
+    t.equal(dump(par), 
+`* Par-0 @17 <B>
+  * Instant-1 @17 <B>`, "dump matches");
+});
+
+test("Instantiation; n = 0", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23)]),
+        Instant(K("B*")),
+        Seq([Instant(K("C")), Delay(23)]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]).take(0), 17);
+    Deck({ tape }).now = 18;
+    t.equal(par.value, [], "dynamic value");
+    t.equal(dump(par), "* Par-0 @17 <>", "dump matches");
+});
+
+test("Allowing failure during instantiation", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Delay(23),
+        Delay(31),
+        Delay(-17), // fails
+        Delay(19),
+        Instant().repeat(), // fails
+    ]).take(3), 17);
+    t.equal(dump(par),
+`* Par-0 [17, 48[
+  * Delay-1 [17, 36[
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 48[`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

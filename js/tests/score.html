@@ -36,48 +36,6 @@ test("Score.add(child)", t => {
     t.equal(instant.parent, score, "parent (2)");
 });
 
-test("Par()", t => {
-    const par = Par();
-    t.equal(par.show(), "Par/0", "show");
-    t.equal(par.children, [], "no children");
-    t.equal(par.dur, 0, "no duration");
-    t.equal(!par.failible, true, "not failible");
-});
-
-test("Par(xs)", t => {
-    const delay = Delay(17);
-    const instant = Instant(x => x * 2);
-    const par = Par([delay, instant]);
-    t.equal(par.show(), "Par/2", "show");
-    t.equal(par.children, [delay, instant], "children");
-    t.equal(delay.parent, par, "parent (1)");
-    t.equal(instant.parent, par, "parent (2)");
-    t.equal(par.dur, 17, "duration");
-    t.equal(!par.failible, true, "not failible");
-});
-
-test("Par duration", t => {
-    t.equal(Par([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31).repeat()]).dur, Infinity,
-        "indefinite duration (1)");
-    t.equal(Par([Instant(), Delay(23).repeat(), Seq.fold(), Par.map(), Delay(31)]).dur, Infinity,
-        "indefinite duration (2)");
-    t.undefined(Par([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
-});
-
-test("Par.take(n)", t => {
-    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().dur, 51, "dur with n = ∞");
-    t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().dur,
-        "dur with n = ∞ (but indefinite durations)");
-    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(7).dur, 0,
-        "zero dur with n > child count (failure)");
-     t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(3).dur, 23,
-        "dur with n < child count");
-     t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Delay(19)]).take(3).dur,
-        "dur with n < child count, but unresolved duration");
-    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(0).dur, 0,
-        "dur with n = 0");
-});
-
 test("Par.repeat()", t => {
     const par = Par();
     const repeat = par.repeat();
@@ -102,32 +60,6 @@ test("Par.map(g).repeat()", t => {
     t.equal(repeat.dur, Infinity, "indefinite duration");
     t.equal(repeat.failible, false, "not failible");
     t.undefined(repeat.take(3).dur, "repeat dur (limited)");
-});
-
-test("Seq()", t => {
-    const seq = Seq();
-    t.equal(seq.show(), "Seq/0", "show");
-    t.equal(seq.children, [], "no children");
-    t.equal(seq.dur, 0, "zero duration");
-});
-
-test("Seq(xs)", t => {
-    const delay = Delay(17);
-    const instant = Instant(x => x * 2);
-    const seq = Seq([delay, instant]);
-    t.equal(seq.show(), "Seq/2", "show");
-    t.equal(seq.children, [delay, instant], "children");
-    t.equal(delay.parent, seq, "parent (1)");
-    t.equal(instant.parent, seq, "parent (2)");
-    t.equal(seq.dur, 17, "duration");
-});
-
-test("Seq duration (unresolved and indefinite child durations)", t => {
-    t.equal(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31).repeat()]).dur, Infinity,
-        "indefinite duration (1)");
-    t.equal(Seq([Instant(), Delay(23).repeat(), Seq.fold(), Par.map(), Delay(31)]).dur, Infinity,
-        "indefinite duration (2)");
-    t.undefined(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
 });
 
 test("Seq.repeat()", t => {

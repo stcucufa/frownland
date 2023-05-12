@@ -277,8 +277,25 @@ export const Par = assign(children => create().call(Par, { children: children ??
             }
             ended(instance, t);
             instance.cancelled = true;
+            // No occurrence to remove for the instance itself.
         }
-    }
+    },
+
+    // Prune all children.
+    pruneInstance(instance, t) {
+        delete instance.finished;
+        if (instance.children.length === 0) {
+            pruned(instance, t);
+        } else {
+            for (const child of instance.children) {
+                if (!Object.hasOwn(child, "value")) {
+                    child.item.pruneInstance(child, t);
+                }
+            }
+            delete instance.parent;
+            // No occurrence to remove for the instance itself.
+        }
+    },
 });
 
 // Par/map is similar to Par but its children are produced by mapping its
