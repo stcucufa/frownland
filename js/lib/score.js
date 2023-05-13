@@ -401,6 +401,10 @@ export const ParMap = {
     },
 };
 
+// Seq is a sequence of items, guaranteeing that no items overlap. The output
+// of every item becomes the input of the next one, the input of the Seq itself
+// begin the input of the first child and the output of the Seq being the output
+// of the last child.
 export const Seq = assign(children => create().call(Seq, { children: children ?? [] }), {
     tag: "Seq",
     show,
@@ -564,6 +568,21 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         instance.children.length = instance.currentChildIndex + 1;
         ended(instance, t);
         instance.cancelled = true;
+    },
+
+    // Prune the instance and its children.
+    pruneInstance(instance, t) {
+        if (instance.children.length === 0) {
+            pruned(instance, t);
+        } else {
+            for (const child of instance.children) {
+                if (!Object.hasOwn(child, "value")) {
+                    child.item.pruneInstance(child, t);
+                }
+            }
+            delete instance.parent;
+            // No occurrence to remove for the instance itself.
+        }
     },
 
     // The value of a Seq is the value of its last child.

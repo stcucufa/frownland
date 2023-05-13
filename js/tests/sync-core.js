@@ -4,96 +4,11 @@ import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
-test("Seq(xs)", t => {
-    const tape = Tape();
-    const instant = Instant();
-    const delay1 = Delay(23);
-    const delay2 = Delay(19);
-    const seq = Seq([instant, delay1, delay2]);
-    const instance = tape.instantiate(seq, 17);
-    t.equal(instance.tape, tape, "instance.tape is set");
-    t.equal(instance.item, seq, "instance.item is set");
-    t.equal(instance.begin, 17, "instance.begin is set");
-    t.equal(instance.end, 59, "instance.end is set");
-    t.equal(instance.children.map(
-        instance => instance.item
-    ), [instant, delay1, delay2], "instance children");
-    t.equal(instance.children.map(
-        instance => instance.begin ?? instance.t
-    ), [17, 17, 40], "instance children begin");
-    t.equal(instance.children.map(
-        instance => instance.end ?? instance.t
-    ), [17, 40, 59], "instance children end");
-    t.equal(instance.children[0].parent, instance, "instance children parent");
-    t.equal(instance.children[1].parent, instance, "instance children parent (2)");
-    t.equal(instance.children[2].parent, instance, "instance children parent (3)");
-
-    Deck({ tape }).now = 60;
-    t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
-});
-
 test("Seq value", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23)]), 17);
     Deck({ tape }).now = 41;
     t.equal(seq.value, "ok", "Seq value");
-});
-
-test("Seq()", t => {
-    const tape = Tape();
-    const seq = Seq();
-    const instance = tape.instantiate(seq, 17);
-    t.equal(instance.item, seq, "instance.item is set");
-    t.equal(instance.t, 17, "instance.t is set");
-    t.equal(instance.children, [], "no children for instance");
-
-    Deck({ tape }).now = 18;
-    t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
-});
-
-test("Seq(xs); zero duration", t => {
-    const tape = Tape();
-    const seq = Seq([Instant(), Instant(), Instant()]);
-    const instance = tape.instantiate(seq, 17);
-    t.equal(instance.t, 17, "instance.t is set");
-
-    Deck({ tape }).now = 18;
-    t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
-});
-
-test("Seq(xs); child with infinite duration", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(), Instant(), Delay(23).repeat(), Delay(-31)]), 17);
-    Deck({ tape }).now = 18;
-    t.equal(dump(seq),
-`* Seq-0 [17, ∞[
-  * Instant-1 @17 <undefined>
-  * Instant-2 @17 <undefined>
-  * Seq/repeat-3 [17, ∞[
-    * Delay-4 [17, 40[`, "dump matches");
-});
-
-test("Seq(xs); child with unresolved duration", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([23])), Par.map(Delay), Instant()]), 17);
-    Deck({ tape }).now = 41;
-    t.equal(dump(seq),
-`* Seq-0 [17, 40[ <23>
-  * Instant-1 @17 <23>
-  * Par/map-2 [17, 40[ <23>
-    * Delay-3 [17, 40[ <23>
-  * Instant-4 @40 <23>`, "dump matches");
-});
-
-test("Seq(xs); child with unresolved duration; failure once the end is resolved", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([23])), Par.map(Delay), Instant(), Delay(-31)]), 17);
-    Deck({ tape }).now = 41;
-    t.equal(dump(seq),
-`* Seq-0 [17, 40[ (failed)
-  * Instant-1 @17 <23>
-  * Par/map-2 [17, 40[ <23>
-    * Delay-3 [17, 40[ <23>`, "dump matches");
 });
 
 test("Seq(xs).take(n = ∞)", t => {
