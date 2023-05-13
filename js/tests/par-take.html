@@ -8,7 +8,7 @@
 
 import { test } from "./test.js";
 import { K } from "../lib/util.js";
-import { Instant, Delay, Par, Seq,dump } from "../lib/score.js";
+import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -58,7 +58,7 @@ test("Instantiation; n < xs.length", t => {
     ]).take(1), 17);
     Deck({ tape }).now = 49;
     t.equal(par.value, ["B"], "dynamic value");
-    t.equal(dump(par), 
+    t.equal(dump(par),
 `* Par-0 @17 <B>
   * Instant-1 @17 <B>`, "dump matches");
 });

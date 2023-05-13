@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Par.map</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Par.map(g)", t => {
+    const par = Par.map(Delay);
+    t.equal(par.show(), "Par/map", "show");
+    t.typeof(par.g, "function", "g function");
+    t.undefined(par.dur, "unresolved duration");
+    t.equal(!par.failible, true, "not failible");
+    t.equal(par.take(0).dur, 0, "down to zero with take(0)");
+});
+
+test("Par.map(g).repeat()", t => {
+    const par = Par.map(Delay);
+    const repeat = par.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, par, "repeat child");
+    t.equal(repeat.dur, Infinity, "indefinite duration");
+    t.equal(repeat.failible, false, "not failible");
+    t.undefined(repeat.take(3).dur, "repeat dur (limited)");
+});
+
+test("Instantiation", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31])),
+        Par.map(Delay),
+        Instant(xs => xs.length)
+    ]), 17);
+    Deck({ tape }).now = 55;
+    t.equal(dump(instance),
+`* Seq-0 [17, 54[ <3>
+  * Instant-1 @17 <19,37,31>
+  * Par/map-2 [17, 54[ <19,37,31>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+  * Instant-6 @54 <3>`, "dump matches");
+});
+
+test("Instantiation, empty input array", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([])),
+        Par.map(Delay)
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(instance.value, [], "empty list");
+});
+
+test("Par.map(g).take(n = ∞)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map((x, i) => Par([Instant(K(i)), Delay(x)])).take(),
+        Instant(xs => xs.map(([i]) => i))
+    ]), 17);
+    Deck({ tape }).now = 69;
+    t.equal(instance.value, [0, 3, 2, 1, 4], "value");
+});
+
+test("Par.map(g).take(n); fails at runtime when n > input length", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map((x, i) => Par([Instant(K(i)), Delay(x)])).take(7),
+        Instant(xs => xs.map(([i]) => i))
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(instance.failed, true, "failed to instantiate map");
+});
+
+test("Par.map(g).take(n); n < input length", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(x => Par([Instant(K(x)), Delay(x)])).take(3),
+        Instant(xs => xs.map(([i]) => i))
+    ]), 17);
+    Deck({ tape }).now = 69;
+    t.equal(instance.value, [19, 19, 31], "value");
+});
+
+test("Par.map(g).take(0)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map((x, i) => Par([Instant(K(i)), Delay(x)])).take(0)
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(instance.value, [], "empty list");
+});
+
+test("Par.map(g) failure", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K("oops")),
+        Par.map(Delay)
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <oops>
+  * Par/map-2 @17 (failed)`, "dump matches");
+});
+
+test("Par.map(g).repeat()", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 23])),
+        Par.map(Delay).repeat()
+    ]), 17);
+    Deck({ tape }).now = 69;
+    t.equal(dump(instance),
+`* Seq-0 [17, ∞[
+  * Instant-1 @17 <19,23>
+  * Seq/repeat-2 [17, ∞[
+    * Par/map-3 [17, 40[ <19,23>
+      * Delay-4 [17, 36[ <19>
+      * Delay-5 [17, 40[ <23>
+    * Par/map-6 [40, 63[ <19,23>
+      * Delay-7 [40, 59[ <19>
+      * Delay-8 [40, 63[ <23>
+    * Par/map-9 [63, 86[
+      * Delay-10 [63, 82[
+      * Delay-11 [63, 86[`, "dump matches");
+});
+
+test("Par.map(g).repeat().take(n)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 23])),
+        Par.map(Delay).repeat().take(3)
+    ]), 17);
+    Deck({ tape }).now = 87;
+    t.equal(dump(instance),
+`* Seq-0 [17, 86[ <19,23>
+  * Instant-1 @17 <19,23>
+  * Seq/repeat-2 [17, 86[ <19,23>
+    * Par/map-3 [17, 40[ <19,23>
+      * Delay-4 [17, 36[ <19>
+      * Delay-5 [17, 40[ <23>
+    * Par/map-6 [40, 63[ <19,23>
+      * Delay-7 [40, 59[ <19>
+      * Delay-8 [40, 63[ <23>
+    * Par/map-9 [63, 86[ <19,23>
+      * Delay-10 [63, 82[ <19>
+      * Delay-11 [63, 86[ <23>`, "dump matches");
+});
+
+test("Par may recover from failing child", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([23, 19])),
+        Par([
+            Par.map(x => Delay(-x)),
+            Par.map(Delay)
+        ]).take(1)
+    ]), 17)
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <23,19>
+  * Instant-1 @17 <23,19>
+  * Par-2 [17, 40[ <23,19>
+    * Par/map-4 [17, 40[ <23,19>
+      * Delay-7 [17, 40[ <23>
+      * Delay-8 [17, 36[ <19>`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>
