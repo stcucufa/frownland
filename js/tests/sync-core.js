@@ -4,99 +4,6 @@ import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
-test("Seq(xs); failure during instantiation", t => {
-    const tape = Tape();
-    t.undefined(tape.instantiate(Seq([
-        Instant(() => { throw Error("should be pruned"); }),
-        Instant().repeat(),
-        Instant(() => { throw Error("should not be intantiated"); })
-    ]), 17), "failed to instantiate seq");
-    t.equal(tape.occurrences.length, 0, "no occurrences on tape");
-});
-
-test("Seq(xs).take(n); failure in child before nth", t => {
-    const tape = Tape();
-    t.undefined(tape.instantiate(Seq([
-        Instant(() => { throw Error("should be pruned"); }),
-        Instant().repeat(),
-        Instant(() => { throw Error("should not be intantiated"); }),
-        Instant(() => { throw Error("should not be intantiated"); }),
-        Instant(() => { throw Error("should not be intantiated"); })
-    ]).take(3), 17), "failed to instantiate seq");
-    t.equal(tape.occurrences.length, 0, "no occurrences on tape");
-});
-
-test("Seq(xs).take(n); failure in child after nth", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([
-        Instant(K("ok")),
-        Instant(),
-        Instant(),
-        Instant().repeat(),
-        Instant(() => { throw Error("should not be intantiated"); })
-    ]).take(3), 17);
-    Deck({ tape }).now = 18;
-    t.equal(seq.value, "ok", "correct value");
-});
-
-test("Seq.map(g)", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay)]), 17);
-    Deck({ tape }).now = 91;
-    t.equal(dump(seq),
-`* Seq-0 [17, 90[ <31,19,23>
-  * Instant-1 @17 <31,19,23>
-  * Seq/map-2 [17, 90[ <31,19,23>
-    * Delay-3 [17, 48[ <31>
-    * Delay-4 [48, 67[ <19>
-    * Delay-5 [67, 90[ <23>`, "dump matches");
-});
-
-test("Seq.map(g); no input", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([])), Seq.map(Delay)]), 17);
-    Deck({ tape }).now = 91;
-    t.equal(seq.value, [], "empty list");
-});
-
-test("Seq.map(g).repeat()", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay).repeat()]), 17);
-    Deck({ tape }).now = 111;
-    t.equal(dump(seq),
-`* Seq-0 [17, ∞[
-  * Instant-1 @17 <19,23>
-  * Seq/repeat-2 [17, ∞[
-    * Seq/map-3 [17, 59[ <19,23>
-      * Delay-4 [17, 36[ <19>
-      * Delay-5 [36, 59[ <23>
-    * Seq/map-6 [59, 101[ <19,23>
-      * Delay-7 [59, 78[ <19>
-      * Delay-8 [78, 101[ <23>
-    * Seq/map-9 [101, 143[
-      * Delay-10 [101, 120[
-      * Delay-11 [120, 143[`, "dump matches");
-});
-
-test("Seq.map(g).repeat().take(n)", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay).repeat().take(3)]), 17);
-    Deck({ tape }).now = 144;
-    t.equal(dump(seq),
-`* Seq-0 [17, 143[ <19,23>
-  * Instant-1 @17 <19,23>
-  * Seq/repeat-2 [17, 143[ <19,23>
-    * Seq/map-3 [17, 59[ <19,23>
-      * Delay-4 [17, 36[ <19>
-      * Delay-5 [36, 59[ <23>
-    * Seq/map-6 [59, 101[ <19,23>
-      * Delay-7 [59, 78[ <19>
-      * Delay-8 [78, 101[ <23>
-    * Seq/map-9 [101, 143[ <19,23>
-      * Delay-10 [101, 120[ <19>
-      * Delay-11 [120, 143[ <23>`, "dump matches");
-});
-
 test("Seq.fold(g, z); child of Seq", t => {
     const tape = Tape();
     const seq = Seq([Instant(K([1, 2, 3])), Seq.fold(x => Instant(y => x + y), 0)]);
@@ -234,26 +141,15 @@ test("Seq.fold(g, z).take(n = ∞)", t => {
   * Delay-8 [17, 40[ <15>`, "dump matches");
 });
 
-test("Seq.fold(g, z).take; n > child count", t => {
+test("Seq.fold(g, z).take(n); fails at runtime when n > input length", t => {
     const tape = Tape();
-    const seq = Seq([
+    const seq = tape.instantiate(Seq([
         Instant(K([1, 2, 3, 4, 5])),
         Seq.fold(x => Instant(y => x + y), 0).take(7),
         Delay(23)
-    ]);
-    const instance = tape.instantiate(seq, 17);
-
-    Deck({ tape }).now = 41;
-    t.equal(dump(instance),
-`* Seq-0 [17, 40[ <15>
-  * Instant-1 @17 <1,2,3,4,5>
-  * Seq/fold-2 @17 <15>
-    * Instant-3 @17 <1>
-    * Instant-4 @17 <3>
-    * Instant-5 @17 <6>
-    * Instant-6 @17 <10>
-    * Instant-7 @17 <15>
-  * Delay-8 [17, 40[ <15>`, "dump matches");
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(seq.failed, true, "failed to instantiate map");
 });
 
 test("Seq.fold(g, z).take; n < child count", t => {

@@ -178,7 +178,7 @@ test("Par may recover from failing child", t => {
       * Delay-8 [17, 36[ <19>`, "dump matches");
 });
 
-test("Cancel par.map", t => {
+test("Cancel Par.map", t => {
     const tape = Tape();
     const choice = tape.instantiate(Par([
         Seq([Instant(K([19])), Par.map(Delay)]),
@@ -199,7 +199,7 @@ test("Cancel par.map", t => {
     t.equal(tape.show(), "Tape<17,17,17,17,36>", "occurrences where removed from the tape");
 });
 
-test("Prune par.map", t => {
+test("Prune Par.map", t => {
     const tape = Tape();
     const choice = tape.instantiate(Par([
         Seq([Instant(K([19])), Par.map(Delay)]),

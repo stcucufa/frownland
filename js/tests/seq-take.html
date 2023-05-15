@@ -55,6 +55,19 @@ test("Instantiation; n < xs.length", t => {
   * Delay-2 [17, 40[ <ok>`, "dump matches");
 });
 
+test("Instantiation failure in child after nth", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K("ok")),
+        Instant(),
+        Instant(),
+        Instant().repeat(),
+        Instant(() => { throw Error("should not be intantiated"); })
+    ]).take(3), 17);
+    Deck({ tape }).now = 18;
+    t.equal(seq.value, "ok", "correct value");
+});
+
 test("Instantiation; n = 0", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq([Instant(K("nope")), Delay(23), Delay(19)]).take(0), 17);

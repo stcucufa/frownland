@@ -593,7 +593,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
 
     // Prune the instance and its children.
     pruneInstance(instance, t) {
-        if (instance.children.length === 0) {
+        if (!instance.children || instance.children.length === 0) {
             pruned(instance, t);
         } else {
             for (const child of instance.children) {
@@ -653,10 +653,19 @@ const SeqFold = {
             return Fail;
         }
 
-        const n = min(xs.length, Capacity.get(this));
-        instance.input = xs.slice(0, n);
+        // Check that we have the right number of input values.
+        const n = Capacity.get(this);
+        if (isFinite(n)) {
+            if (xs.length < n) {
+                return Fail;
+            }
+            instance.input = xs.slice(0, n);
+        } else {
+            instance.input = xs;
+        }
+
         instance.children = [];
-        for (let i = 0; i < n && isFinite(t); ++i) {
+        for (let i = 0; i < instance.input.length && isFinite(t); ++i) {
             const childInstance = instance.tape.instantiate(this.g(xs[i]), t);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
@@ -716,6 +725,7 @@ const SeqFold = {
 
     childInstanceDidFail: Seq.childInstanceDidFail,
     cancelInstance: Seq.cancelInstance,
+    pruneInstance: Seq.pruneInstance,
 };
 
 // Seq/map is just like Seq/fold but taking its initial input from its parent,
@@ -725,7 +735,7 @@ export const SeqMap = extend(SeqFold, {
 
     // Collect the values of the children as the value of the map itself.
     valueForInstance() {
-        return this.children.map(child => child.value);
+        return this.children?.map(child => child.value) ?? [];
     },
 
     // Each successive child gets the next input from the Seq/map parent.

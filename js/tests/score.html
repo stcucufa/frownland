@@ -36,24 +36,6 @@ test("Score.add(child)", t => {
     t.equal(instant.parent, score, "parent (2)");
 });
 
-test("Seq.map(g)", t => {
-    const map = Seq.map(Delay);
-    t.equal(map.show(), "Seq/map", "show");
-    t.typeof(map.g, "function", "g function");
-    t.undefined(map.dur, "unresolved duration");
-    t.equal(map.take(0).dur, 0, "down to zero with take(0)");
-});
-
-test("Seq.map(g).repeat()", t => {
-    const seq = Seq.map(Delay);
-    const repeat = seq.repeat();
-    t.equal(repeat.show(), "Seq/repeat", "show");
-    t.equal(repeat.child, seq, "repeat child");
-    t.equal(repeat.dur, Infinity, "indefinite duration");
-    t.equal(repeat.failible, false, "not failible");
-    t.undefined(repeat.take(3).dur, "repeat dur (limited)");
-});
-
 test("Seq.fold(g, z)", t => {
     const fold = Seq.fold(x => Instant(y => x + y), 0);
     t.equal(fold.show(), "Seq/fold", "show");
