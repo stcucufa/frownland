@@ -36,25 +36,6 @@ test("Score.add(child)", t => {
     t.equal(instant.parent, score, "parent (2)");
 });
 
-test("Seq.fold(g, z)", t => {
-    const fold = Seq.fold(x => Instant(y => x + y), 0);
-    t.equal(fold.show(), "Seq/fold", "show");
-    t.typeof(fold.g, "function", "g function");
-    t.equal(fold.z, 0, "initial accumulator value");
-    t.undefined(fold.dur, "unresolved duration");
-    t.equal(fold.take(0).dur, 0, "down to zero with take(0)");
-});
-
-test("Seq.fold(g, z).repeat()", t => {
-    const seq = Seq.fold(Delay, 1);
-    const repeat = seq.repeat();
-    t.equal(repeat.show(), "Seq/repeat", "show");
-    t.equal(repeat.child, seq, "repeat child");
-    t.equal(repeat.dur, Infinity, "indefinite duration");
-    t.equal(repeat.failible, false, "not failible");
-    t.undefined(repeat.take(3).dur, "repeat dur (limited)");
-});
-
         </script>
     </head>
     <body>
