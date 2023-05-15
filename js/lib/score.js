@@ -267,7 +267,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // Cancel all children that have not finished yet.
     cancelInstance(instance, t) {
         delete instance.finished;
-        if (instance.children.length === 0) {
+        if (!instance.children || instance.children.length === 0) {
             cancelled(instance, t);
         } else {
             for (const child of instance.children) {
@@ -284,7 +284,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // Prune all children.
     pruneInstance(instance, t) {
         delete instance.finished;
-        if (instance.children.length === 0) {
+        if (!instance.children || instance.children.length === 0) {
             pruned(instance, t);
         } else {
             for (const child of instance.children) {

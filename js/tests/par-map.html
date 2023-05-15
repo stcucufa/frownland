@@ -178,12 +178,43 @@ test("Par may recover from failing child", t => {
       * Delay-8 [17, 36[ <19>`, "dump matches");
 });
 
-test("Cancel Par.map", t => {
-    t.skip("TODO");
+test("Cancel par.map", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Seq([Instant(K([23, 31])), Par.map(Delay)]),
+    ]).take(1), 17);
+    Deck({ tape }).now = 37;
+    t.equal(dump(choice),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19>
+    * Par/map-3 [17, 36[ <19>
+      * Delay-7 [17, 36[ <19>
+  * Seq-4 [17, 36[ (cancelled)
+    * Instant-5 @17 <23,31>
+    * Par/map-6 [17, 36[ (cancelled)
+      * Delay-8 [17, 36[ (cancelled)
+      * Delay-9 [17, 36[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,17,17,36>", "occurrences where removed from the tape");
 });
 
-test("Prune Par.map", t => {
-    t.skip("TODO");
+test("Prune par.map", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Seq([Delay(23), Par.map(Delay)])
+    ]).take(1), 17);
+    Deck({ tape }).now = 37;
+    t.equal(dump(choice),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19>
+    * Par/map-3 [17, 36[ <19>
+      * Delay-7 [17, 36[ <19>
+  * Seq-4 [17, 36[ (cancelled)
+    * Delay-5 [17, 36[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,36>", "occurrences where removed from the tape");
 });
 
         </script>

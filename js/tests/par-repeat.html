@@ -17,7 +17,7 @@ test("Par(xs).repeat()", t => {
     const par = tape.instantiate(Par([Instant(K("A")), Delay(23)]).repeat(), 17);
 
     Deck({ tape }).now = 71;
-    t.equal(dump(par), 
+    t.equal(dump(par),
 `* Seq/repeat-0 [17, ∞[
   * Par-1 [17, 40[ <A,>
     * Instant-2 @17 <A>
@@ -52,7 +52,7 @@ test("Par(xs).repeat().take(n); zero-duration par", t => {
     const par = tape.instantiate(Par([Instant(K("A")), Instant(K(1))]).repeat().take(3), 17);
 
     Deck({ tape }).now = 18;
-    t.equal(dump(par), 
+    t.equal(dump(par),
 `* Seq/repeat-0 @17 <A,1>
   * Par-1 @17 <A,1>
     * Instant-2 @17 <A>

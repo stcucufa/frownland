@@ -39,6 +39,13 @@ test("Seq duration", t => {
     t.undefined(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
 });
 
+test("Seq value", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23)]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(seq.value, "ok", "Seq value");
+});
+
 test("Instantiation", t => {
     const tape = Tape();
     const instant = Instant();
