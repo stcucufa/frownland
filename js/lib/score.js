@@ -58,17 +58,20 @@ function createDelay(dur) {
             value: dur
         }
     };
-    if (dur <= 0) {
+    if (dur < 0) {
         properties.failible = {
             enumerable: true,
             value: true
         }
+    } else if (dur === 0) {
+        return Instant();
     }
     return Object.create(Delay, properties);
 }
 
 // Delay(dur) delays its value for `dur` amount of time, which should be greater
-// than zero (otherwise fails to instantiate). Repeatable.
+// than or equal to zero (otherwise fails to instantiate); a zero duration delay
+// is the same as Instant(). Repeatable.
 export const Delay = Object.assign(createDelay, {
     tag: "Delay",
 

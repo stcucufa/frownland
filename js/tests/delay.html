@@ -18,7 +18,7 @@ test("Delay(dur)", t => {
     t.equal(delay.dur, 23, "duration");
     t.equal(!delay.failible, true, "not failible (delay > 0)");
     t.throws(() => { delay.dur = 19; }, "cannot overwrite dur");
-    t.equal(Delay(0).failible, true, "zero duration delay is failible");
+    t.equal(!Delay(0).failible, true, "zero duration delay is OK");
     t.equal(Delay(-17).failible, true, "negative duration delay is failible");
 });
 
@@ -31,7 +31,8 @@ test("Delay.repeat()", t => {
     t.equal(repeat.failible, false, "unlimited repetitions do not fail");
     const limitedRepeats = repeat.take(3);
     t.equal(limitedRepeats.dur, 69, "repeat dur (limited)");
-    t.equal(limitedRepeats.failible, false, "limited repetitions do not fail");
+    t.equal(!limitedRepeats.failible, true, "limited repetitions do not fail");
+    t.equal(Delay(0).repeat().failible, true, "zero duration delay cannot repeat");
 });
 
 test("Instantiation", t => {
@@ -46,10 +47,16 @@ test("Instantiation", t => {
     t.equal(dump(instance), "* Delay-0 [17, 40[ <undefined>", "dump matches");
 });
 
-test("Instantiation fails if d ≤ 0", t => {
+test("Instantiation (zero duration)", t => {
+    const tape = Tape();
+    const delay = tape.instantiate(Delay(0), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(delay), "* Instant-0 @17 <undefined>", "dump matches");
+});
+
+test("Instantiation fails if d < 0", t => {
     const tape = Tape();
     t.undefined(tape.instantiate(Delay(-23), 17), "negative delay");
-    t.undefined(tape.instantiate(Delay(0), 17), "zero duration delay");
 });
 
 test("Delay(d).repeat()", t => {
