@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Seq.repeat</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Seq(xs).repeat()", t => {
+    const seq = Seq([Delay(23)]);
+    const repeat = seq.repeat();
+    t.equal(repeat.show(), "Seq/repeat", "show");
+    t.equal(repeat.child, seq, "repeat child");
+    t.equal(repeat.dur, Infinity, "indefinite duration");
+});
+
+test("Instantiation", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K(1)),
+        Seq([Instant(x => x * 2), Delay(23)]).repeat()
+    ]), 17);
+    Deck({ tape }).now = 110;
+    t.equal(dump(seq),
+`* Seq-0 [17, ∞[
+  * Instant-1 @17 <1>
+  * Seq/repeat-2 [17, ∞[
+    * Seq-3 [17, 40[ <2>
+      * Instant-4 @17 <2>
+      * Delay-5 [17, 40[ <2>
+    * Seq-6 [40, 63[ <4>
+      * Instant-7 @40 <4>
+      * Delay-8 [40, 63[ <4>
+    * Seq-9 [63, 86[ <8>
+      * Instant-10 @63 <8>
+      * Delay-11 [63, 86[ <8>
+    * Seq-12 [86, 109[ <16>
+      * Instant-13 @86 <16>
+      * Delay-14 [86, 109[ <16>
+    * Seq-15 [109, 132[
+      * Instant-16 @109 <32>
+      * Delay-17 [109, 132[`, "dump matches");
+});
+
+test("Instantiation fails for zero duration", t => {
+    const tape = Tape();
+    t.undefined(tape.instantiate(Seq().repeat(), 17), "empty seq");
+    t.undefined(tape.instantiate(Seq([Instant(), Instant()]).repeat(), 17), "zero duration seq");
+});
+
+test("Seq(xs).repeat().take(n)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K(1)),
+        Seq([Instant(x => x * 2), Delay(23)]).repeat().take(4)
+    ]), 17);
+    Deck({ tape }).now = 110;
+    t.equal(seq.value, 16, "return value");
+});
+
+test("Seq(xs).repeat().take(n); empty seq", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq().repeat().take(3), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq/repeat-0 @17 <undefined>
+  * Seq-1 @17 <undefined>
+  * Seq-2 @17 <undefined>
+  * Seq-3 @17 <undefined>`, "dump matches");
+});
+
+test("Seq(xs).repeat().take(n); zero-duration seq", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K("A")), Instant(x => x + "*")]).repeat().take(3), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq/repeat-0 @17 <A*>
+  * Seq-1 @17 <A*>
+    * Instant-2 @17 <A>
+    * Instant-3 @17 <A*>
+  * Seq-4 @17 <A*>
+    * Instant-5 @17 <A>
+    * Instant-6 @17 <A*>
+  * Seq-7 @17 <A*>
+    * Instant-8 @17 <A>
+    * Instant-9 @17 <A*>`, "dump matches");
+});
+
+test("Repeat with unresolved duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay)]).repeat(), 17);
+    Deck({ tape }).now = 111;
+    t.equal(dump(seq),
+`* Seq/repeat-0 [17, ∞[
+  * Seq-1 [17, 59[ <19,23>
+    * Instant-2 @17 <19,23>
+    * Seq/map-3 [17, 59[ <19,23>
+      * Delay-4 [17, 36[ <19>
+      * Delay-5 [36, 59[ <23>
+  * Seq-6 [59, 101[ <19,23>
+    * Instant-7 @59 <19,23>
+    * Seq/map-8 [59, 101[ <19,23>
+      * Delay-9 [59, 78[ <19>
+      * Delay-10 [78, 101[ <23>
+  * Seq-11 [101, 143[
+    * Instant-12 @101 <19,23>
+    * Seq/map-13 [101, 143[
+      * Delay-14 [101, 120[
+      * Delay-15 [120, 143[`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

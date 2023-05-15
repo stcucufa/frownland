@@ -4,44 +4,6 @@ import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
-test("Seq(xs).repeat()", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([
-        Instant(K(1)),
-        Seq([Instant(x => x * 2), Delay(23)]).repeat()
-    ]), 17);
-    Deck({ tape }).now = 110;
-    t.equal(dump(seq),
-`* Seq-0 [17, ∞[
-  * Instant-1 @17 <1>
-  * Seq/repeat-2 [17, ∞[
-    * Seq-3 [17, 40[ <2>
-      * Instant-4 @17 <2>
-      * Delay-5 [17, 40[ <2>
-    * Seq-6 [40, 63[ <4>
-      * Instant-7 @40 <4>
-      * Delay-8 [40, 63[ <4>
-    * Seq-9 [63, 86[ <8>
-      * Instant-10 @63 <8>
-      * Delay-11 [63, 86[ <8>
-    * Seq-12 [86, 109[ <16>
-      * Instant-13 @86 <16>
-      * Delay-14 [86, 109[ <16>
-    * Seq-15 [109, 132[
-      * Instant-16 @109 <32>
-      * Delay-17 [109, 132[`, "dump matches");
-});
-
-test("Seq(xs).repeat().take(n)", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([
-        Instant(K(1)),
-        Seq([Instant(x => x * 2), Delay(23)]).repeat().take(4)
-    ]), 17);
-    Deck({ tape }).now = 110;
-    t.equal(seq.value, 16, "return value");
-});
-
 test("Seq(xs); failure during instantiation", t => {
     const tape = Tape();
     t.undefined(tape.instantiate(Seq([
@@ -328,51 +290,4 @@ test("Seq.fold(g, z).take(0)", t => {
   * Instant-1 @17 <1,2,3,4,5>
   * Seq/fold-2 @17 <0>
   * Delay-3 [17, 40[ <0>`, "dump matches");
-});
-
-test("Repeat with unresolved duration", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay)]).repeat(), 17);
-    Deck({ tape }).now = 111;
-    console.log(dump(seq));
-    t.equal(dump(seq),
-`* Seq/repeat-0 [17, ∞[
-  * Seq-1 [17, 59[ <19,23>
-    * Instant-2 @17 <19,23>
-    * Seq/map-3 [17, 59[ <19,23>
-      * Delay-4 [17, 36[ <19>
-      * Delay-5 [36, 59[ <23>
-  * Seq-6 [59, 101[ <19,23>
-    * Instant-7 @59 <19,23>
-    * Seq/map-8 [59, 101[ <19,23>
-      * Delay-9 [59, 78[ <19>
-      * Delay-10 [78, 101[ <23>
-  * Seq-11 [101, 143[
-    * Instant-12 @101 <19,23>
-    * Seq/map-13 [101, 143[
-      * Delay-14 [101, 120[
-      * Delay-15 [120, 143[`, "dump matches");
-});
-
-test("Nesting", t => {
-    const tape = Tape();
-    const par = Par([
-        Seq([Delay(31), Instant(K("a"))]),
-        Seq([Delay(23), Par([Delay(19), Instant(K("b"))])]),
-    ]);
-    const instance = tape.instantiate(par, 17);
-
-    const deck = Deck({ tape });
-    deck.now = 60;
-
-    t.equal(dump(instance),
-`* Par-0 [17, 59[ <a,,b>
-  * Seq-1 [17, 48[ <a>
-    * Delay-2 [17, 48[ <undefined>
-    * Instant-3 @48 <a>
-  * Seq-4 [17, 59[ <,b>
-    * Delay-5 [17, 40[ <undefined>
-    * Par-6 [40, 59[ <,b>
-      * Delay-7 [40, 59[ <undefined>
-      * Instant-8 @40 <b>`, "dump matches");
 });
