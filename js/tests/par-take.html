@@ -12,10 +12,10 @@ import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
-test("Par(xs).take(n = ∞)", t => {
+test("Par(xs).take(n = ∞) duration", t => {
     t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().dur, 51, "dur with n = ∞");
     t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().dur,
-        "dur with n = ∞ (but indefinite durations)");
+        "dur with n = ∞ (indefinite durations)");
     t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(7).dur, 0,
         "zero dur with n > child count (failure)");
      t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(3).dur, 23,

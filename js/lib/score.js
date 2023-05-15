@@ -417,8 +417,14 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // unresolved durations (such as folds and maps) and indefinite durations
     // (unbounded repetitions).
     get dur() {
+        const n = Capacity.get(this);
+        if (n === 0 || (isFinite(n) && this.children.length < n)) {
+            return 0;
+        }
+
         let dur = 0;
-        for (let i = 0; i < this.children.length; ++i) {
+        const m = min(this.children.length, n);
+        for (let i = 0; i < m; ++i) {
             const d = this.children[i].dur;
             if (d === Infinity) {
                 // If any duration is indefinite, the total is indefinite.
@@ -433,6 +439,17 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             }
         }
         return dur;
+    },
+
+    // The value of a Seq is the value of its last child.
+    valueForInstance() {
+        return this.children?.at(-1)?.value;
+    },
+
+    // Fail if not enough children can be instantiated.
+    get failible() {
+        const n = Capacity.get(this);
+        return isFinite(n) && n > this.children.length;
     },
 
     // Create a new SeqMap object with the given generator function.
@@ -457,6 +474,10 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // unresolved, or never if the child has an indefinite duration (which is
     // perfectly cromulent and not a failure).
     instantiate(instance, t) {
+        if (this.failible) {
+            throw Fail;
+        }
+
         instance.children = [];
         const begin = t;
         const n = min(this.children.length, Capacity.get(this));
@@ -584,11 +605,6 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             // No occurrence to remove for the instance itself.
         }
     },
-
-    // The value of a Seq is the value of its last child.
-    valueForInstance() {
-        return this.children?.at(-1)?.value;
-    }
 });
 
 // Seq/fold is similar to Seq but its children are produced by mapping its
