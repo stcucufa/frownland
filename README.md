@@ -94,7 +94,7 @@ using two primitives, `Par` (for _parallel_) and `Seq` (for _sequence_), giving 
 of the timing model.
 
 * `Instant(f)`: evaluate a pure function _f_ and finishes instantly, without any side effect.
-* `Delay(d)`: do nothing and finish after a duration _d_ greater than zero.
+* `Delay(d)`: do nothing and finish after a duration _d_ greater than or equal to zero.
 * `Par(xs)`: evaluate a list of elements _xs_ in parallel, finishing when the element with the longest
 duration finishes.
 * `Seq(xs)`: evaluate a list of elements _xs_ one by one, beginning an element when the previous one
