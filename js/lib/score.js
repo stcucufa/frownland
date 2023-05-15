@@ -267,7 +267,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // Cancel all children that have not finished yet.
     cancelInstance(instance, t) {
         delete instance.finished;
-        if (instance.children.length === 0) {
+        if (!instance.children || instance.children.length === 0) {
             cancelled(instance, t);
         } else {
             for (const child of instance.children) {
@@ -277,8 +277,25 @@ export const Par = assign(children => create().call(Par, { children: children ??
             }
             ended(instance, t);
             instance.cancelled = true;
+            // No occurrence to remove for the instance itself.
         }
-    }
+    },
+
+    // Prune all children.
+    pruneInstance(instance, t) {
+        delete instance.finished;
+        if (!instance.children || instance.children.length === 0) {
+            pruned(instance, t);
+        } else {
+            for (const child of instance.children) {
+                if (!Object.hasOwn(child, "value")) {
+                    child.item.pruneInstance(child, t);
+                }
+            }
+            delete instance.parent;
+            // No occurrence to remove for the instance itself.
+        }
+    },
 });
 
 // Par/map is similar to Par but its children are produced by mapping its
@@ -384,6 +401,10 @@ export const ParMap = {
     },
 };
 
+// Seq is a sequence of items, guaranteeing that no items overlap. The output
+// of every item becomes the input of the next one, the input of the Seq itself
+// begin the input of the first child and the output of the Seq being the output
+// of the last child.
 export const Seq = assign(children => create().call(Seq, { children: children ?? [] }), {
     tag: "Seq",
     show,
@@ -396,8 +417,14 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // unresolved durations (such as folds and maps) and indefinite durations
     // (unbounded repetitions).
     get dur() {
+        const n = Capacity.get(this);
+        if (n === 0 || (isFinite(n) && this.children.length < n)) {
+            return 0;
+        }
+
         let dur = 0;
-        for (let i = 0; i < this.children.length; ++i) {
+        const m = min(this.children.length, n);
+        for (let i = 0; i < m; ++i) {
             const d = this.children[i].dur;
             if (d === Infinity) {
                 // If any duration is indefinite, the total is indefinite.
@@ -412,6 +439,17 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             }
         }
         return dur;
+    },
+
+    // The value of a Seq is the value of its last child.
+    valueForInstance() {
+        return this.children?.at(-1)?.value;
+    },
+
+    // Fail if not enough children can be instantiated.
+    get failible() {
+        const n = Capacity.get(this);
+        return isFinite(n) && n > this.children.length;
     },
 
     // Create a new SeqMap object with the given generator function.
@@ -436,6 +474,10 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // unresolved, or never if the child has an indefinite duration (which is
     // perfectly cromulent and not a failure).
     instantiate(instance, t) {
+        if (this.failible) {
+            throw Fail;
+        }
+
         instance.children = [];
         const begin = t;
         const n = min(this.children.length, Capacity.get(this));
@@ -549,10 +591,20 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         instance.cancelled = true;
     },
 
-    // The value of a Seq is the value of its last child.
-    valueForInstance() {
-        return this.children?.at(-1)?.value;
-    }
+    // Prune the instance and its children.
+    pruneInstance(instance, t) {
+        if (!instance.children || instance.children.length === 0) {
+            pruned(instance, t);
+        } else {
+            for (const child of instance.children) {
+                if (!Object.hasOwn(child, "value")) {
+                    child.item.pruneInstance(child, t);
+                }
+            }
+            delete instance.parent;
+            // No occurrence to remove for the instance itself.
+        }
+    },
 });
 
 // Seq/fold is similar to Seq but its children are produced by mapping its
@@ -601,10 +653,19 @@ const SeqFold = {
             return Fail;
         }
 
-        const n = min(xs.length, Capacity.get(this));
-        instance.input = xs.slice(0, n);
+        // Check that we have the right number of input values.
+        const n = Capacity.get(this);
+        if (isFinite(n)) {
+            if (xs.length < n) {
+                return Fail;
+            }
+            instance.input = xs.slice(0, n);
+        } else {
+            instance.input = xs;
+        }
+
         instance.children = [];
-        for (let i = 0; i < n && isFinite(t); ++i) {
+        for (let i = 0; i < instance.input.length && isFinite(t); ++i) {
             const childInstance = instance.tape.instantiate(this.g(xs[i]), t);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
@@ -664,6 +725,7 @@ const SeqFold = {
 
     childInstanceDidFail: Seq.childInstanceDidFail,
     cancelInstance: Seq.cancelInstance,
+    pruneInstance: Seq.pruneInstance,
 };
 
 // Seq/map is just like Seq/fold but taking its initial input from its parent,
@@ -673,7 +735,7 @@ export const SeqMap = extend(SeqFold, {
 
     // Collect the values of the children as the value of the map itself.
     valueForInstance() {
-        return this.children.map(child => child.value);
+        return this.children?.map(child => child.value) ?? [];
     },
 
     // Each successive child gets the next input from the Seq/map parent.

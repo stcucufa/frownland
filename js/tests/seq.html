@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Seq</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Seq()", t => {
+    const seq = Seq();
+    t.equal(seq.show(), "Seq/0", "show");
+    t.equal(seq.children, [], "no children");
+    t.equal(seq.dur, 0, "zero duration");
+});
+
+test("Seq(xs)", t => {
+    const delay = Delay(17);
+    const instant = Instant(x => x * 2);
+    const seq = Seq([delay, instant]);
+    t.equal(seq.show(), "Seq/2", "show");
+    t.equal(seq.children, [delay, instant], "children");
+    t.equal(delay.parent, seq, "parent (1)");
+    t.equal(instant.parent, seq, "parent (2)");
+    t.equal(seq.dur, 17, "duration");
+});
+
+test("Seq duration", t => {
+    t.equal(Seq([Instant(), Instant(), Par(), Seq()]).dur, 0, "non-empty but zero duration");
+    t.equal(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31).repeat()]).dur, Infinity,
+        "indefinite duration (1)");
+    t.equal(Seq([Instant(), Delay(23).repeat(), Seq.fold(), Par.map(), Delay(31)]).dur, Infinity,
+        "indefinite duration (2)");
+    t.undefined(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
+});
+
+test("Seq value", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23)]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(seq.value, "ok", "Seq value");
+});
+
+test("Instantiation", t => {
+    const tape = Tape();
+    const instant = Instant();
+    const delay1 = Delay(23);
+    const delay2 = Delay(19);
+    const seq = Seq([instant, delay1, delay2]);
+    const instance = tape.instantiate(seq, 17);
+    t.equal(instance.tape, tape, "instance.tape is set");
+    t.equal(instance.item, seq, "instance.item is set");
+    t.equal(instance.begin, 17, "instance.begin is set");
+    t.equal(instance.end, 59, "instance.end is set");
+    t.equal(instance.children.map(
+        instance => instance.item
+    ), [instant, delay1, delay2], "instance children");
+    t.equal(instance.children.map(
+        instance => instance.begin ?? instance.t
+    ), [17, 17, 40], "instance children begin");
+    t.equal(instance.children.map(
+        instance => instance.end ?? instance.t
+    ), [17, 40, 59], "instance children end");
+    t.equal(instance.children[0].parent, instance, "instance children parent");
+    t.equal(instance.children[1].parent, instance, "instance children parent (2)");
+    t.equal(instance.children[2].parent, instance, "instance children parent (3)");
+    Deck({ tape }).now = 60;
+    t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
+});
+
+test("Instantiation; empty", t => {
+    const tape = Tape();
+    const seq = Seq();
+    const instance = tape.instantiate(seq, 17);
+    t.equal(instance.item, seq, "instance.item is set");
+    t.equal(instance.t, 17, "instance.t is set");
+    t.equal(instance.children, [], "no children for instance");
+    Deck({ tape }).now = 18;
+    t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
+});
+
+test("Instantiation; zero duration", t => {
+    const tape = Tape();
+    const seq = Seq([Instant(), Instant(), Instant()]);
+    const instance = tape.instantiate(seq, 17);
+    t.equal(instance.t, 17, "instance.t is set");
+    Deck({ tape }).now = 18;
+    t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
+});
+
+test("Instantiation; child with infinite duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(), Instant(), Delay(23).repeat(), Delay(-31)]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 [17, ∞[
+  * Instant-1 @17 <undefined>
+  * Instant-2 @17 <undefined>
+  * Seq/repeat-3 [17, ∞[
+    * Delay-4 [17, 40[`, "dump matches");
+});
+
+test("Instantiation; child with unresolved duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([23])), Par.map(Delay), Instant()]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(seq),
+`* Seq-0 [17, 40[ <23>
+  * Instant-1 @17 <23>
+  * Par/map-2 [17, 40[ <23>
+    * Delay-3 [17, 40[ <23>
+  * Instant-4 @40 <23>`, "dump matches");
+});
+
+test("Instantiation; child with unresolved duration; failure once the end is resolved", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([23])), Par.map(Delay), Instant(), Delay(-31)]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(seq),
+`* Seq-0 [17, 40[ (failed)
+  * Instant-1 @17 <23>
+  * Par/map-2 [17, 40[ <23>
+    * Delay-3 [17, 40[ <23>`, "dump matches");
+});
+
+test("Instantiation failure", t => {
+    const tape = Tape();
+    t.undefined(tape.instantiate(Seq([
+        Instant(() => { throw Error("should be pruned"); }),
+        Instant().repeat(),
+        Instant(() => { throw Error("should not be intantiated"); })
+    ]), 17), "failed to instantiate seq");
+    t.equal(tape.occurrences.length, 0, "no occurrences on tape");
+});
+
+test("Cancel Seq", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Seq([Instant(K("ok")), Delay(23), Instant(() => { throw Error("should be pruned"); })])
+    ]).take(1), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19>
+    * Par/map-3 [17, 36[ <19>
+      * Delay-8 [17, 36[ <19>
+  * Seq-4 [17, 36[ (cancelled)
+    * Instant-5 @17 <ok>
+    * Delay-6 [17, 36[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,17,36>", "occurrences were removed from the tape");
+});
+
+test("Prune Seq", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Seq([Instant(K("ok")), Delay(23), Seq([
+            Seq(), Instant(() => { throw Error("should be pruned"); })
+        ])])
+    ]).take(1), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19>
+    * Par/map-3 [17, 36[ <19>
+      * Delay-10 [17, 36[ <19>
+  * Seq-4 [17, 36[ (cancelled)
+    * Instant-5 @17 <ok>
+    * Delay-6 [17, 36[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,17,36>", "occurrences were removed from the tape");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

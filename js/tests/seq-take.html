@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Seq.take</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Seq(xs).take(n = ∞) duration", t => {
+    t.equal(Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().dur, 141, "dur with n = ∞");
+    t.undefined(Seq([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().dur,
+        "dur with n = ∞ (indefinite durations)");
+    t.equal(Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(7).dur, 0,
+        "zero dur with n > child count (failure)");
+     t.equal(Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(3).dur, 105,
+        "dur with n < child count");
+     t.undefined(Seq([Delay(51), Delay(23), Par.map(), Delay(19)]).take(3).dur,
+        "dur with n < child count, but unresolved duration");
+    t.equal(Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(0).dur, 0,
+        "dur with n = 0");
+});
+
+test("Instantiation, n = ∞", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23), Delay(19)]).take(), 17);
+    Deck({ tape }).now = 60;
+    t.equal(dump(seq),
+`* Seq-0 [17, 59[ <ok>
+  * Instant-1 @17 <ok>
+  * Delay-2 [17, 40[ <ok>
+  * Delay-3 [40, 59[ <ok>`, "dump matches");
+});
+
+test("Instantiation fails when n > xs.length", t => {
+    const tape = Tape();
+    t.undefined(
+        tape.instantiate(Seq([Instant(K("ok")), Delay(23), Delay(19)]).take(7), 17),
+        "not enough children"
+    );
+});
+
+test("Instantiation; n < xs.length", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23), Instant(K("nope"))]).take(2), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(seq),
+`* Seq-0 [17, 40[ <ok>
+  * Instant-1 @17 <ok>
+  * Delay-2 [17, 40[ <ok>`, "dump matches");
+});
+
+test("Instantiation failure in child after nth", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K("ok")),
+        Instant(),
+        Instant(),
+        Instant().repeat(),
+        Instant(() => { throw Error("should not be intantiated"); })
+    ]).take(3), 17);
+    Deck({ tape }).now = 18;
+    t.equal(seq.value, "ok", "correct value");
+});
+
+test("Instantiation; n = 0", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K("nope")), Delay(23), Delay(19)]).take(0), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq), "* Seq-0 @17 <undefined>", "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>
