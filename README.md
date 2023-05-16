@@ -104,7 +104,7 @@ These elements can be further modified through the use of the following modifier
 
 * `repeat()`: repeats an element indefinitely, producing an inifinite sequence. `x.repeat()` is the same
 as `Seq([x, x, ...])`.
-* `take(n)` applies to Par, Seq or repeat and finishes when _n_ child elements have finished, or all
+* `take(n)` applies to Par, Seq or repeat and finishes when _n_ ≥ 0 child elements have finished, or all
 elements by default.
     * `Par(xs).take(n)` selects the _n_ elements from _xs_ that finish first and cancels the rest of the
       elements (cancellation is discussed below).
@@ -115,6 +115,16 @@ elements by default.
       same as just `Seq(xs)`.
     * It is possible to limit the number of occurrences of `repeat()` with `take(n)`:
       `x.repeate().take(3)` is the same as `Seq([x, x, x])`.
+* `dur(d)` applies to Par, Seq or repeat and sets the duration to exactly _d_ ≥ 0. If the natural duration
+of the element is less than _d_, then it is padded as if a Delay was added to it. If the natural duration
+of the element is more than _d_, then it is cut off earlier and the children that have not finished yet
+are cancelled.
+    * `Par(xs).dur(d)` sets the duration of the par to _d_ and returns the elements that have finished
+    in the order in which they finished.
+    * `Seq(xs).dur(d)` sets the duration of the seq to _d_ and returns the last value that finished by _d_.
+    * Both `take(n)` and `dur(d)` can apply to an element; if by _d_ less than _n_ child elements have
+    finished, then the element fails, otherwise only the first _n_ child elements that have finished are
+    returned.
 * `Par.map(g)` and `Seq.map(g)` map the function _g_ to an input list in parallel or in sequence.
 * `Seq.fold(g, z)` folds over an input list with the function _g_ and an initial value _z_ in sequence.
 
