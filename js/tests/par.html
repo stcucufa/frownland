@@ -16,7 +16,7 @@ test("Par()", t => {
     const par = Par();
     t.equal(par.show(), "Par/0", "show");
     t.equal(par.children, [], "no children");
-    t.equal(par.dur, 0, "no duration");
+    t.equal(par.duration, 0, "no duration");
     t.equal(!par.failible, true, "not failible");
 });
 
@@ -28,16 +28,23 @@ test("Par(xs)", t => {
     t.equal(par.children, [delay, instant], "children");
     t.equal(delay.parent, par, "parent (first child)");
     t.equal(instant.parent, par, "parent (second child)");
-    t.equal(par.dur, 17, "duration");
+    t.equal(par.duration, 17, "duration");
     t.equal(!par.failible, true, "not failible");
 });
 
 test("Par duration", t => {
-    t.equal(Par([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31).repeat()]).dur, Infinity,
-        "indefinite duration (repeated child at the end)");
-    t.equal(Par([Instant(), Delay(23).repeat(), Seq.fold(), Par.map(), Delay(31)]).dur, Infinity,
-        "indefinite duration (repeated child)");
-    t.undefined(Par([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
+    t.equal(
+        Par([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31).repeat()]).duration, Infinity,
+        "indefinite duration (repeated child at the end)"
+    );
+    t.equal(
+        Par([Instant(), Delay(23).repeat(), Seq.fold(), Par.map(), Delay(31)]).duration, Infinity,
+        "indefinite duration (repeated child)"
+    );
+    t.undefined(
+        Par([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).duration,
+        "unresolved duration"
+    );
 });
 
 test("Instantiation", t => {

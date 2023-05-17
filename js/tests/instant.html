@@ -16,7 +16,7 @@ test("Instant()", t => {
     const instant = Instant();
     t.equal(instant.show(), "Instant", "show");
     t.equal(instant.valueForInstance(17), 17, "valueForInstance defaults to I");
-    t.equal(instant.dur, 0, "zero duration");
+    t.equal(instant.duration, 0, "zero duration");
     t.equal(!instant.failible, true, "infailible (at instantiation)");
 });
 
@@ -30,10 +30,10 @@ test("Instant.repeat(); must be limited by take()", t => {
     const repeat = instant.repeat();
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, instant, "repeat child");
-    t.equal(repeat.dur, Infinity, "repeat dur");
+    t.equal(repeat.duration, Infinity, "repeat dur");
     t.equal(repeat.failible, true, "unlimited repetitions fail");
     const limitedRepeats = repeat.take(3);
-    t.equal(limitedRepeats.dur, 0, "repeat dur (limited)");
+    t.equal(limitedRepeats.duration, 0, "repeat dur (limited)");
     t.equal(!limitedRepeats.failible, true, "limited repetitions do not fail");
 });
 
@@ -84,6 +84,9 @@ test("Prune instant", t => {
     t.equal(tape.occurrences, [], "no occurrence on tape");
 });
 
+test("Instantiation with duration cap", t => {
+    t.equal(dump(Tape().instantiate(Instant(), 17, 31)), "* Instant-0 @17", "cap is always high enough");
+});
 
         </script>
     </head>

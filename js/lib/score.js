@@ -1,8 +1,10 @@
 import { assign, create, extend, I, isNumber, nop, push, remove } from "./util.js";
 
 const Fail = Error("Instantiation failure");
-const Capacity = new Map();
 const RepeatMax = 17;
+
+const Capacity = new Map(); // capacity for items, set by take()
+const Duration = new Map(); // duration for items, set by dur()
 
 // The score is the root of the tree of timing items.
 export const Score = Object.assign(children => create().call(Score, { children: children ?? [] }), {
@@ -31,7 +33,7 @@ export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) 
     repeat,
 
     // An instant has no duration.
-    get dur() {
+    get duration() {
         return 0;
     },
 
@@ -50,45 +52,46 @@ export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) 
     pruneInstance: pruned,
 });
 
-// Create a new delay (see below) with dur as a read-only property.
-function createDelay(dur) {
+// Create a new delay (see below) with duration as a read-only property.
+function createDelay(duration) {
     const properties = {
-        dur: {
+        duration: {
             enumerable: true,
-            value: dur
+            value: duration
         }
     };
-    if (dur < 0) {
+    if (duration < 0) {
         properties.failible = {
             enumerable: true,
             value: true
         }
-    } else if (dur === 0) {
+    } else if (duration === 0) {
         return Instant();
     }
     return Object.create(Delay, properties);
 }
 
-// Delay(dur) delays its value for `dur` amount of time, which should be greater
-// than or equal to zero (otherwise fails to instantiate); a zero duration delay
-// is the same as Instant(). Repeatable.
+// Delay(duration) delays its value for `duration` amount of time, which should
+// be greater than or equal to zero (otherwise fails to instantiate); a zero
+// duration delay is the same as Instant(). Repeatable.
 export const Delay = Object.assign(createDelay, {
     tag: "Delay",
 
     show() {
-        return `${this.tag}<${this.dur}>`;
+        return `${this.tag}<${this.duration}>`;
     },
 
     repeat,
 
     // The instance for a delay is an interval, with an occurrence at the end
-    // of the interval. Fails if the duration is not greater than zero.
-    instantiate(instance, t) {
-        if (this.dur <= 0) {
+    // of the interval. Fails if the duration is not greater than zero, or if
+    // it is greater than the duration cap.
+    instantiate(instance, t, dur) {
+        if (this.duration <= 0 || this.duration > dur) {
             throw Fail;
         }
         instance.begin = t;
-        instance.end = t + this.dur;
+        instance.end = t + this.duration;
         return Object.assign(instance, { t: instance.end, forward });
     },
 
@@ -107,11 +110,17 @@ export const Par = assign(children => create().call(Par, { children: children ??
     show,
     repeat,
     take,
+    dur,
     init,
 
     // The duration of a par is the duration of the child that finishes last.
     // A par with no children has no duration.
-    get dur() {
+    get duration() {
+        const duration = Duration.get(this);
+        if (isFinite(duration)) {
+            return duration;
+        }
+
         const n = Capacity.get(this);
         if (n === 0) {
             return 0;
@@ -120,10 +129,10 @@ export const Par = assign(children => create().call(Par, { children: children ??
         if (children.length === 0) {
             return 0;
         }
-        if (children.some(([dur]) => dur === Infinity)) {
+        if (children.some(([duration]) => duration === Infinity)) {
             return Infinity;
         }
-        if (children.every(([dur]) => isNumber(dur))) {
+        if (children.every(([duration]) => isNumber(duration))) {
             if (isFinite(n)) {
                 // The children are sorted by duration and all durations are
                 // resolved so the last one is the longest.
@@ -312,11 +321,13 @@ export const ParMap = {
         return false;
     },
 
-    // Duration is unresolved, unless it is modified by take(0).
-    get dur() {
+    // Duration is unresolved, unless it is modified by take(0) or has a set
+    // duration.
+    get duration() {
         if (Capacity.get(this) === 0) {
             return 0;
         }
+        return Duration.get(this);
     },
 
     // Schedule instantiation of the contents.
@@ -419,29 +430,29 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // Addition of course gets a little more involved when we take into account
     // unresolved durations (such as folds and maps) and indefinite durations
     // (unbounded repetitions).
-    get dur() {
+    get duration() {
         const n = Capacity.get(this);
         if (n === 0 || (isFinite(n) && this.children.length < n)) {
             return 0;
         }
 
-        let dur = 0;
+        let duration = 0;
         const m = min(this.children.length, n);
         for (let i = 0; i < m; ++i) {
-            const d = this.children[i].dur;
+            const d = this.children[i].duration;
             if (d === Infinity) {
                 // If any duration is indefinite, the total is indefinite.
                 return Infinity;
             }
             if (isNaN(d)) {
                 // If either duration is unresolved, the sum is unresolved.
-                dur = d;
-            } else if (!isNaN(dur)) {
+                duration = d;
+            } else if (!isNaN(duration)) {
                 // Simply add two resolved durations.
-                dur += d;
+                duration += d;
             }
         }
-        return dur;
+        return duration;
     },
 
     // The value of a Seq is the value of its last child.
@@ -627,7 +638,7 @@ const SeqFold = {
     },
 
     // Duration is unresolved, unless it is modified by take(0).
-    get dur() {
+    get duration() {
         if (Capacity.get(this) === 0) {
             return 0;
         }
@@ -760,13 +771,13 @@ const Repeat = assign(child => extend(Repeat, { child }), {
     // Duration is indefinite, unless it is modified by take in which case it
     // is a product of the number of iterations by the duration of the item
     // being repeated.
-    get dur() {
+    get duration() {
         const repeats = Capacity.get(this);
-        const dur = repeats === 0 ? 0 : repeats > 0 ? this.child.dur * repeats : Infinity;
-        if (!isNaN(dur)) {
+        const duration = repeats === 0 ? 0 : repeats > 0 ? this.child.duration * repeats : Infinity;
+        if (!isNaN(duration)) {
             // Limited repetition of an unresolved duration is unresolved,
             // so only return resolved durations.
-            return dur;
+            return duration;
         }
     },
 
@@ -777,7 +788,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
             return true;
         }
         const n = Capacity.get(this) ?? Infinity;
-        return this.child.dur === 0 && n === Infinity;
+        return this.child.duration === 0 && n === Infinity;
     },
 
     instantiate(instance, t) {
@@ -788,7 +799,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
         if (Capacity.get(this) === 0) {
             return Object.assign(instance, { t, forward });
         }
-        if (this.dur === 0) {
+        if (this.duration === 0) {
             instance.t = t;
         } else {
             instance.begin = t;
@@ -880,6 +891,14 @@ function take(n = Infinity) {
     return this;
 }
 
+// Set the duration of an item with dur.
+function dur(d) {
+    console.assert(!Duration.has(this));
+    console.assert(d >= 0);
+    Duration.set(this, d);
+    return this;
+}
+
 // Create a Repeat item from any item.
 function repeat() {
     return Repeat(this);
@@ -960,8 +979,8 @@ const max = (x, y) => isNumber(y) ? Math.max(x, y) : x === Infinity ? x : y;
 // When an item has an unresolved duration, no sorting occurs and the cap is not
 // applied as the eventual order is unknown yet.
 function itemsByDuration(items, n) {
-    const itemsWithDuration = items.filter(item => !item.failible).map(item => [item.dur, item]);
-    if (itemsWithDuration.some(([dur]) => !isNumber(dur))) {
+    const itemsWithDuration = items.filter(item => !item.failible).map(item => [item.duration, item]);
+    if (itemsWithDuration.some(([duration]) => !isNumber(duration))) {
         return itemsWithDuration;
     }
     if (isFinite(n) && n > itemsWithDuration.length) {

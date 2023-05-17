@@ -17,7 +17,7 @@ test("Seq(xs).repeat()", t => {
     const repeat = seq.repeat();
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, seq, "repeat child");
-    t.equal(repeat.dur, Infinity, "indefinite duration");
+    t.equal(repeat.duration, Infinity, "indefinite duration");
 });
 
 test("Instantiation", t => {

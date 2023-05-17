@@ -13,17 +13,30 @@ import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
 test("Par(xs).take(n = ∞) duration", t => {
-    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().dur, 51, "dur with n = ∞");
-    t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().dur,
-        "dur with n = ∞ (indefinite durations)");
-    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(7).dur, 0,
-        "zero dur with n > child count (failure)");
-     t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(3).dur, 23,
-        "dur with n < child count");
-     t.undefined(Par([Delay(51), Delay(23), Delay(31), Par.map(), Delay(19)]).take(3).dur,
-        "dur with n < child count, but unresolved duration");
-    t.equal(Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(0).dur, 0,
-        "dur with n = 0");
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().duration, 51,
+        "dur with n = ∞"
+    );
+    t.undefined(
+        Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().duration,
+        "dur with n = ∞ (indefinite durations)"
+    );
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(7).duration, 0,
+        "zero dur with n > child count (failure)"
+    );
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(3).duration, 23,
+        "dur with n < child count"
+    );
+    t.undefined(
+        Par([Delay(51), Delay(23), Delay(31), Par.map(), Delay(19)]).take(3).duration,
+        "dur with n < child count, but unresolved duration"
+    );
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(0).duration, 0,
+        "dur with n = 0"
+    );
 });
 
 test("Instantiation; n = ∞", t => {

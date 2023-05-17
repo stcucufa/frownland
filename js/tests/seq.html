@@ -16,7 +16,7 @@ test("Seq()", t => {
     const seq = Seq();
     t.equal(seq.show(), "Seq/0", "show");
     t.equal(seq.children, [], "no children");
-    t.equal(seq.dur, 0, "zero duration");
+    t.equal(seq.duration, 0, "zero duration");
 });
 
 test("Seq(xs)", t => {
@@ -27,16 +27,23 @@ test("Seq(xs)", t => {
     t.equal(seq.children, [delay, instant], "children");
     t.equal(delay.parent, seq, "parent (1)");
     t.equal(instant.parent, seq, "parent (2)");
-    t.equal(seq.dur, 17, "duration");
+    t.equal(seq.duration, 17, "duration");
 });
 
 test("Seq duration", t => {
-    t.equal(Seq([Instant(), Instant(), Par(), Seq()]).dur, 0, "non-empty but zero duration");
-    t.equal(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31).repeat()]).dur, Infinity,
-        "indefinite duration (1)");
-    t.equal(Seq([Instant(), Delay(23).repeat(), Seq.fold(), Par.map(), Delay(31)]).dur, Infinity,
-        "indefinite duration (2)");
-    t.undefined(Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).dur, "unresolved duration");
+    t.equal(Seq([Instant(), Instant(), Par(), Seq()]).duration, 0, "non-empty but zero duration");
+    t.equal(
+        Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31).repeat()]).duration, Infinity,
+        "indefinite duration (1)"
+    );
+    t.equal(
+        Seq([Instant(), Delay(23).repeat(), Seq.fold(), Par.map(), Delay(31)]).duration, Infinity,
+        "indefinite duration (2)"
+    );
+    t.undefined(
+        Seq([Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31)]).duration,
+        "unresolved duration"
+    );
 });
 
 test("Seq value", t => {

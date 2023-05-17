@@ -68,16 +68,15 @@ choice(
     Seq([
         Par([Receive(A), Receive(B)]),
         Send(O),
-        Delay(Infinity)
-    ]),
+    ]).dur(Infinity),
     Receive(R)
 ).repeat()
 ```
 
 Again, `choice()` here allows receiving the event R to reset the system (which keeps running forever thanks
-to the `repeat()` modifier). The `Delay(Infinity)` ensures that after sending O, further A and B events
-are ignored until R is received. And requiring additional events before sending O is simply a matter of
-modifying the Par element, so this can turn into ABCRO with:
+to the `repeat()` modifier). Setting the duration of the sequence that waits for A and B and then sends O
+ensures that further A and B events are ignored until R is received. And requiring additional events before
+sending O is simply a matter of modifying the Par element, so this can turn into ABCRO with:
 
 ```
 Par([Receive(A), Receive(B), Receive(C)])
@@ -107,14 +106,14 @@ as `Seq([x, x, ...])`.
 * `take(n)` applies to Par, Seq or repeat and finishes when _n_ ≥ 0 child elements have finished, or all
 elements by default.
     * `Par(xs).take(n)` selects the _n_ elements from _xs_ that finish first and cancels the rest of the
-      elements (cancellation is discussed below).
+    elements (cancellation is discussed below).
     * `Par(xs).take()` differs from `Par(xs)` in the output value. In the latter case, output values are
-      in the order in which the elements are specified; in the former case, output values are in the order
-      in which they finish.
+    in the order in which the elements are specified; in the former case, output values are in the order
+    in which they finish.
     * `Seq(xs).take(n)` cuts the sequence short by taking only the first n steps. `Seq(xs).take()` is the
-      same as just `Seq(xs)`.
+    same as just `Seq(xs)`.
     * It is possible to limit the number of occurrences of `repeat()` with `take(n)`:
-      `x.repeate().take(3)` is the same as `Seq([x, x, x])`.
+    `x.repeate().take(3)` is the same as `Seq([x, x, x])`.
 * `dur(d)` applies to Par, Seq or repeat and sets the duration to exactly _d_ ≥ 0. If the natural duration
 of the element is less than _d_, then it is padded as if a Delay was added to it. If the natural duration
 of the element is more than _d_, then it is cut off earlier and the children that have not finished yet
@@ -189,9 +188,9 @@ comprised of three new elements:
 
 * `Effect(f)` is similar to `Instant(f)` but is allowed to produce side effects.
 * `Await(f)` evaluates an asynchronous function _f_ and finishes when _f_ finishes, which is _unresolved_
-  until _f_ is actually evaluated.
+until _f_ is actually evaluated.
 * `DOMEvent(target, type)` starts listening to an event of a given _type_ from a _target_, and finishes
-  when an event notification is received.
+when an event notification is received.
 
 These elements can be combined with the synchronous elements defined above, and accept the `repeat()`
 modifier. `Effect` comes with two modifiers of its own and will be detailed when describing the execution

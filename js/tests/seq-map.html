@@ -16,8 +16,8 @@ test("Seq.map(g)", t => {
     const map = Seq.map(Delay);
     t.equal(map.show(), "Seq/map", "show");
     t.typeof(map.g, "function", "g function");
-    t.undefined(map.dur, "unresolved duration");
-    t.equal(map.take(0).dur, 0, "down to zero with take(0)");
+    t.undefined(map.duration, "unresolved duration");
+    t.equal(map.take(0).duration, 0, "down to zero with take(0)");
 });
 
 test("Seq.map(g).repeat()", t => {
@@ -25,9 +25,9 @@ test("Seq.map(g).repeat()", t => {
     const repeat = seq.repeat();
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, seq, "repeat child");
-    t.equal(repeat.dur, Infinity, "indefinite duration");
+    t.equal(repeat.duration, Infinity, "indefinite duration");
     t.equal(repeat.failible, false, "not failible");
-    t.undefined(repeat.take(3).dur, "repeat dur (limited)");
+    t.undefined(repeat.take(3).duration, "repeat dur (limited)");
 });
 
 test("Instantiation", t => {
