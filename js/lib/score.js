@@ -61,10 +61,6 @@ function createDelay(duration) {
         duration: {
             enumerable: true,
             value: duration
-        },
-        failible: {
-            enumerable: true,
-            value: K(duration < 0)
         }
     };
     if (duration === 0) {
@@ -85,13 +81,20 @@ export const Delay = Object.assign(createDelay, {
 
     repeat,
 
+    // Failible if dur is less than the duration of the delay (or if the delay
+    // is negative).
+    failible(dur) {
+        return this.duration < 0 || this.duration > dur;
+    },
+
     // The instance for a delay is an interval, with an occurrence at the end
     // of the interval. Fails if the duration is not greater than zero, or if
     // it is greater than the duration cap.
     instantiate(instance, t, dur) {
-        if (this.duration <= 0 || this.duration > dur) {
+        if (this.failible(dur)) {
             throw Fail;
         }
+
         instance.begin = t;
         instance.end = t + this.duration;
         return Object.assign(instance, { t: instance.end, forward });
@@ -154,8 +157,8 @@ export const Par = assign(children => create().call(Par, { children: children ??
     },
 
     // Fail if not enough children can be instantiated.
-    failible() {
-        const failingChildCount = this.children.filter(child => child.failible()).length;
+    failible(dur) {
+        const failingChildCount = this.children.filter(child => child.failible(dur)).length;
         const n = Capacity.get(this);
         if (isFinite(n)) {
             return this.children.length - failingChildCount < n;
@@ -184,8 +187,8 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // their own occurrences scheduled as needed), unless it is empty. Fails
     // if enough children fail that the capacity of the map cannot be
     // fulfilled.
-    instantiate(instance, t) {
-        if (this.failible()) {
+    instantiate(instance, t, dur) {
+        if (this.failible(dur)) {
             throw Fail;
         }
 
@@ -196,10 +199,16 @@ export const Par = assign(children => create().call(Par, { children: children ??
         const children = n === 0 ? [] :
             isFinite(n) ? (xs => xs.map(([_, x]) => x))(itemsByDuration(this.children, n)) : this.children;
 
-        const end = children.reduce((end, child) => max(end, endOf(Object.assign(
-            push(instance.children, instance.tape.instantiate(child, t)),
+        const setDur = Duration.get(this);
+        dur = min(dur, setDur);
+        let end = children.reduce((end, child) => max(end, endOf(Object.assign(
+            push(instance.children, instance.tape.instantiate(child, t, dur)),
             { parent: instance }
         ))), t);
+        if (isFinite(setDur)) {
+            end = t + dur;
+        }
+
         if (end === t) {
             instance.t = t;
             if (instance.children.length === 0) {
@@ -970,7 +979,7 @@ function ended(...args) {
 }
 
 // Minimum function accepting an undefined value as its second argument, for
-// use with Capacity.get().
+// use with Capacity.get() and Duration.get().
 const min = (x, y) => isNumber(y) ? Math.min(x, y) : x;
 
 // Maximum function accepting an undefined value as its second argument, which

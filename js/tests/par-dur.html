@@ -28,7 +28,46 @@ test("Par(xs).dur(d) duration", t => {
     );
 });
 
+test("Extending duration", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(31), 17);
+    t.equal(dump(par),
+`* Par-0 [17, 48[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
+});
 
+test("Extending duration (but constrained by parent)", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(51), 17, 31);
+    t.equal(dump(par),
+`* Par-0 [17, 48[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
+});
+
+test("Cutting off duration (failure)", t => {
+    const tape = Tape();
+    t.undefined(
+        tape.instantiate(Par([Instant(), Delay(31), Delay(19)]).dur(23), 17),
+        "Par.dur is less than natural duration"
+    );
+    t.undefined(
+        tape.instantiate(Par([Instant(), Delay(31), Delay(19)]), 17, 23),
+        "Instantiation dur is less than natural duration"
+    );
+});
+
+test("Cutting off duration (success with take())", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([Instant(), Delay(31), Delay(19)]).dur(23).take(2), 17);
+    t.equal(dump(par),
+`* Par-0 [17, 40[
+  * Instant-1 @17
+  * Delay-2 [17, 36[`, "dump matches");
+});
 
         </script>
     </head>

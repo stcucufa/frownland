@@ -16,7 +16,8 @@ test("Delay(duration)", t => {
     const delay = Delay(23);
     t.equal(delay.show(), "Delay<23>", "show");
     t.equal(delay.duration, 23, "duration");
-    t.equal(delay.failible(), false, "not failible (delay > 0)");
+    t.equal(delay.failible(31), false, "not failible (delay > 0 and parent duration is high enough)");
+    t.equal(delay.failible(19), true, "failible (if the cap is too low");
     t.throws(() => { delay.duration = 19; }, "cannot overwrite dur");
     t.equal(Delay(0).failible(), false, "zero duration delay is OK");
     t.equal(Delay(-17).failible(), true, "negative duration delay is failible");
