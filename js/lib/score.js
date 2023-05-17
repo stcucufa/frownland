@@ -1,4 +1,4 @@
-import { assign, create, extend, I, isNumber, nop, push, remove } from "./util.js";
+import { assign, create, extend, I, isNumber, K, nop, push, remove } from "./util.js";
 
 const Fail = Error("Instantiation failure");
 const RepeatMax = 17;
@@ -37,6 +37,9 @@ export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) 
         return 0;
     },
 
+    // Cannot fail at instantiation time.
+    failible: K(false),
+
     // The occurrence for an instant is the same as its instance using the
     // generic forward function.
     instantiate: (instance, t) => Object.assign(instance, { t, forward }),
@@ -58,14 +61,13 @@ function createDelay(duration) {
         duration: {
             enumerable: true,
             value: duration
+        },
+        failible: {
+            enumerable: true,
+            value: K(duration < 0)
         }
     };
-    if (duration < 0) {
-        properties.failible = {
-            enumerable: true,
-            value: true
-        }
-    } else if (duration === 0) {
+    if (duration === 0) {
         return Instant();
     }
     return Object.create(Delay, properties);
@@ -152,8 +154,8 @@ export const Par = assign(children => create().call(Par, { children: children ??
     },
 
     // Fail if not enough children can be instantiated.
-    get failible() {
-        const failingChildCount = this.children.filter(child => child.failible).length;
+    failible() {
+        const failingChildCount = this.children.filter(child => child.failible()).length;
         const n = Capacity.get(this);
         if (isFinite(n)) {
             return this.children.length - failingChildCount < n;
@@ -183,7 +185,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // if enough children fail that the capacity of the map cannot be
     // fulfilled.
     instantiate(instance, t) {
-        if (this.failible) {
+        if (this.failible()) {
             throw Fail;
         }
 
@@ -317,9 +319,7 @@ export const ParMap = {
     tag: "Par/map",
 
     // Cannot fail at instantiation time.
-    get failible() {
-        return false;
-    },
+    failible: K(false),
 
     // Duration is unresolved, unless it is modified by take(0) or has a set
     // duration.
@@ -461,7 +461,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     },
 
     // Fail if not enough children can be instantiated.
-    get failible() {
+    failible() {
         const n = Capacity.get(this);
         return isFinite(n) && n > this.children.length;
     },
@@ -488,7 +488,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // unresolved, or never if the child has an indefinite duration (which is
     // perfectly cromulent and not a failure).
     instantiate(instance, t) {
-        if (this.failible) {
+        if (this.failible()) {
             throw Fail;
         }
 
@@ -644,6 +644,9 @@ const SeqFold = {
         }
     },
 
+    // Cannot fail at instantiation time. 
+    failible: K(false),
+
     // Schedule instantiation of the contents.
     instantiate(instance, t) {
         if (Capacity.get(this) === 0) {
@@ -783,8 +786,8 @@ const Repeat = assign(child => extend(Repeat, { child }), {
 
     // Fails if the inner item fails, or if it has zero duration and repeats
     // indefinitely.
-    get failible() {
-        if (this.child.failible) {
+    failible() {
+        if (this.child.failible()) {
             return true;
         }
         const n = Capacity.get(this) ?? Infinity;
@@ -792,7 +795,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
     },
 
     instantiate(instance, t) {
-        if (this.failible) {
+        if (this.failible()) {
             throw Fail;
         }
 
@@ -979,7 +982,7 @@ const max = (x, y) => isNumber(y) ? Math.max(x, y) : x === Infinity ? x : y;
 // When an item has an unresolved duration, no sorting occurs and the cap is not
 // applied as the eventual order is unknown yet.
 function itemsByDuration(items, n) {
-    const itemsWithDuration = items.filter(item => !item.failible).map(item => [item.duration, item]);
+    const itemsWithDuration = items.filter(item => !item.failible()).map(item => [item.duration, item]);
     if (itemsWithDuration.some(([duration]) => !isNumber(duration))) {
         return itemsWithDuration;
     }

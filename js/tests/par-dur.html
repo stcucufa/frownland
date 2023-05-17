@@ -13,6 +13,7 @@ import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
 test("Par(xs).dur(d) duration", t => {
+    t.equal(Par().dur(29).duration, 29, "empty par");
     t.equal(
         Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(79).duration, 79,
         "dur (more than natural duration)"
@@ -26,6 +27,8 @@ test("Par(xs).dur(d) duration", t => {
         "dur (indefinite natural durations)"
     );
 });
+
+
 
         </script>
     </head>

@@ -18,6 +18,7 @@ test("Seq.map(g)", t => {
     t.typeof(map.g, "function", "g function");
     t.undefined(map.duration, "unresolved duration");
     t.equal(map.take(0).duration, 0, "down to zero with take(0)");
+    t.equal(map.failible(), false, "not failible");
 });
 
 test("Seq.map(g).repeat()", t => {
@@ -26,7 +27,7 @@ test("Seq.map(g).repeat()", t => {
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, seq, "repeat child");
     t.equal(repeat.duration, Infinity, "indefinite duration");
-    t.equal(repeat.failible, false, "not failible");
+    t.equal(repeat.failible(), false, "not failible");
     t.undefined(repeat.take(3).duration, "repeat dur (limited)");
 });
 

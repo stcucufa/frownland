@@ -18,6 +18,7 @@ test("Seq.fold(g, z)", t => {
     t.typeof(fold.g, "function", "g function");
     t.equal(fold.z, 0, "initial accumulator value");
     t.undefined(fold.duration, "unresolved duration");
+    t.equal(fold.failible(), false, "not failible");
     t.equal(fold.take(0).duration, 0, "down to zero with take(0)");
 });
 
@@ -27,7 +28,7 @@ test("Seq.fold(g, z).repeat()", t => {
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, seq, "repeat child");
     t.equal(repeat.duration, Infinity, "indefinite duration");
-    t.equal(repeat.failible, false, "not failible");
+    t.equal(repeat.failible(), false, "not failible");
     t.undefined(repeat.take(3).duration, "repeat dur (limited)");
 });
 

@@ -17,7 +17,7 @@ test("Par()", t => {
     t.equal(par.show(), "Par/0", "show");
     t.equal(par.children, [], "no children");
     t.equal(par.duration, 0, "no duration");
-    t.equal(!par.failible, true, "not failible");
+    t.equal(par.failible(), false, "not failible");
 });
 
 test("Par(xs)", t => {
@@ -29,7 +29,7 @@ test("Par(xs)", t => {
     t.equal(delay.parent, par, "parent (first child)");
     t.equal(instant.parent, par, "parent (second child)");
     t.equal(par.duration, 17, "duration");
-    t.equal(!par.failible, true, "not failible");
+    t.equal(par.failible(), false, "not failible");
 });
 
 test("Par duration", t => {
