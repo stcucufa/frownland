@@ -192,33 +192,38 @@ export const Par = assign(children => create().call(Par, { children: children ??
             throw Fail;
         }
 
-        instance.children = []; // children in instantiation order
-        instance.finished = []; // children in ending order
+        // itemDur is the duration potentially set by .dur(), which may be
+        // lower than the available duration so we take the minimum value.
+        const itemDur = Duration.get(this);
+        dur = min(dur, itemDur);
 
+        // Gather the children and instantiate them.
         const n = Capacity.get(this);
         const children = n === 0 ? [] :
             isFinite(n) ? (xs => xs.map(([_, x]) => x))(itemsByDuration(this.children, n)) : this.children;
-
-        const setDur = Duration.get(this);
-        dur = min(dur, setDur);
-        let end = children.reduce((end, child) => max(end, endOf(Object.assign(
-            push(instance.children, instance.tape.instantiate(child, t, dur)),
+        instance.children = children.map(child => Object.assign(
+            instance.tape.instantiate(child, t, dur),
             { parent: instance }
-        ))), t);
-        if (isFinite(setDur)) {
-            end = t + dur;
-        }
+        ));
+        instance.finished = [];
 
+        // Set t or begin/end for the par instance and create an occurrence at
+        // the end if there are no children.
+        const end = isNumber(itemDur) ?
+            t + dur :
+            instance.children.reduce((end, child) => max(end, endOf(child)), t);
         if (end === t) {
             instance.t = t;
             if (instance.children.length === 0) {
                 return Object.assign(instance, { forward });
             }
         } else {
-            console.assert(instance.children.length > 0);
             instance.begin = t;
             if (isNumber(end)) {
                 instance.end = end;
+            }
+            if (instance.children.length === 0) {
+                return extend(instance, { t, forward });
             }
         }
     },

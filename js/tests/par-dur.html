@@ -38,6 +38,22 @@ test("Extending duration", t => {
   * Delay-3 [17, 36[`, "dump matches");
 });
 
+test("Extending duration (indefinite duration)", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(Infinity), 17);
+    t.equal(dump(par),
+`* Par-0 [17, ∞[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
+});
+
+test("Extending duration (no children)", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par().dur(23), 17);
+    t.equal(dump(par), "* Par-0 [17, 40[", "dump matches");
+});
+
 test("Extending duration (but constrained by parent)", t => {
     const tape = Tape();
     const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(51), 17, 31);
