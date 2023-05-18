@@ -421,6 +421,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     show,
     init,
     take,
+    dur,
     repeat,
 
     // The duration of a Seq is the sum of the duration of its children.
@@ -428,18 +429,29 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // unresolved durations (such as folds and maps) and indefinite durations
     // (unbounded repetitions).
     get duration() {
+        const duration = this.durationForChildren(this.children);
+        return duration === Fail ? 0 : duration;
+    },
+
+    // This helper function returns Fail if the item is failible, or a possibly
+    // unresolved or indefinite duration.
+    durationForChildren(children) {
         const n = Capacity.get(this);
-        if (n === 0 || (isFinite(n) && this.children.length < n)) {
+        if (n === 0) {
             return 0;
+        }
+        if (isFinite(n) && children.length < n) {
+            return Fail;
         }
 
         let duration = 0;
-        const m = min(this.children.length, n);
+        const m = min(children.length, n);
         for (let i = 0; i < m; ++i) {
-            const d = this.children[i].duration;
+            const d = children[i].duration;
             if (d === Infinity) {
                 // If any duration is indefinite, the total is indefinite.
-                return Infinity;
+                duration = Infinity;
+                break;
             }
             if (isNaN(d)) {
                 // If either duration is unresolved, the sum is unresolved.
@@ -449,7 +461,13 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
                 duration += d;
             }
         }
-        return duration;
+
+        // Check whether the requested duration can be fulfilled, or return
+        // the natural duration if unconstrained.
+        const itemDur = Duration.get(this);
+        return isNaN(itemDur) ?
+            duration :
+            (isNaN(duration) || itemDur >= duration ? itemDur : Fail);
     },
 
     // The value of a Seq is the value of its last child.
@@ -457,10 +475,10 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         return this.children?.at(-1)?.value;
     },
 
-    // Fail if not enough children can be instantiated.
-    failible() {
-        const n = Capacity.get(this);
-        return isFinite(n) && n > this.children.length;
+    // Fail if not enough children can be instantiated or if the requested
+    // duration cannot be achieved.
+    failible(dur) {
+        return this.durationForChildren(this.children) === Fail;
     },
 
     // Create a new SeqMap object with the given generator function.
@@ -484,8 +502,8 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // children will be instantiated later when resolving the child with an
     // unresolved, or never if the child has an indefinite duration (which is
     // perfectly cromulent and not a failure).
-    instantiate(instance, t) {
-        if (this.failible()) {
+    instantiate(instance, t, dur) {
+        if (this.failible(dur)) {
             throw Fail;
         }
 
@@ -493,7 +511,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         const begin = t;
         const n = min(this.children.length, Capacity.get(this));
         for (let i = 0; i < n && isFinite(t); ++i) {
-            const childInstance = instance.tape.instantiate(this.children[i], t);
+            const childInstance = instance.tape.instantiate(this.children[i], t, dur);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
                     childInstance.item.pruneInstance(childInstance);
@@ -501,6 +519,11 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
                 throw Fail;
             }
             t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+        }
+
+        const itemDur = Duration.get(this);
+        if (isNumber(itemDur)) {
+            t = begin + itemDur;
         }
 
         if (begin === t) {

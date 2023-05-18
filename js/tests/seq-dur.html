@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Seq.dur</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Seq(xs).dur(d) duration", t => {
+    t.equal(Seq().dur(29).duration, 29, "empty seq");
+    t.equal(
+        Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(179).duration, 179,
+        "dur (more than natural duration)"
+    );
+    t.equal(
+        Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(29).duration, 0,
+        "zero dur (less than natural duration)"
+    );
+    t.equal(
+        Seq([Delay(51), Delay(23).repeat()]).dur(179).duration, 0,
+        "zero dur (indefinite natural duration)"
+    );
+    t.equal(
+        Seq([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).dur(179).duration, 179,
+        "dur (indefinite natural durations)"
+    );
+});
+
+test("Extending duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(51), 17);
+    t.equal(dump(seq),
+`* Seq-0 [17, 68[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [40, 59[`, "dump matches");
+});
+
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>
