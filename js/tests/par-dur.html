@@ -55,8 +55,7 @@ test("Extending duration (no children)", t => {
 });
 
 test("Extending duration (but constrained by parent)", t => {
-    const tape = Tape();
-    const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(51), 17, 31);
+    const par = Tape().instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(51), 17, 31);
     t.equal(dump(par),
 `* Par-0 [17, 48[
   * Instant-1 @17
@@ -77,12 +76,20 @@ test("Cutting off duration (failure)", t => {
 });
 
 test("Cutting off duration (success with take())", t => {
-    const tape = Tape();
-    const par = tape.instantiate(Par([Instant(), Delay(31), Delay(19)]).dur(23).take(2), 17);
+    const par = Tape().instantiate(Par([Instant(), Delay(31), Delay(19)]).dur(23).take(2), 17);
     t.equal(dump(par),
 `* Par-0 [17, 40[
   * Instant-1 @17
   * Delay-2 [17, 36[`, "dump matches");
+});
+
+test("dur(0) with only zero-duration children", t => {
+    const par = Tape().instantiate(Par([Instant(), Delay(0), Par()]).dur(0), 17);
+    t.equal(dump(par),
+`* Par-0 @17
+  * Instant-1 @17
+  * Instant-2 @17
+  * Par-3 @17`, "dump matches");
 });
 
         </script>

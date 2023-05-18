@@ -102,6 +102,65 @@ test("Par.map(g).take(0)", t => {
     t.equal(instance.value, [], "empty list");
 });
 
+test("Par.map(g).dur(d); extending duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).dur(71)
+    ]), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <19,37,31,19,51>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 88[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 68[ <51>`, "dump matches");
+});
+
+test("Par.map(g).dur(d); extending duration, no children", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([])),
+        Par.map(Delay).dur(71)
+    ]), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <>
+  * Instant-1 @17 <>
+  * Par/map-2 [17, 88[ <>`, "dump matches");
+});
+
+test("Par.map(g).dur(d); cutting off duration, failure at runtime", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).dur(41)
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 @17 (failed)`, "dump matches");
+});
+
+test("Par.map(g).dur(d); cutting off instantiation duration, failure at runtime", t => {
+    t.skip();
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay)
+    ]), 17, 41);
+    Deck({ tape }).now = 18;
+    console.log(dump(instance));
+    t.equal(dump(instance),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 @17 (failed)`, "dump matches");
+});
+
 test("Par.map(g) failure", t => {
     const tape = Tape();
     const instance = tape.instantiate(Seq([
@@ -174,8 +233,8 @@ test("Par may recover from failing child", t => {
   * Instant-1 @17 <23,19>
   * Par-2 [17, 40[ <23,19>
     * Par/map-4 [17, 40[ <23,19>
-      * Delay-7 [17, 40[ <23>
-      * Delay-8 [17, 36[ <19>`, "dump matches");
+      * Delay-5 [17, 40[ <23>
+      * Delay-6 [17, 36[ <19>`, "dump matches");
 });
 
 test("Cancel Par.map", t => {
