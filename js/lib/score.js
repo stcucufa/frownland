@@ -121,9 +121,8 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // The duration of a par is the duration of the child that finishes last.
     // A par with no children has no duration.
     get duration() {
-        const duration = Duration.get(this);
-        if (isFinite(duration)) {
-            return duration;
+        if (Duration.has(this)) {
+            return Duration.get(this);
         }
 
         const n = Capacity.get(this);
@@ -424,34 +423,42 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     dur,
     repeat,
 
-    // The duration of a Seq is the sum of the duration of its children.
+    // The duration of a Seq is the sum of the duration of its children, unless
+    // an explicit duration is set. A failing Seq will have a zero duration.
     // Addition of course gets a little more involved when we take into account
     // unresolved durations (such as folds and maps) and indefinite durations
     // (unbounded repetitions).
     get duration() {
         const duration = this.durationForChildren(this.children);
-        return duration === Fail ? 0 : duration;
+        return duration === null ? 0 : duration;
     },
 
-    // This helper function returns Fail if the item is failible, or a possibly
+    // This helper function returns null if the item is failible, or a possibly
     // unresolved or indefinite duration.
     durationForChildren(children) {
+        if (Duration.has(this)) {
+            return Duration.get(this);
+        }
+
         const n = Capacity.get(this);
         if (n === 0) {
             return 0;
         }
         if (isFinite(n) && children.length < n) {
-            return Fail;
+            return null;
         }
 
         let duration = 0;
         const m = min(children.length, n);
         for (let i = 0; i < m; ++i) {
-            const d = children[i].duration;
+            const child = children[i];
+            if (child.failible(Infinity)) {
+                return null;
+            }
+            const d = child.duration;
             if (d === Infinity) {
                 // If any duration is indefinite, the total is indefinite.
-                duration = Infinity;
-                break;
+                return Infinity;
             }
             if (isNaN(d)) {
                 // If either duration is unresolved, the sum is unresolved.
@@ -462,12 +469,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             }
         }
 
-        // Check whether the requested duration can be fulfilled, or return
-        // the natural duration if unconstrained.
-        const itemDur = Duration.get(this);
-        return isNaN(itemDur) ?
-            duration :
-            (isNaN(duration) || itemDur >= duration ? itemDur : Fail);
+        return duration;
     },
 
     // The value of a Seq is the value of its last child.
@@ -478,7 +480,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // Fail if not enough children can be instantiated or if the requested
     // duration cannot be achieved.
     failible(dur) {
-        return this.durationForChildren(this.children) === Fail;
+        return this.durationForChildren(this.children) === null;
     },
 
     // Create a new SeqMap object with the given generator function.
@@ -503,15 +505,17 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // unresolved, or never if the child has an indefinite duration (which is
     // perfectly cromulent and not a failure).
     instantiate(instance, t, dur) {
-        if (this.failible(dur)) {
+        const duration = this.durationForChildren(this.children);
+        if (duration === null) {
             throw Fail;
         }
 
         instance.children = [];
         const begin = t;
         const n = min(this.children.length, Capacity.get(this));
-        for (let i = 0; i < n && isFinite(t); ++i) {
-            const childInstance = instance.tape.instantiate(this.children[i], t, dur);
+        const end = t + (duration ?? Infinity);
+        for (let i = 0; i < n && t <= end; ++i) {
+            const childInstance = instance.tape.instantiate(this.children[i], t, end - t);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
                     childInstance.item.pruneInstance(childInstance);
@@ -521,21 +525,20 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
         }
 
-        const itemDur = Duration.get(this);
-        if (isNumber(itemDur)) {
-            t = begin + itemDur;
-        }
-
-        if (begin === t) {
+        if (duration === 0) {
+            console.assert(begin === t);
             instance.t = t;
             if (instance.children.length === 0) {
                 return Object.assign(instance, { forward });
             }
         } else {
-            console.assert(instance.children.length > 0);
             instance.begin = begin;
-            if (isNumber(t)) {
-                instance.end = t;
+            if (isNumber(end)) {
+                instance.end = end;
+            }
+            if (instance.children.length === 0) {
+                console.assert(isNumber(end));
+                return extend(instance, { end, forward });
             }
         }
         instance.currentChildIndex = 0;
@@ -976,9 +979,9 @@ function ended(...args) {
     const [instance, t, value] = args;
     const endsWithValue = args.length > 2;
     if (Object.hasOwn(instance, "begin")) {
-        if (endsWithValue && Object.hasOwn(instance, "end")) {
+        if (endsWithValue && Duration.has(instance.item)) {
             // Do not overwrite the end that was already set for normal
-            // termination; when cancelling or failing, update the end time.
+            // termination from dur.
             console.assert(t <= instance.end);
         } else if (instance.begin === t) {
             delete instance.begin;

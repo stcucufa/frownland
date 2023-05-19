@@ -16,25 +16,24 @@ test("Seq(xs).dur(d) duration", t => {
     t.equal(Seq().dur(29).duration, 29, "empty seq");
     t.equal(
         Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(179).duration, 179,
-        "dur (more than natural duration)"
+        "more than natural duration"
     );
     t.equal(
-        Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(29).duration, 0,
-        "zero dur (less than natural duration)"
+        Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(79).duration, 79,
+        "less than natural duration"
     );
     t.equal(
-        Seq([Delay(51), Delay(23).repeat()]).dur(179).duration, 0,
-        "zero dur (indefinite natural duration)"
+        Seq([Delay(51), Delay(23).repeat()]).dur(179).duration, 179,
+        "indefinite natural duration"
     );
     t.equal(
         Seq([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).dur(179).duration, 179,
-        "dur (indefinite natural durations)"
+        "unresolved natural duration"
     );
 });
 
 test("Extending duration", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(51), 17);
+    const seq = Tape().instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(51), 17);
     t.equal(dump(seq),
 `* Seq-0 [17, 68[
   * Instant-1 @17
@@ -42,6 +41,14 @@ test("Extending duration", t => {
   * Delay-3 [40, 59[`, "dump matches");
 });
 
+test("Extending duration (no children)", t => {
+    const tape = Tape();
+    const noChildren = tape.instantiate(Seq().dur(23), 17);
+    const emptyList = tape.instantiate(Seq([]).dur(23), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(noChildren), "* Seq-0 [17, 40[ <undefined>", "no children");
+    t.equal(dump(emptyList), "* Seq-1 [17, 40[ <undefined>", "empty list");
+});
 
         </script>
     </head>

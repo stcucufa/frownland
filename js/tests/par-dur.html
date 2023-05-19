@@ -50,8 +50,11 @@ test("Extending duration (indefinite duration)", t => {
 
 test("Extending duration (no children)", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par().dur(23), 17);
-    t.equal(dump(par), "* Par-0 [17, 40[", "dump matches");
+    const noChildren = tape.instantiate(Par().dur(23), 17);
+    const emptyList = tape.instantiate(Par([]).dur(23), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(noChildren), "* Par-0 [17, 40[ <>", "no children");
+    t.equal(dump(emptyList), "* Par-1 [17, 40[ <>", "empty list");
 });
 
 test("Extending duration (but constrained by parent)", t => {

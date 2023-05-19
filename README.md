@@ -114,10 +114,10 @@ elements by default.
     same as just `Seq(xs)`.
     * It is possible to limit the number of occurrences of `repeat()` with `take(n)`:
     `x.repeate().take(3)` is the same as `Seq([x, x, x])`.
-* `dur(d)` applies to Par, Seq or repeat and sets the duration to exactly _d_ ≥ 0. If the natural duration
+* `dur(d)` applies to Par, Seq or repeat, and sets the duration to exactly _d_ ≥ 0. If the natural duration
 of the element is less than _d_, then it is padded as if a Delay was added to it. If the natural duration
 of the element is more than _d_, then it is cut off earlier and the children that have not finished yet
-are cancelled.
+are pruned.
     * `Par(xs).dur(d)` sets the duration of the par to _d_ and returns the elements that have finished
     in the order in which they finished.
     * `Seq(xs).dur(d)` sets the duration of the seq to _d_ and returns the last value that finished by _d_.
