@@ -496,24 +496,30 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         return extend(SeqFold, { g, z });
     },
 
-    // A Seq instance is an interval (unless all of its children have zero
-    // duration), and needs no occurrence of its own (because the children have
+    // A Seq instance is an interval, unless all of its children have zero
+    // duration, and needs no occurrence of its own (because the children have
     // their own occurrences scheduled as needed), unless it is empty. Fails
     // if any child fails.
-    // Instantiate children as long as they have a definite duration. The next
-    // children will be instantiated later when resolving the child with an
-    // unresolved, or never if the child has an indefinite duration (which is
-    // perfectly cromulent and not a failure).
-    instantiate(instance, t, dur) {
-        const duration = this.durationForChildren(this.children);
-        if (duration === null) {
+    instantiate(instance, t, parentDuration) {
+        const itemDuration = this.durationForChildren(this.children);
+        if (itemDuration === null) {
             throw Fail;
         }
 
+        // The actual duration is contrained by the parent duration.
+        // Note that itemDuration may be unresolved, but the parent duration
+        // is always a number so min will handle that case correctly (by
+        // using the parent duration).
+        const dur = min(parentDuration, itemDuration);
+
+        // Instantiate children as long as they have a definite duration. The
+        // following children will be instantiated later when resolving the
+        // child with an unresolved duration, or never if the child has an
+        // indefinite duration (which is perfectly cromulent and not a failure).
         instance.children = [];
         const begin = t;
         const n = min(this.children.length, Capacity.get(this));
-        const end = t + (duration ?? Infinity);
+        const end = t + dur;
         for (let i = 0; i < n && t <= end; ++i) {
             const childInstance = instance.tape.instantiate(this.children[i], t, end - t);
             if (!childInstance) {
@@ -525,7 +531,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
         }
 
-        if (duration === 0) {
+        if (dur === 0) {
             console.assert(begin === t);
             instance.t = t;
             if (instance.children.length === 0) {
@@ -538,9 +544,10 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             }
             if (instance.children.length === 0) {
                 console.assert(isNumber(end));
-                return extend(instance, { end, forward });
+                return extend(instance, { t: end, forward });
             }
         }
+
         instance.currentChildIndex = 0;
     },
 
@@ -599,7 +606,9 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         instance.currentChildIndex += 1;
         if (instance.currentChildIndex === min(this.children.length, Capacity.get(this))) {
             instance.value = this.valueForInstance.call(instance);
-            instance.end ??= t;
+            if (!Duration.has(instance.item)) {
+                instance.end = t;
+            }
             instance.parent?.item.childInstanceDidEnd(instance, instance.end);
             delete instance.currentChildIndex;
         }

@@ -41,6 +41,15 @@ test("Extending duration", t => {
   * Delay-3 [40, 59[`, "dump matches");
 });
 
+test("Extending duration (indefinite duration)", t => {
+    const seq = Tape().instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(Infinity), 17);
+    t.equal(dump(seq),
+`* Seq-0 [17, ∞[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [40, 59[`, "dump matches");
+});
+
 test("Extending duration (no children)", t => {
     const tape = Tape();
     const noChildren = tape.instantiate(Seq().dur(23), 17);
@@ -48,6 +57,15 @@ test("Extending duration (no children)", t => {
     Deck({ tape }).now = 41;
     t.equal(dump(noChildren), "* Seq-0 [17, 40[ <undefined>", "no children");
     t.equal(dump(emptyList), "* Seq-1 [17, 40[ <undefined>", "empty list");
+});
+
+test("Extending duration (but constrained by parent)", t => {
+    const par = Tape().instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(71), 17, 51);
+    t.equal(dump(par),
+`* Seq-0 [17, 68[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [40, 59[`, "dump matches");
 });
 
         </script>
