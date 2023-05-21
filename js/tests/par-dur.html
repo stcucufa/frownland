@@ -66,16 +66,24 @@ test("Extending duration (but constrained by parent)", t => {
   * Delay-3 [17, 36[`, "dump matches");
 });
 
-test("Cutting off duration (failure)", t => {
+test("Cutting off duration (dur)", t => {
     const tape = Tape();
-    t.undefined(
-        tape.instantiate(Par([Instant(), Delay(31), Delay(19)]).dur(23), 17),
-        "Par.dur is less than natural duration"
-    );
-    t.undefined(
-        tape.instantiate(Par([Instant(), Delay(31), Delay(19)]), 17, 23),
-        "Instantiation dur is less than natural duration"
-    );
+    const par = tape.instantiate(Par([Instant(), Delay(31), Delay(19)]).dur(23), 17);
+    t.equal(dump(par),
+`* Par-0 [17, 40[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
+});
+
+test("Cutting off duration (parent duration)", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([Instant(), Delay(31), Delay(19)]), 17, 23);
+    t.equal(dump(par),
+`* Par-0 [17, 40[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
 });
 
 test("Cutting off duration (success with take())", t => {

@@ -78,13 +78,13 @@ test("Prune instant", t => {
     const tape = Tape();
     t.undefined(tape.instantiate(Seq([
         Instant(() => { throw Error("not pruned?!"); }),
-        Delay(-1)
+        Par().take(1)
     ]), 17), "instantiation failed");
     Deck({ tape }).now = 18;
     t.equal(tape.occurrences, [], "no occurrence on tape");
 });
 
-test("Instantiation with duration cap", t => {
+test("Instantiation with parent duration", t => {
     t.equal(dump(Tape().instantiate(Instant(), 17, 31)), "* Instant-0 @17", "cap is always high enough");
 });
 

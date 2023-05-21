@@ -79,7 +79,7 @@ test("Instantiation; n < xs.length", t => {
 test("Instantiation failure in child after nth", t => {
     const tape = Tape();
     const par = tape.instantiate(Par([
-        Seq([Delay(23), Delay(-19)]),
+        Seq([Delay(23), Par().take(1)]),
         Instant(K("B")),
     ]).take(1), 17);
     Deck({ tape }).now = 18;
@@ -106,7 +106,7 @@ test("Allowing failure during instantiation", t => {
     const par = tape.instantiate(Par([
         Delay(23),
         Delay(31),
-        Delay(-17), // fails
+        Par().take(1), // fails
         Delay(19),
         Instant().repeat(), // fails
     ]).take(3), 17);

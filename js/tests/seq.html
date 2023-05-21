@@ -104,7 +104,7 @@ test("Instantiation; zero duration", t => {
 
 test("Instantiation; child with infinite duration", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(), Instant(), Delay(23).repeat(), Delay(-31)]), 17);
+    const seq = tape.instantiate(Seq([Instant(), Instant(), Delay(23).repeat(), Par().take(1)]), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(seq),
 `* Seq-0 [17, ∞[

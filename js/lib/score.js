@@ -14,9 +14,9 @@ export const Score = Object.assign(children => create().call(Score, { children: 
 
     // Add an item to the score.
     add(item) {
-        this.children.push(item);
+        console.assert(!Object.hasOwn(item, parent));
         item.parent = this;
-        return item;
+        return push(this.children, item);
     },
 
     inputForChildInstance: nop,
@@ -27,7 +27,7 @@ export const Score = Object.assign(children => create().call(Score, { children: 
 
 // Instant(f) evaluates f instantly. f should not have any side effect and
 // defaults to I (identity). Repeatable, cannot fail.
-export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) : Instant, {
+export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) : Object.create(Instant), {
     tag: "Instant",
     show,
     repeat,
@@ -61,11 +61,16 @@ function createDelay(duration) {
         duration: {
             enumerable: true,
             value: duration
+        },
+        failible: {
+            enumerable: true,
+            value: K(duration < 0)
         }
     };
     if (duration === 0) {
         return Instant();
     }
+    console.assert(duration > 0);
     return Object.create(Delay, properties);
 }
 
@@ -81,12 +86,6 @@ export const Delay = Object.assign(createDelay, {
 
     repeat,
 
-    // Failible if dur is less than the duration of the delay (or if the delay
-    // is negative).
-    failible(dur) {
-        return this.duration < 0 || this.duration > dur;
-    },
-
     // The instance for a delay is an interval, with an occurrence at the end
     // of the interval. Fails if the duration is not greater than zero, or if
     // it is greater than the duration cap.
@@ -96,7 +95,7 @@ export const Delay = Object.assign(createDelay, {
         }
 
         instance.begin = t;
-        instance.end = t + this.duration;
+        instance.end = t + min(this.duration, dur);
         return Object.assign(instance, { t: instance.end, forward });
     },
 
@@ -240,6 +239,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // Every child has the same input as the par itself, that is, the input
     // of the parent of the par.
     inputForChildInstance(childInstance) {
+        console.assert(this.parent !== this);
         return this.parent?.inputForChildInstance(childInstance.parent);
     },
 
@@ -500,17 +500,12 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // duration, and needs no occurrence of its own (because the children have
     // their own occurrences scheduled as needed), unless it is empty. Fails
     // if any child fails.
-    instantiate(instance, t, parentDuration) {
-        const itemDuration = this.durationForChildren(this.children);
-        if (itemDuration === null) {
-            throw Fail;
-        }
+    instantiate(instance, t, dur) {
 
-        // The actual duration is contrained by the parent duration.
-        // Note that itemDuration may be unresolved, but the parent duration
-        // is always a number so min will handle that case correctly (by
-        // using the parent duration).
-        const dur = min(parentDuration, itemDuration);
+        // The duration of the seq is contrained by the parent duration or the
+        // item duration itself (if set). min can handle a second parameter that
+        // is undefined so this duration is always going to be defined.
+        const end = t + min(dur, Duration.get(this));
 
         // Instantiate children as long as they have a definite duration. The
         // following children will be instantiated later when resolving the
@@ -519,7 +514,6 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         instance.children = [];
         const begin = t;
         const n = min(this.children.length, Capacity.get(this));
-        const end = t + dur;
         for (let i = 0; i < n && t <= end; ++i) {
             const childInstance = instance.tape.instantiate(this.children[i], t, end - t);
             if (!childInstance) {
@@ -531,20 +525,24 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
         }
 
-        if (dur === 0) {
-            console.assert(begin === t);
+        if (Duration.has(this)) {
+            t = end;
+        }
+
+        if (begin === t) {
             instance.t = t;
             if (instance.children.length === 0) {
                 return Object.assign(instance, { forward });
             }
         } else {
             instance.begin = begin;
-            if (isNumber(end)) {
-                instance.end = end;
+            if (isNumber(t)) {
+                // Don’t set the end if it is not resolved yet.
+                instance.end = t;
             }
             if (instance.children.length === 0) {
-                console.assert(isNumber(end));
-                return extend(instance, { t: end, forward });
+                console.assert(isNumber(t));
+                return extend(instance, { t, forward });
             }
         }
 
@@ -909,6 +907,7 @@ export function dump(instance, indent = "* ") {
 // children.
 function init() {
     for (const child of this.children) {
+        console.assert(!Object.hasOwn(child, "parent"));
         child.parent = this;
     }
 }
