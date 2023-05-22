@@ -152,7 +152,6 @@ test("Par.map(g).dur(d); cutting off duration", t => {
 });
 
 test("Par.map(g).dur(d); cutting off instantiation duration, failure at runtime", t => {
-    t.skip();
     const tape = Tape();
     const instance = tape.instantiate(Seq([
         Instant(K([19, 37, 31, 19, 51])),

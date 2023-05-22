@@ -15,7 +15,7 @@ export const Tape = Object.assign(() => create().call(Tape), {
         return `Tape<${this.occurrences.map(occurrence => occurrence.t)}>`
     },
 
-    // Instantiate an item beginning at time t with a duration cap dur, and
+    // Instantiate an item beginning at time t with a maximum duration dur, and
     // commit its occurrences to this tape. Return an instance on success or
     // nothing on failure.
     instantiate(item, t, dur = Infinity) {

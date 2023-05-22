@@ -171,9 +171,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
 
     // A Par instance is an interval (unless all of its children have zero
     // duration), and needs no occurrence of its own (because the children have
-    // their own occurrences scheduled as needed), unless it is empty. Fails
-    // if enough children fail that the capacity of the map cannot be
-    // fulfilled.
+    // their own occurrences scheduled as needed), unless it is empty.
     instantiate(instance, t, dur) {
         return this.instantiateChildren(instance, this.children, t, dur);
     },
@@ -189,7 +187,12 @@ export const Par = assign(children => create().call(Par, { children: children ??
 
         // Gather the children and instantiate them.
         if (Capacity.has(this)) {
-            children = (xs => xs.map(([_, x]) => x))(itemsByDuration(children, Capacity.get(this)));
+            instance.capacity = Capacity.get(this);
+            children = (xs => xs.map(([_, x]) => x))(itemsByDuration(children, instance.capacity));
+        }
+        // Set the capacity to exactly how many children are expected to finish.
+        if (!isFinite(instance.capacity)) {
+            instance.capacity = children.length;
         }
         instance.children = children.map(child => Object.assign(
             instance.tape.instantiate(child, t, dur),
@@ -221,7 +224,6 @@ export const Par = assign(children => create().call(Par, { children: children ??
     // Every child has the same input as the par itself, that is, the input
     // of the parent of the par.
     inputForChildInstance(childInstance) {
-        console.assert(this.parent !== this);
         return this.parent?.inputForChildInstance(childInstance.parent);
     },
 
@@ -234,7 +236,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
         const instance = childInstance.parent;
         console.assert(instance.item === this);
         instance.finished.push(childInstance);
-        if (instance.finished.length === min(instance.children.length, Capacity.get(this))) {
+        if (instance.finished.length === instance.capacity) {
             for (const child of instance.children) {
                 if (instance.finished.indexOf(child) < 0) {
                     child.item.cancelInstance(child, t);
@@ -364,7 +366,7 @@ export const ParMap = {
                 return this.g(x, i);
             } catch {
             }
-        }).filter(x => typeof x?.instantiate === "function");
+        });
 
         // Instantiate children, which may fail.
         try {
@@ -913,7 +915,7 @@ function show() {
 function take(n = Infinity) {
     console.assert(!Capacity.has(this));
     console.assert(n >= 0);
-    Capacity.set(this, Math.max(0, n));
+    Capacity.set(this, n >= 0 ? n : 0);
     return this;
 }
 
