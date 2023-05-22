@@ -48,6 +48,10 @@ test("Instantiatiation", t => {
     t.equal(instance.value, "ok", "instance value");
 });
 
+test("Instantiation with parent duration", t => {
+    t.equal(dump(Tape().instantiate(Instant(), 17, 31)), "* Instant-0 @17", "cap is always high enough");
+});
+
 test("Instant(f).repeat().take(n = ∞)", t => {
     const tape = Tape();
     const repeat = tape.instantiate(Instant(K("ok")).repeat(), 17);
@@ -82,10 +86,6 @@ test("Prune instant", t => {
     ]), 17), "instantiation failed");
     Deck({ tape }).now = 18;
     t.equal(tape.occurrences, [], "no occurrence on tape");
-});
-
-test("Instantiation with parent duration", t => {
-    t.equal(dump(Tape().instantiate(Instant(), 17, 31)), "* Instant-0 @17", "cap is always high enough");
 });
 
         </script>

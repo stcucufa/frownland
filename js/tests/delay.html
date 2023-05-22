@@ -16,9 +16,8 @@ test("Delay(duration)", t => {
     const delay = Delay(23);
     t.equal(delay.show(), "Delay<23>", "show");
     t.equal(delay.duration, 23, "duration");
-    t.equal(delay.failible(19), false, "not failible");
+    t.equal(delay.failible(), false, "not failible");
     t.throws(() => { delay.duration = 19; }, "cannot overwrite dur");
-    t.equal(Delay(0).failible(), false, "zero duration delay is OK");
 });
 
 test("Delay.repeat()", t => {
@@ -51,6 +50,18 @@ test("Instantiation (zero duration)", t => {
     const delay = tape.instantiate(Delay(0), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(delay), "* Instant-0 @17 <undefined>", "dump matches");
+});
+
+test("Instantiation (illegal duration)", t => {
+    const tape = Tape();
+    t.equal(dump(tape.instantiate(Delay(-23), 17)), "* Instant-0 @17", "negative duration");
+    t.equal(dump(tape.instantiate(Delay("23s"), 17)), "* Instant-1 @17", "not a number");
+});
+
+test("Instantiation with parent duration", t => {
+    const tape = Tape();
+    t.equal(dump(tape.instantiate(Delay(23), 17, 31)), "* Delay-0 [17, 40[", "no cutoff");
+    t.equal(dump(tape.instantiate(Delay(23), 17, 19)), "* Delay-1 [17, 36[", "cutoff");
 });
 
 test("Delay(d).repeat()", t => {
@@ -107,12 +118,6 @@ test("Prune delay", t => {
     ]), 17), "instantiation failed");
     Deck({ tape }).now = 18;
     t.equal(tape.occurrences, [], "no occurrence on tape");
-});
-
-test("Instantiation with parent duration", t => {
-    const tape = Tape();
-    t.equal(dump(tape.instantiate(Delay(23), 17, 31)), "* Delay-0 [17, 40[", "cap is high enough");
-    t.equal(dump(tape.instantiate(Delay(23), 17, 19)), "* Delay-1 [17, 36[", "delay may be shortened");
 });
 
         </script>

@@ -103,6 +103,46 @@ test("dur(0) with only zero-duration children", t => {
   * Par-3 @17`, "dump matches");
 });
 
+test("Par.take(n).dur(d), extending the duration", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23)]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]).take(3).dur(31), 17);
+    Deck({ tape }).now = 49;
+    t.equal(dump(par),
+`* Par-0 [17, 48[ <B,D,A>
+  * Instant-1 @17 <B>
+  * Seq-2 [17, 36[ <D>
+    * Instant-3 @17 <D>
+    * Delay-4 [17, 36[ <D>
+  * Seq-5 [17, 40[ <A>
+    * Instant-6 @17 <A>
+    * Delay-7 [17, 40[ <A>`, "dump matches");
+});
+
+test("Par.take(n).dur(d), extending the duration", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]).take(3).dur(20), 17);
+    Deck({ tape }).now = 37;
+    t.equal(dump(par),
+`* Par-0 [17, 37[ <B,D,A>
+  * Instant-1 @17 <B>
+  * Seq-2 [17, 36[ <D>
+    * Instant-3 @17 <D>
+    * Delay-4 [17, 36[ <D>
+  * Seq-5 [17, 37[ <A>
+    * Instant-6 @17 <A>
+    * Delay-7 [17, 37[ <A>`, "dump matches");
+});
+
         </script>
     </head>
     <body>
