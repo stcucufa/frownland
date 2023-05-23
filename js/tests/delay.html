@@ -62,6 +62,7 @@ test("Instantiation with parent duration", t => {
     const tape = Tape();
     t.equal(dump(tape.instantiate(Delay(23), 17, 31)), "* Delay-0 [17, 40[", "no cutoff");
     t.equal(dump(tape.instantiate(Delay(23), 17, 19)), "* Delay-1 [17, 36[", "cutoff");
+    t.equal(dump(tape.instantiate(Delay(23), 17, 0)), "* Delay-2 @17", "zero duration");
 });
 
 test("Delay(d).repeat()", t => {

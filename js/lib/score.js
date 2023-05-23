@@ -88,6 +88,11 @@ export const Delay = Object.assign(createDelay, {
     // of the interval. The parent duration may cut off the delay, which is
     // reported by the instance.
     instantiate(instance, t, dur) {
+        if (dur === 0) {
+            // This is a degenerate case where the delay must fit in zero
+            // duration.
+            return Object.assign(instance, { t, cutoff: true, forward });
+        }
         instance.begin = t;
         if (this.duration < dur) {
             instance.end = t + this.duration;
@@ -458,15 +463,15 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         return duration;
     },
 
-    // The value of a Seq is the value of its last child.
-    valueForInstance() {
-        return this.children?.at(-1)?.value;
-    },
-
     // Fail if not enough children can be instantiated or if the requested
     // duration cannot be achieved.
     failible(dur) {
         return this.durationForChildren(this.children) === null;
+    },
+
+    // The value of a Seq is the value of its last child.
+    valueForInstance() {
+        return this.children?.at(-1)?.value;
     },
 
     // Create a new SeqMap object with the given generator function.
@@ -487,6 +492,9 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // their own occurrences scheduled as needed), unless it is empty. Fails
     // if any child fails.
     instantiate(instance, t, dur) {
+        if (this.failible()) {
+            throw Fail;
+        }
 
         // The duration of the seq is contrained by the parent duration or the
         // item duration itself (if set). min can handle a second parameter that
@@ -501,9 +509,9 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         // be shortened by take() and dur() and is needed to verify that the
         // sequence ended.
         instance.children = [];
-        instance.n = min(this.children.length, Capacity.get(this));
+        instance.capacity = min(this.children.length, Capacity.get(this));
         const begin = t;
-        for (let i = 0; i < instance.n && t <= end; ++i) {
+        for (let i = 0; i < instance.capacity && t <= end; ++i) {
             const childInstance = instance.tape.instantiate(this.children[i], t, end - t);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
@@ -516,7 +524,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             // If a child instance is cut off then we cannot go any further.
             if (childInstance.cutoff) {
                 delete childInstance.cutoff;
-                instance.n = min(instance.children.length, Capacity.get(this));
+                instance.capacity = min(instance.children.length, Capacity.get(this));
                 break;
             }
         }
@@ -598,7 +606,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         console.assert(instance.item === this);
         console.assert(instance.children[instance.currentChildIndex] === childInstance);
         instance.currentChildIndex += 1;
-        if (instance.currentChildIndex === instance.n) {
+        if (instance.currentChildIndex === instance.capacity) {
             instance.value = this.valueForInstance.call(instance);
             if (!Duration.has(instance.item)) {
                 instance.end = t;
