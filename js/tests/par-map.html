@@ -139,30 +139,50 @@ test("Par.map(g).dur(d); cutting off duration", t => {
         Instant(K([19, 37, 31, 19, 51])),
         Par.map(Delay).dur(41)
     ]), 17);
-    Deck({ tape }).now = 18;
+    Deck({ tape }).now = 59;
     t.equal(dump(instance),
-`* Seq-0 [17, 58[
+`* Seq-0 [17, 58[ <19,37,31,19,51>
   * Instant-1 @17 <19,37,31,19,51>
-  * Par/map-2 [17, 58[
-    * Delay-3 [17, 36[
-    * Delay-4 [17, 54[
-    * Delay-5 [17, 48[
-    * Delay-6 [17, 36[
-    * Delay-7 [17, 58[`, "dump matches");
+  * Par/map-2 [17, 58[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 58[ <51>`, "dump matches");
 });
 
-test("Par.map(g).dur(d); cutting off instantiation duration, failure at runtime", t => {
+test("Par.map(g).dur(d); cutting off instantiation duration", t => {
     const tape = Tape();
     const instance = tape.instantiate(Seq([
         Instant(K([19, 37, 31, 19, 51])),
         Par.map(Delay)
     ]), 17, 41);
-    Deck({ tape }).now = 18;
-    console.log(dump(instance));
+    Deck({ tape }).now = 59;
     t.equal(dump(instance),
-`* Seq-0 @17 (failed)
+`* Seq-0 [17, 58[ <19,37,31,19,51>
   * Instant-1 @17 <19,37,31,19,51>
-  * Par/map-2 @17 (failed)`, "dump matches");
+  * Par/map-2 [17, 58[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 58[ <51>`, "dump matches");
+});
+
+test("Par.map(g).take(n).dur(d); extending duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).take(3).dur(71)
+    ]), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <19,19,31>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 88[ <19,19,31>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 36[ <19>
+    * Delay-5 [17, 48[ <31>`, "dump matches");
 });
 
 test("Par.map(g) failure", t => {

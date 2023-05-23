@@ -360,8 +360,7 @@ export const ParMap = {
         }
 
         // Get the child elements first.
-        instance.input = xs;
-        const children = instance.input.map((x, i) => {
+        const children = xs.map((x, i) => {
             try {
                 return this.g(x, i);
             } catch {
@@ -372,6 +371,9 @@ export const ParMap = {
         try {
             const occurrence = Par.instantiateChildren.call(this, instance, children, t, dur);
             const end = endOf(instance);
+            instance.children.forEach(child => {
+                child.input = xs[children.indexOf(child.item)];
+            });
             if (isNumber(end)) {
                 if (instance.children.length === 0) {
                     instance.value = this.valueForInstance.call(instance);
@@ -385,13 +387,13 @@ export const ParMap = {
         }
     },
 
-    // Input values are distributed to the children as their input.
+    // Input values are distributed to the children as their input. Because
+    // child instances may be reordered, each instance records its input value.
     inputForChildInstance(childInstance) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        const index = instance.children.indexOf(childInstance);
-        console.assert(index >= 0);
-        return instance.input[index];
+        console.assert(Object.hasOwn(childInstance, "input"));
+        const input = childInstance.input;
+        delete childInstance.input;
+        return input;
     },
 };
 
