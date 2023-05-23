@@ -199,10 +199,14 @@ export const Par = assign(children => create().call(Par, { children: children ??
         if (!isFinite(instance.capacity)) {
             instance.capacity = children.length;
         }
-        instance.children = children.map(child => Object.assign(
-            instance.tape.instantiate(child, t, dur),
-            { parent: instance }
-        ));
+        instance.children = children.map(child => {
+            const childInstance = instance.tape.instantiate(child, t, dur);
+            if (childInstance.cutoff) {
+                instance.cutoff = true;
+                delete childInstance.cutoff;
+            }
+            return Object.assign(childInstance, { parent: instance });
+        });
         instance.finished = [];
 
         // Set t or begin/end for the par instance and create an occurrence at
@@ -525,6 +529,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             if (childInstance.cutoff) {
                 delete childInstance.cutoff;
                 instance.capacity = min(instance.children.length, Capacity.get(this));
+                instance.cutoff = true;
                 break;
             }
         }
@@ -541,7 +546,6 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         } else {
             instance.begin = begin;
             if (isNumber(t)) {
-                // Don’t set the end if it is not resolved yet.
                 instance.end = t;
             }
             if (instance.children.length === 0) {
@@ -551,6 +555,11 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         }
 
         instance.currentChildIndex = 0;
+        if (instance.children.length < instance.capacity) {
+            // Record the maximum end time of the item to use when the next
+            // children will be instantiated.
+            instance.maxEnd = end;
+        }
     },
 
     // A child with an unresolved duration becomes solved, so the following
@@ -561,18 +570,40 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         console.assert(instance.item === this);
         console.assert(instance.children.at(-1) === childInstance);
         const n = min(this.children.length, Capacity.get(this));
-        const m = instance.children.length;
-        for (let i = m; i < n && isFinite(t); ++i) {
-            const childInstance = instance.tape.instantiate(this.children[i], t);
-            if (!childInstance) {
-                for (let j = m; j < i; ++j) {
-                    instance.children[j].item.pruneInstance(instance.children[j]);
+
+        if (childInstance.cutoff) {
+            // Stop instantiation here.
+            delete childInstance.cutoff;
+            instance.capacity = min(instance.children.length, Capacity.get(this));
+            instance.cutoff = true;
+        } else {
+            // Continue instantiation starting from the next child.
+            const m = instance.children.length;
+            for (let i = m; i < n && t <= instance.maxEnd; ++i) {
+                const childInstance = instance.tape.instantiate(this.children[i], t, instance.maxEnd - t);
+                if (!childInstance) {
+                    for (let j = m; j < i; ++j) {
+                        instance.children[j].item.pruneInstance(instance.children[j]);
+                    }
+                    instance.children.length = m;
+                    failed(instance, t);
+                    return;
                 }
-                instance.children.length = m;
-                failed(instance, t);
-                return;
+                t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+
+                // If a child instance is cut off then we cannot go any further.
+                if (childInstance.cutoff) {
+                    delete childInstance.cutoff;
+                    instance.capacity = min(instance.children.length, Capacity.get(this));
+                    instance.cutoff = true;
+                    break;
+                }
             }
-            t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+        }
+
+        if (Duration.has(this)) {
+            // The end was already set.
+            return;
         }
 
         if (instance.children.length === n && isNumber(t)) {
