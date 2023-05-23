@@ -169,6 +169,14 @@ export const mod = (a, n) => a - n * Math.floor(a / n);
 // Do nothing.
 export const nop = () => {};
 
+// Partition an array into two arrays according to a predicate. The first
+// array of the pair contains all items from the source array for which the
+// predicate is true, and the second array the items for which it is false.
+export const partition = (xs, p) => xs.reduce(([t, f], x) => {
+    (p(x) ? t : f).push(x);
+    return [t, f];
+}, [[], []]);
+
 // Push an item to an array and return the item.
 export function push(xs, x) {
     xs.push(x);
