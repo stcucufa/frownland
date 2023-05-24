@@ -20,6 +20,7 @@ test("Seq.fold(g, z)", t => {
     t.undefined(fold.duration, "unresolved duration");
     t.equal(fold.failible(), false, "not failible");
     t.equal(fold.take(0).duration, 0, "down to zero with take(0)");
+    t.equal(Seq.fold(Instant).dur(23).duration, 23, "duration can be set with dur()");
 });
 
 test("Seq.fold(g, z).repeat()", t => {
@@ -202,6 +203,85 @@ test("Seq.fold(g, z).take(0)", t => {
   * Instant-1 @17 <1,2,3,4,5>
   * Seq/fold-2 @17 <0>
   * Delay-3 [17, 40[ <0>`, "dump matches");
+});
+
+test("Seq.fold(g, z).dur(d), extending duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K([23, 19, 31])),
+        Seq.fold(x => Seq([Delay(x), Instant(y => x + y)]), 0).dur(83)
+    ]), 17);
+    Deck({ tape }).now = 101;
+    t.equal(dump(seq),
+`* Seq-0 [17, 100[ <73>
+  * Instant-1 @17 <23,19,31>
+  * Seq/fold-2 [17, 100[ <73>
+    * Seq-3 [17, 40[ <23>
+      * Delay-4 [17, 40[ <0>
+      * Instant-5 @40 <23>
+    * Seq-6 [40, 59[ <42>
+      * Delay-7 [40, 59[ <23>
+      * Instant-8 @59 <42>
+    * Seq-9 [59, 90[ <73>
+      * Delay-10 [59, 90[ <42>
+      * Instant-11 @90 <73>`, "dump matches");
+});
+
+test("Seq.fold(g, z).dur(d), cutting off duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K([23, 19, 31])),
+        Seq.fold(x => Seq([Delay(x), Instant(y => x + y)]), 0).dur(43)
+    ]), 17);
+    Deck({ tape }).now = 61;
+    t.equal(dump(seq),
+`* Seq-0 [17, 60[ <42>
+  * Instant-1 @17 <23,19,31>
+  * Seq/fold-2 [17, 60[ <42>
+    * Seq-3 [17, 40[ <23>
+      * Delay-4 [17, 40[ <0>
+      * Instant-5 @40 <23>
+    * Seq-6 [40, 59[ <42>
+      * Delay-7 [40, 59[ <23>
+      * Instant-8 @59 <42>
+    * Seq-9 [59, 60[ <42>
+      * Delay-10 [59, 60[ <42>`, "dump matches");
+});
+
+test("Seq.fold(g, z).dur(d), cutting off parent (i.e. instantiation) duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K([23, 19, 31])),
+        Seq.fold(x => Seq([Delay(x), Instant(y => x + y)]), 0)
+    ]).dur(43), 17);
+    Deck({ tape }).now = 61;
+    t.equal(dump(seq),
+`* Seq-0 [17, 60[ <42>
+  * Instant-1 @17 <23,19,31>
+  * Seq/fold-2 [17, 60[ <42>
+    * Seq-3 [17, 40[ <23>
+      * Delay-4 [17, 40[ <0>
+      * Instant-5 @40 <23>
+    * Seq-6 [40, 59[ <42>
+      * Delay-7 [40, 59[ <23>
+      * Instant-8 @59 <42>
+    * Seq-9 [59, 60[ <42>
+      * Delay-10 [59, 60[ <42>`, "dump matches");
+});
+
+test("Seq.fold(g, z).dur(0), cutting off duration (???)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K([23, 19, 31])),
+        Seq.fold(x => Seq([Delay(x), Instant(y => x + y)]), 0).dur(0)
+    ]), 17);
+    Deck({ tape }).now = 61;
+    t.equal(dump(seq),
+`* Seq-0 @17 <0>
+  * Instant-1 @17 <23,19,31>
+  * Seq/fold-2 @17 <0>
+    * Seq-3 @17 <0>
+      * Delay-4 @17 <0>`, "dump matches");
 });
 
 test("Cancel Seq.fold", t => {

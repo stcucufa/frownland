@@ -810,16 +810,15 @@ const SeqFold = {
     tag: "Seq/fold",
     show,
     take,
+    dur,
     repeat,
 
-    // Return the last child value, but in the case of no inputs, return the
-    // initial accumulator value.
-    valueForInstance() {
-        return this.children?.at(-1)?.value ?? this.item.z;
-    },
-
-    // Duration is unresolved, unless it is modified by take(0).
+    // Duration is unresolved, unless it is specified by dur() or modified by
+    // take(0).
     get duration() {
+        if (Duration.has(this)) {
+            return Duration.get(this);
+        }
         if (Capacity.get(this) === 0) {
             return 0;
         }
@@ -828,34 +827,40 @@ const SeqFold = {
     // Cannot fail at instantiation time. 
     failible: K(false),
 
+    // Return the last child value, but in the case of no inputs, return the
+    // initial accumulator value.
+    valueForInstance() {
+        return this.children?.at(-1)?.value ?? this.item.z;
+    },
+
     // Schedule instantiation of the contents.
-    instantiate(instance, t) {
+    instantiate(instance, t, dur) {
         if (Capacity.get(this) === 0) {
             return Object.assign(instance, { t, forward });
         }
 
         instance.begin = t;
         return extend(instance, { t, forward(t) {
-            if (instance.item.instantiateChildren(
-                instance, instance.parent?.item.inputForChildInstance(instance), t
-            ) === Fail) {
-                failed(instance, t);
-            }
+            instance.item.instantiateChildren(
+                instance, instance.parent?.item.inputForChildInstance(instance), t, dur
+            );
         } });
     },
 
     // Actually instantiate the children from the input.
-    instantiateChildren(instance, xs, t) {
+    instantiateChildren(instance, xs, t, dur) {
         console.assert(t === instance.begin);
         if (!Array.isArray(xs)) {
-            return Fail;
+            return failed(instance, t);
         }
+
+        const end = t + min(dur, Duration.get(this));
 
         // Check that we have the right number of input values.
         const n = Capacity.get(this);
         if (isFinite(n)) {
             if (xs.length < n) {
-                return Fail;
+                return failed(instance, t);
             }
             instance.input = xs.slice(0, n);
         } else {
@@ -863,15 +868,28 @@ const SeqFold = {
         }
 
         instance.children = [];
-        for (let i = 0; i < instance.input.length && isFinite(t); ++i) {
-            const childInstance = instance.tape.instantiate(this.g(xs[i]), t);
+        instance.capacity = instance.input.length;
+        for (let i = 0; i < instance.capacity && t <= end; ++i) {
+            const childInstance = instance.tape.instantiate(this.g(xs[i]), t, end - t);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
                     childInstance.item.pruneInstance(childInstance, t);
                 }
-                throw Fail;
+                return failed(instance, t);
             }
             t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+
+            // If a child instance is cut off then we cannot go any further
+            if (childInstance.cutoff) {
+                delete childInstance.cutoff;
+                instance.cutoff = true;
+                instance.capacity = min(instance.children.length, n);
+                break;
+            }
+        }
+
+        if (Duration.has(this)) {
+            t = end;
         }
 
         if (instance.begin === t) {
@@ -882,9 +900,12 @@ const SeqFold = {
                 instance.parent?.item.childInstanceDidEnd(instance, t);
             }
         } else {
-            console.assert(instance.children.length > 0);
             if (isNumber(t)) {
                 instance.end = t;
+            }
+            if (instance.children.length === 0) {
+                console.assert(isNumber(t));
+                instance.parent?.item.childInstanceDidEnd(instance, t);
             }
         }
 
@@ -892,6 +913,9 @@ const SeqFold = {
             instance.parent?.item.childInstanceEndWasResolved(instance, t);
         }
         instance.currentChildIndex = 0;
+        if (instance.children.length < instance.input.length) {
+            instance.maxEnd = end;
+        }
     },
 
     // Feed the input of the preceding child to the current child, or that of
@@ -905,22 +929,7 @@ const SeqFold = {
             instance.children[instance.currentChildIndex - 1].value;
     },
 
-    // Move to the next child when a child finishes by keeping track of the
-    // index of the current child in the list of children. Done if the last
-    // child of the list ended.
-    childInstanceDidEnd(childInstance, t) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        console.assert(instance.children[instance.currentChildIndex] === childInstance);
-        instance.currentChildIndex += 1;
-        if (instance.currentChildIndex === min(instance.input.length, Capacity.get(this))) {
-            instance.value = this.valueForInstance.call(instance);
-            instance.end = t;
-            instance.parent?.item.childInstanceDidEnd(instance, t);
-            delete instance.currentChildIndex;
-        }
-    },
-
+    childInstanceDidEnd: Seq.childInstanceDidEnd,
     childInstanceDidFail: Seq.childInstanceDidFail,
     cancelInstance: Seq.cancelInstance,
     pruneInstance: Seq.pruneInstance,
