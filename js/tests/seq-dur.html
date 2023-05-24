@@ -159,6 +159,22 @@ test("Cutoff child; unresolved duration", t => {
     * Delay-5 [17, 48[ <41>`, "dump matches");
 });
 
+test("Cutoff child; after child with unresolved duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(
+        Seq([Instant(K([23, 19, 41])), Par.map(Delay), Delay(31), (K("ko"))]).dur(51), 17
+    );
+    Deck({ tape }).now = 69;
+    t.equal(dump(seq),
+`* Seq-0 [17, 68[ <23,19,41>
+  * Instant-1 @17 <23,19,41>
+  * Par/map-2 [17, 58[ <23,19,41>
+    * Delay-3 [17, 40[ <23>
+    * Delay-4 [17, 36[ <19>
+    * Delay-5 [17, 58[ <41>
+  * Delay-6 [58, 68[ <23,19,41>`, "dump matches");
+});
+
 test("Extending duration; child with unresolved duration", t => {
     const tape = Tape();
     const seq = tape.instantiate(

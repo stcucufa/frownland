@@ -686,6 +686,122 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     },
 });
 
+// Repeat is a special kind of Seq that keeps instantiating its child when it
+// finishes and never ends (unless capped by take()).
+const Repeat = assign(child => extend(Repeat, { child }), {
+    tag: "Seq/repeat",
+    show,
+    init,
+    take,
+    dur,
+
+    // Duration is indefinite, unless it is modified by take in which case it
+    // is a product of the number of iterations by the duration of the item
+    // being repeated.
+    get duration() {
+        if (Duration.has(this)) {
+            return Duration.get(this);
+        }
+        const repeats = Capacity.get(this);
+        const duration = repeats === 0 ? 0 : repeats > 0 ? this.child.duration * repeats : Infinity;
+        if (!isNaN(duration)) {
+            // Limited repetition of an unresolved duration is unresolved,
+            // so only return resolved durations.
+            return duration;
+        }
+    },
+
+    // Fails if the inner item fails, or if it has zero duration and repeats
+    // indefinitely.
+    failible() {
+        if (this.child.failible()) {
+            return true;
+        }
+        const n = Capacity.get(this) ?? Infinity;
+        return this.child.duration === 0 && n === Infinity;
+    },
+
+    // Instantiate the first iteration of the repeat, or immediately return a
+    // single occurrence if there are no iterations.
+    instantiate(instance, t, dur) {
+        if (this.failible()) {
+            throw Fail;
+        }
+
+        if (Capacity.get(this) === 0) {
+            return Object.assign(instance, { t, forward });
+        }
+
+        instance.maxEnd = t + min(dur, Duration.get(this));
+        instance.capacity = Capacity.get(this) ?? Infinity;
+        if (instance.maxEnd === t) {
+            instance.t = t;
+        } else {
+            instance.begin = t;
+            if (Duration.has(this)) {
+                instance.end = instance.maxEnd;
+            }
+        }
+        instance.children = [
+            Object.assign(instance.tape.instantiate(this.child, t, dur), { parent: instance })
+        ];
+    },
+
+    // Because repeat children are instantiated one at a time, the child
+    // instance that needs input is always the last one, and its input the
+    // output of the instance preceding, or the the input of the parent in the
+    // case of the first child instance.
+    inputForChildInstance(childInstance) {
+        const instance = childInstance.parent;
+        console.assert(instance.item === this);
+        const index = instance.children.length - 1;
+        console.assert(childInstance === instance.children[index]);
+        return index === 0 ?
+            instance.parent?.item.inputForChildInstance(instance) :
+            instance.children[index - 1].value;
+    },
+
+    // When an instance ends, immediately instantiate its contents again,
+    // unless the total number of iterations has been reached. If the end of
+    // the duration is reached, the instance may fail if it did not reach the
+    // required number of iterations as specified by take().
+    childInstanceDidEnd(childInstance, t) {
+        const instance = childInstance.parent;
+        console.assert(instance.item === this);
+        if (childInstance.cutoff) {
+            delete childInstance.cutoff;
+            if (isFinite(instance.capacity)) {
+                return failed(instance, t);
+            }
+            instance.cutoff = true;
+            return ended(instance, t, childInstance.value);
+        }
+
+        if (instance.children.length > RepeatMax) {
+            // This is just for debug purposes and should be removed eventually.
+            throw Error("Too many repeats");
+        }
+        if (instance.children.length === instance.capacity) {
+            ended(instance, t, childInstance.value);
+        } else {
+            instance.children.push(Object.assign(
+                instance.tape.instantiate(this.child, t, instance.maxEnd - t), { parent: instance }
+            ));
+        }
+    },
+
+    // Fail if the child fails.
+    childInstanceDidFail(childInstance, t) {
+        const instance = childInstance.parent;
+        console.assert(instance.item === this);
+        console.assert(childInstance === instance.children.at(-1));
+        failed(instance, t);
+    },
+
+    valueForInstance: I,
+    childInstanceEndWasResolved: nop,
+});
+
 // Seq/fold is similar to Seq but its children are produced by mapping its
 // input through the g function, and the initial value of the fold is given by
 // z. The initial instantiation is an interval with an unresolved end time and
@@ -828,97 +944,6 @@ export const SeqMap = extend(SeqFold, {
     },
 });
 
-// Repeat is a special kind of Seq that keeps instantiating its child when it
-// finishes and never ends (unless capped by take()).
-const Repeat = assign(child => extend(Repeat, { child }), {
-    tag: "Seq/repeat",
-    show,
-    init,
-    take,
-
-    // Duration is indefinite, unless it is modified by take in which case it
-    // is a product of the number of iterations by the duration of the item
-    // being repeated.
-    get duration() {
-        const repeats = Capacity.get(this);
-        const duration = repeats === 0 ? 0 : repeats > 0 ? this.child.duration * repeats : Infinity;
-        if (!isNaN(duration)) {
-            // Limited repetition of an unresolved duration is unresolved,
-            // so only return resolved durations.
-            return duration;
-        }
-    },
-
-    // Fails if the inner item fails, or if it has zero duration and repeats
-    // indefinitely.
-    failible() {
-        if (this.child.failible()) {
-            return true;
-        }
-        const n = Capacity.get(this) ?? Infinity;
-        return this.child.duration === 0 && n === Infinity;
-    },
-
-    instantiate(instance, t) {
-        if (this.failible()) {
-            throw Fail;
-        }
-
-        if (Capacity.get(this) === 0) {
-            return Object.assign(instance, { t, forward });
-        }
-        if (this.duration === 0) {
-            instance.t = t;
-        } else {
-            instance.begin = t;
-        }
-        instance.children = [Object.assign(instance.tape.instantiate(this.child, t), { parent: instance })];
-    },
-
-    // Because repeat children are instantiated one at a time, the child
-    // instance that needs input is always the last one, and its input the
-    // output of the instance preceding, or the the input of the parent in the
-    // case of the first child instance.
-    inputForChildInstance(childInstance) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        const index = instance.children.length - 1;
-        console.assert(childInstance === instance.children[index]);
-        return index === 0 ?
-            instance.parent?.item.inputForChildInstance(instance) :
-            instance.children[index - 1].value;
-    },
-
-    // When an instance ends, immediately instantiate its contents again,
-    // unless the total number of iterations has been reached.
-    childInstanceDidEnd(childInstance, t) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        if (instance.children.length > RepeatMax) {
-            // This is just for debug purposes and should be removed eventually.
-            throw Error("Too many repeats");
-        }
-        if (instance.children.length === Capacity.get(this)) {
-            ended(instance, t, childInstance.value);
-        } else {
-            instance.children.push(Object.assign(
-                instance.tape.instantiate(this.child, t), { parent: instance }
-            ));
-        }
-    },
-
-    // Fail if the child fails.
-    childInstanceDidFail(childInstance, t) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        console.assert(childInstance === instance.children.at(-1));
-        failed(instance, t);
-    },
-
-    valueForInstance: I,
-    childInstanceEndWasResolved: nop,
-});
-
 // Dump an instance and its children for debugging and testing.
 export function dump(instance, indent = "* ") {
     const selfDump = `${indent}${instance.id} ${
@@ -963,8 +988,9 @@ function take(n = Infinity) {
 // Set the duration of an item with dur.
 function dur(d) {
     console.assert(!Duration.has(this));
-    console.assert(d >= 0);
-    Duration.set(this, d);
+    if (d >= 0) {
+        Duration.set(this, d);
+    }
     return this;
 }
 

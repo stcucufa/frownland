@@ -26,6 +26,10 @@ test("Par(xs).dur(d) duration", t => {
         Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).dur(29).duration, 29,
         "dur (indefinite natural durations)"
     );
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur("79s").duration, 51,
+        "dur (illegal value is not applied)"
+    );
 });
 
 test("Extending the duration", t => {

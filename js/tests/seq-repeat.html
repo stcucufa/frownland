@@ -19,6 +19,7 @@ test("Seq(xs).repeat()", t => {
     t.equal(repeat.child, seq, "repeat child");
     t.equal(repeat.duration, Infinity, "indefinite duration");
     t.equal(repeat.failible(), false, "not failible (when seq duration > 0)");
+    t.equal(repeat.dur(71).duration, 71, "duration constrained by dur");
     t.equal(Seq().repeat().failible(), true, "failible (when seq duration = 0)");
 });
 
@@ -54,6 +55,7 @@ test("Instantiation fails for zero duration", t => {
     const tape = Tape();
     t.undefined(tape.instantiate(Seq().repeat(), 17), "empty seq");
     t.undefined(tape.instantiate(Seq([Instant(), Instant()]).repeat(), 17), "zero duration seq");
+    t.undefined(tape.instantiate(Seq().repeat().dur(23), 17), "also fails with dur()");
 });
 
 test("Seq(xs).repeat().take(n)", t => {
@@ -115,6 +117,76 @@ test("Repeat with unresolved duration", t => {
     * Seq/map-13 [101, 143[
       * Delay-14 [101, 120[
       * Delay-15 [120, 143[`, "dump matches");
+});
+
+test("Repeat with dur", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K("A")),
+        Seq([Delay(7), Instant(x => x + "+")]).repeat().dur(23)
+    ]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(seq),
+`* Seq-0 [17, 40[ <A+++>
+  * Instant-1 @17 <A>
+  * Seq/repeat-2 [17, 40[ <A+++>
+    * Seq-3 [17, 24[ <A+>
+      * Delay-4 [17, 24[ <A>
+      * Instant-5 @24 <A+>
+    * Seq-6 [24, 31[ <A++>
+      * Delay-7 [24, 31[ <A+>
+      * Instant-8 @31 <A++>
+    * Seq-9 [31, 38[ <A+++>
+      * Delay-10 [31, 38[ <A++>
+      * Instant-11 @38 <A+++>
+    * Seq-12 [38, 40[ <A+++>
+      * Delay-13 [38, 40[ <A+++>`, "dump matches");
+});
+
+test("Repeat with dur and take (extend duration)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K("A")),
+        Seq([Delay(7), Instant(x => x + "+")]).repeat().take(3).dur(23)
+    ]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(seq),
+`* Seq-0 [17, 40[ <A+++>
+  * Instant-1 @17 <A>
+  * Seq/repeat-2 [17, 40[ <A+++>
+    * Seq-3 [17, 24[ <A+>
+      * Delay-4 [17, 24[ <A>
+      * Instant-5 @24 <A+>
+    * Seq-6 [24, 31[ <A++>
+      * Delay-7 [24, 31[ <A+>
+      * Instant-8 @31 <A++>
+    * Seq-9 [31, 38[ <A+++>
+      * Delay-10 [31, 38[ <A++>
+      * Instant-11 @38 <A+++>`, "dump matches");
+});
+
+test("Repeat with dur and take (not enough iterations)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K("A")),
+        Seq([Delay(7), Instant(x => x + "+")]).repeat().take(4).dur(23)
+    ]), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(seq),
+`* Seq-0 [17, 40[ (failed)
+  * Instant-1 @17 <A>
+  * Seq/repeat-2 [17, 40[ (failed)
+    * Seq-3 [17, 24[ <A+>
+      * Delay-4 [17, 24[ <A>
+      * Instant-5 @24 <A+>
+    * Seq-6 [24, 31[ <A++>
+      * Delay-7 [24, 31[ <A+>
+      * Instant-8 @31 <A++>
+    * Seq-9 [31, 38[ <A+++>
+      * Delay-10 [31, 38[ <A++>
+      * Instant-11 @38 <A+++>
+    * Seq-12 [38, 40[ <A+++>
+      * Delay-13 [38, 40[ <A+++>`, "dump matches");
 });
 
         </script>
