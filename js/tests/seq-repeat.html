@@ -18,9 +18,9 @@ test("Seq(xs).repeat()", t => {
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, seq, "repeat child");
     t.equal(repeat.duration, Infinity, "indefinite duration");
-    t.equal(repeat.failible(), false, "not failible (when seq duration > 0)");
+    t.equal(!repeat.failible, true, "not failible (when seq duration > 0)");
     t.equal(repeat.dur(71).duration, 71, "duration constrained by dur");
-    t.equal(Seq().repeat().failible(), true, "failible (when seq duration = 0)");
+    t.equal(Seq().repeat().failible, true, "failible (when seq duration = 0)");
 });
 
 test("Instantiation", t => {

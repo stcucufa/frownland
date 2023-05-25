@@ -1,4 +1,4 @@
-import { assign, create, extend, I, isNumber, K, nop, partition, push, remove } from "./util.js";
+import { assign, create, extend, I, isNumber, nop, partition, push, remove } from "./util.js";
 
 const Fail = Error("Instantiation failure");
 const RepeatMax = 17;
@@ -36,9 +36,6 @@ export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) 
     get duration() {
         return 0;
     },
-
-    // Cannot fail at instantiation time.
-    failible: K(false),
 
     // The occurrence for an instant is the same as its instance using the
     // generic forward function.
@@ -80,9 +77,6 @@ export const Delay = Object.assign(createDelay, {
     },
 
     repeat,
-
-    // Can never fail.
-    failible: K(false),
 
     // The instance for a delay is an interval, with an occurrence at the end
     // of the interval. The parent duration may cut off the delay, which is
@@ -145,12 +139,12 @@ export const Par = assign(children => create().call(Par, { children: children ??
     },
 
     // Fail if not enough children can be instantiated.
-    failible(dur) {
-        return this.failibleChildren(this.children, dur);
+    get failible() {
+        return this.failibleChildren(this.children);
     },
 
-    failibleChildren(children, dur) {
-        const failingChildCount = children.filter(child => child.failible(dur)).length;
+    failibleChildren(children) {
+        const failingChildCount = children.filter(child => child.failible).length;
         const n = Capacity.get(this);
         if (isFinite(n)) {
             return children.length - failingChildCount < n;
@@ -182,13 +176,14 @@ export const Par = assign(children => create().call(Par, { children: children ??
     },
 
     instantiateChildren(instance, children, t, dur) {
+        if (this.failibleChildren(children)) {
+            throw Fail;
+        }
+
         // itemDur is the duration potentially set by .dur(), which may be
         // lower than the available duration so we take the minimum value.
         const itemDur = Duration.get(this);
         dur = min(dur, itemDur);
-        if (this.failibleChildren(children, dur)) {
-            throw Fail;
-        }
 
         // Gather the children and instantiate them.
         if (Capacity.has(this)) {
@@ -334,8 +329,11 @@ export const Par = assign(children => create().call(Par, { children: children ??
 export const ParMap = {
     tag: "Par/map",
 
-    // Cannot fail at instantiation time.
-    failible: K(false),
+    // Cannot fail at instantiation time (unlike Par which may fail depending
+    // on its children).
+    get failible() {
+        return false;
+    },
 
     // Duration is unresolved, unless it is modified by take(0) or has a set
     // duration.
@@ -447,7 +445,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         const m = min(children.length, n);
         for (let i = 0; i < m; ++i) {
             const child = children[i];
-            if (child.failible(Infinity)) {
+            if (child.failible) {
                 return null;
             }
             const d = child.duration;
@@ -469,7 +467,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
 
     // Fail if not enough children can be instantiated or if the requested
     // duration cannot be achieved.
-    failible(dur) {
+    get failible() {
         return this.durationForChildren(this.children) === null;
     },
 
@@ -496,7 +494,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     // their own occurrences scheduled as needed), unless it is empty. Fails
     // if any child fails.
     instantiate(instance, t, dur) {
-        if (this.failible()) {
+        if (this.failible) {
             throw Fail;
         }
 
@@ -713,8 +711,8 @@ const Repeat = assign(child => extend(Repeat, { child }), {
 
     // Fails if the inner item fails, or if it has zero duration and repeats
     // indefinitely.
-    failible() {
-        if (this.child.failible()) {
+    get failible() {
+        if (this.child.failible) {
             return true;
         }
         const n = Capacity.get(this) ?? Infinity;
@@ -724,7 +722,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
     // Instantiate the first iteration of the repeat, or immediately return a
     // single occurrence if there are no iterations.
     instantiate(instance, t, dur) {
-        if (this.failible()) {
+        if (this.failible) {
             throw Fail;
         }
 
@@ -823,9 +821,6 @@ const SeqFold = {
             return 0;
         }
     },
-
-    // Cannot fail at instantiation time. 
-    failible: K(false),
 
     // Return the last child value, but in the case of no inputs, return the
     // initial accumulator value.
@@ -1092,7 +1087,7 @@ function itemsByDuration(items, n) {
     if (n === 0) {
         return [];
     }
-    const itemsWithDuration = items.filter(item => !item.failible()).map(item => [item.duration, item]);
+    const itemsWithDuration = items.filter(item => !item.failible).map(item => [item.duration, item]);
     if (isFinite(n) && n > itemsWithDuration.length) {
         return [];
     }
