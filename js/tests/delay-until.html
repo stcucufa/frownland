@@ -21,24 +21,62 @@ test("Delay.until(t)", t => {
 
 test("Instantiation (delay applies)", t => {
     const tape = Tape();
-    const delay = tape.instantiate(Delay.until(23), 17);
-    Deck({ tape }).now = 24;
-    t.equal(dump(delay), "* Delay/until-0 [17, 23[ <undefined>", "dump matches");
+    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23), Delay.until(31), Delay(19)]), 17);
+    Deck({ tape }).now = 68;
+    t.equal(dump(seq),
+`* Seq-0 [17, 67[ <ok>
+  * Instant-1 @17 <ok>
+  * Delay-2 [17, 40[ <ok>
+  * Delay/until-3 [40, 48[ <ok>
+  * Delay-4 [48, 67[ <ok>`, "dump matches");
+});
+
+test("Instantiation (delay applies but is cutoff)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(
+        Seq([Instant(K("ok")), Delay(23), Delay.until(31), Delay(19)]).dur(29), 17
+    );
+    Deck({ tape }).now = 47;
+    t.equal(dump(seq),
+`* Seq-0 [17, 46[ <ok>
+  * Instant-1 @17 <ok>
+  * Delay-2 [17, 40[ <ok>
+  * Delay/until-3 [40, 46[ <ok>`, "dump matches");
 });
 
 test("Instantiation (delay does not apply)", t => {
     const tape = Tape();
-    const delay = tape.instantiate(Delay.until(23), 31);
-    Deck({ tape }).now = 32;
-    t.equal(dump(delay), "* Delay/until-0 @31 <undefined>", "dump matches");
+    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23), Delay.until(19), Delay(19)]), 17);
+    Deck({ tape }).now = 60;
+    t.equal(dump(seq),
+`* Seq-0 [17, 59[ <ok>
+  * Instant-1 @17 <ok>
+  * Delay-2 [17, 40[ <ok>
+  * Delay/until-3 @40 <ok>
+  * Delay-4 [40, 59[ <ok>`, "dump matches");
 });
 
-test("Instantiation (inside a container; applies)", t => {
-    t.equal(dump(Tape().instantiate(Seq([Delay(23), Delay.until(31), Delay(19)]), 17)),
-`* Seq-0 [17, 67[
-  * Delay-1 [17, 40[
-  * Delay/until-2 [40, 48[
-  * Delay-3 [48, 67[`, "dump matches");
+test("Cancel delay", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par([
+        Instant(K("ok")), Delay.until(23)
+    ]).take(1), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(choice),
+`* Par-0 @17 <ok>
+  * Delay/until-1 @17 (cancelled)
+  * Instant-2 @17 <ok>`, "dump matches");
+    t.equal(tape.show(), "Tape<17>", "no occurrence on tape");
+});
+
+test("Prune delay", t => {
+    const tape = Tape();
+    t.undefined(tape.instantiate(Seq([
+        Delay.until(1),
+        Par().take(1)
+    ]), 17), "instantiation failed");
+    Deck({ tape }).now = 18;
+    t.equal(tape.occurrences, [], "no occurrence on tape");
 });
 
         </script>
