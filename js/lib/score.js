@@ -78,6 +78,7 @@ export const Delay = Object.assign(createDelay, {
 
     repeat,
 
+    // Create a new DelayUntil item.
     until(t) {
         console.assert(this === Delay);
         return t > 0 ? DelayUntil(t) : Instant();
@@ -109,6 +110,9 @@ export const Delay = Object.assign(createDelay, {
     pruneInstance: pruned,
 });
 
+// Delay until time t relative to the begin of the parent. If the delay begins
+// after the requested time, this acts just like an Instant. Not failible, and
+// *not* repeatable (since the delay can apply at most once).
 const DelayUntil = assign(t => extend(DelayUntil, { t }), {
     tag: "Delay/until",
 

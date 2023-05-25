@@ -56,6 +56,19 @@ test("Instantiation (delay does not apply)", t => {
   * Delay-4 [40, 59[ <ok>`, "dump matches");
 });
 
+test("Instantiation after an unresolved duration", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K([23])), Par.map(Delay), Delay.until(31), Delay(19)]), 17);
+    Deck({ tape }).now = 68;
+    t.equal(dump(seq),
+`* Seq-0 [17, 67[ <23>
+  * Instant-1 @17 <23>
+  * Par/map-2 [17, 40[ <23>
+    * Delay-3 [17, 40[ <23>
+  * Delay/until-4 [40, 48[ <23>
+  * Delay-5 [48, 67[ <23>`, "dump matches");
+});
+
 test("Cancel delay", t => {
     const tape = Tape();
     const choice = tape.instantiate(Par([
