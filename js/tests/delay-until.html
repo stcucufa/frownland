@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Delay.until</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Delay.until(t)", t => {
+    const delay = Delay.until(23);
+    t.equal(delay.show(), "Delay/until<23>", "show");
+    t.undefined(delay.duration, "unresolved duration");
+    t.equal(!delay.failible, true, "not failible");
+});
+
+test("Instantiation (delay applies)", t => {
+    const tape = Tape();
+    const delay = tape.instantiate(Delay.until(23), 17);
+    Deck({ tape }).now = 24;
+    t.equal(dump(delay), "* Delay/until-0 [17, 23[ <undefined>", "dump matches");
+});
+
+test("Instantiation (delay does not apply)", t => {
+    const tape = Tape();
+    const delay = tape.instantiate(Delay.until(23), 31);
+    Deck({ tape }).now = 32;
+    t.equal(dump(delay), "* Delay/until-0 @31 <undefined>", "dump matches");
+});
+
+test("Instantiation (inside a container; applies)", t => {
+    t.equal(dump(Tape().instantiate(Seq([Delay(23), Delay.until(31), Delay(19)]), 17)),
+`* Seq-0 [17, 67[
+  * Delay-1 [17, 40[
+  * Delay/until-2 [40, 48[
+  * Delay-3 [48, 67[`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

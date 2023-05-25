@@ -78,6 +78,11 @@ export const Delay = Object.assign(createDelay, {
 
     repeat,
 
+    until(t) {
+        console.assert(this === Delay);
+        return t > 0 ? DelayUntil(t) : Instant();
+    },
+
     // The instance for a delay is an interval, with an occurrence at the end
     // of the interval. The parent duration may cut off the delay, which is
     // reported by the instance.
@@ -102,6 +107,29 @@ export const Delay = Object.assign(createDelay, {
 
     cancelInstance: cancelled,
     pruneInstance: pruned,
+});
+
+const DelayUntil = assign(t => extend(DelayUntil, { t }), {
+    tag: "Delay/until",
+
+    get duration() {},
+
+    show() {
+        return `${this.tag}<${this.t}>`;
+    },
+
+    valueForInstance: I,
+
+    instantiate(instance, t, dur) {
+        const begin = instance.parent ? beginOf(instance.parent) : t;
+        const itemDur = min(this.t - begin, dur);
+        if (itemDur <= 0) {
+            return Object.assign(instance, { t, forward });
+        }
+        instance.begin = t;
+        instance.end = t + itemDur;
+        return extend(instance, { t: instance.end, forward });
+    },
 });
 
 // Par is a container for items that all begin at the same time, ending when
