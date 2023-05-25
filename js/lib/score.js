@@ -185,6 +185,29 @@ const DelayUntil = assign(t => extend(DelayUntil, { t }), {
     pruneInstance: pruned,
 });
 
+export const Await = assign(f => extend(Await, { instanceDidBegin: f }), {
+    tag: "Await",
+    show,
+
+    // The duration is unresolved.
+    get duration() {},
+
+    // Schedule f to run when the instance begins.
+    instantiate(instance, t, dur) {
+        instance.begin = t;
+        return extend(instance, { t, forward: (t, interval) => {
+            console.assert(t === instance.begin);
+            this.instanceDidBegin.call(
+                instance, instance.parent?.item.inputForChildInstance(instance), t, interval
+            ).then(value => {
+                instance.value = value;
+                instance.end = instance.tape.deck.now;
+                instance.parent?.item.childInstanceDidEnd(instance, instance.end);
+            });
+        } });
+    },
+});
+
 // Par is a container for items that all begin at the same time, ending when
 // all children have ended. The value is the list of all values of the
 // individual items in the order that children were specified. This behaviour
