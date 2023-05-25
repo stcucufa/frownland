@@ -17,7 +17,9 @@ test("Par(xs).repeat()", t => {
     const repeat = par.repeat();
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, par, "repeat child");
-    t.equal(repeat.dur, Infinity, "indefinite duration");
+    t.equal(repeat.duration, Infinity, "indefinite duration");
+    t.equal(!repeat.failible, true, "not failible (when par duration > 0)");
+    t.equal(Par().repeat().failible, true, "failible (when par duration = 0)");
 });
 
 test("Instantiation", t => {

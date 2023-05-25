@@ -16,9 +16,9 @@ test("Par.map(g)", t => {
     const par = Par.map(Delay);
     t.equal(par.show(), "Par/map", "show");
     t.typeof(par.g, "function", "g function");
-    t.undefined(par.dur, "unresolved duration");
+    t.undefined(par.duration, "unresolved duration");
     t.equal(!par.failible, true, "not failible");
-    t.equal(par.take(0).dur, 0, "down to zero with take(0)");
+    t.equal(par.take(0).duration, 0, "down to zero with take(0)");
 });
 
 test("Par.map(g).repeat()", t => {
@@ -26,9 +26,9 @@ test("Par.map(g).repeat()", t => {
     const repeat = par.repeat();
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, par, "repeat child");
-    t.equal(repeat.dur, Infinity, "indefinite duration");
-    t.equal(repeat.failible, false, "not failible");
-    t.undefined(repeat.take(3).dur, "repeat dur (limited)");
+    t.equal(repeat.duration, Infinity, "indefinite duration");
+    t.equal(!repeat.failible, true, "not failible");
+    t.undefined(repeat.take(3).duration, "repeat dur (limited)");
 });
 
 test("Instantiation", t => {
@@ -102,6 +102,89 @@ test("Par.map(g).take(0)", t => {
     t.equal(instance.value, [], "empty list");
 });
 
+test("Par.map(g).dur(d); extending duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).dur(71)
+    ]), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <19,37,31,19,51>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 88[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 68[ <51>`, "dump matches");
+});
+
+test("Par.map(g).dur(d); extending duration, no children", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([])),
+        Par.map(Delay).dur(71)
+    ]), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <>
+  * Instant-1 @17 <>
+  * Par/map-2 [17, 88[ <>`, "dump matches");
+});
+
+test("Par.map(g).dur(d); cutting off duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).dur(41)
+    ]), 17);
+    Deck({ tape }).now = 59;
+    t.equal(dump(instance),
+`* Seq-0 [17, 58[ <19,37,31,19,51>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 58[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 58[ <51>`, "dump matches");
+});
+
+test("Par.map(g).dur(d); cutting off instantiation duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay)
+    ]), 17, 41);
+    Deck({ tape }).now = 59;
+    t.equal(dump(instance),
+`* Seq-0 [17, 58[ <19,37,31,19,51>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 58[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 58[ <51>`, "dump matches");
+});
+
+test("Par.map(g).take(n).dur(d); extending duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).take(3).dur(71)
+    ]), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <19,19,31>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 88[ <19,19,31>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 36[ <19>
+    * Delay-5 [17, 48[ <31>`, "dump matches");
+});
+
 test("Par.map(g) failure", t => {
     const tape = Tape();
     const instance = tape.instantiate(Seq([
@@ -164,7 +247,7 @@ test("Par may recover from failing child", t => {
     const instance = tape.instantiate(Seq([
         Instant(K([23, 19])),
         Par([
-            Par.map(x => Delay(-x)),
+            Par().take(1),
             Par.map(Delay)
         ]).take(1)
     ]), 17)
@@ -173,9 +256,9 @@ test("Par may recover from failing child", t => {
 `* Seq-0 [17, 40[ <23,19>
   * Instant-1 @17 <23,19>
   * Par-2 [17, 40[ <23,19>
-    * Par/map-4 [17, 40[ <23,19>
-      * Delay-7 [17, 40[ <23>
-      * Delay-8 [17, 36[ <19>`, "dump matches");
+    * Par/map-3 [17, 40[ <23,19>
+      * Delay-4 [17, 40[ <23>
+      * Delay-5 [17, 36[ <19>`, "dump matches");
 });
 
 test("Cancel Par.map", t => {

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Par.dur</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Par(xs).dur(d) duration", t => {
+    t.equal(Par().dur(29).duration, 29, "empty par");
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(79).duration, 79,
+        "dur (more than natural duration)"
+    );
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(29).duration, 29,
+        "dur (less than natural duration)"
+    );
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).dur(29).duration, 29,
+        "dur (indefinite natural durations)"
+    );
+    t.equal(
+        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur("79s").duration, 51,
+        "dur (illegal value is not applied)"
+    );
+});
+
+test("Extending the duration", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(31), 17);
+    t.equal(dump(par),
+`* Par-0 [17, 48[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
+});
+
+test("Extending duration (indefinite duration)", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(Infinity), 17);
+    t.equal(dump(par),
+`* Par-0 [17, ∞[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
+});
+
+test("Extending duration (no children)", t => {
+    const tape = Tape();
+    const noChildren = tape.instantiate(Par().dur(23), 17);
+    const emptyList = tape.instantiate(Par([]).dur(23), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(noChildren), "* Par-0 [17, 40[ <>", "no children");
+    t.equal(dump(emptyList), "* Par-1 [17, 40[ <>", "empty list");
+});
+
+test("Extending duration (but constrained by parent)", t => {
+    const par = Tape().instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(51), 17, 31);
+    t.equal(dump(par),
+`* Par-0 [17, 48[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
+});
+
+test("Par.dur(d), cutting off the duration", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]).dur(21), 17);
+    Deck({ tape }).now = 47;
+    t.equal(dump(par),
+`* Par-0 [17, 38[ <A,B,C,D>
+  * Seq-1 [17, 38[ <A>
+    * Instant-2 @17 <A>
+    * Delay-3 [17, 38[ <A>
+  * Instant-4 @17 <B>
+  * Seq-5 [17, 38[ <C>
+    * Instant-6 @17 <C>
+    * Delay-7 [17, 38[ <C>
+  * Seq-8 [17, 36[ <D>
+    * Instant-9 @17 <D>
+    * Delay-10 [17, 36[ <D>`, "dump matches");
+});
+
+test("Par, cutting off the duration (parent duration)", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]), 17, 21);
+    Deck({ tape }).now = 47;
+    t.equal(dump(par),
+`* Par-0 [17, 38[ <A,B,C,D>
+  * Seq-1 [17, 38[ <A>
+    * Instant-2 @17 <A>
+    * Delay-3 [17, 38[ <A>
+  * Instant-4 @17 <B>
+  * Seq-5 [17, 38[ <C>
+    * Instant-6 @17 <C>
+    * Delay-7 [17, 38[ <C>
+  * Seq-8 [17, 36[ <D>
+    * Instant-9 @17 <D>
+    * Delay-10 [17, 36[ <D>`, "dump matches");
+});
+
+test("Cutting off duration (parent duration)", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([Instant(), Delay(31), Delay(19)]), 17, 23);
+    t.equal(dump(par),
+`* Par-0 [17, 40[
+  * Instant-1 @17
+  * Delay-2 [17, 40[
+  * Delay-3 [17, 36[`, "dump matches");
+});
+
+test("dur(0)", t => {
+    const par = Tape().instantiate(Par([Instant(), Delay(0), Par(), Delay(23)]).dur(0), 17);
+    t.equal(dump(par),
+`* Par-0 @17
+  * Instant-1 @17
+  * Instant-2 @17
+  * Par-3 @17
+  * Delay-4 @17`, "dump matches");
+});
+
+test("dur(0) with only zero-duration children", t => {
+    const par = Tape().instantiate(Par([Instant(), Delay(0), Par()]).dur(0), 17);
+    t.equal(dump(par),
+`* Par-0 @17
+  * Instant-1 @17
+  * Instant-2 @17
+  * Par-3 @17`, "dump matches");
+});
+
+test("Par.take(n).dur(d), cutting off the duration", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]).take(3).dur(20), 17);
+    Deck({ tape }).now = 38;
+    t.equal(dump(par),
+`* Par-0 [17, 37[ <B,D,A>
+  * Instant-1 @17 <B>
+  * Seq-2 [17, 36[ <D>
+    * Instant-3 @17 <D>
+    * Delay-4 [17, 36[ <D>
+  * Seq-5 [17, 37[ <A>
+    * Instant-6 @17 <A>
+    * Delay-7 [17, 37[ <A>`, "dump matches");
+});
+
+test("Par.take(n).dur(d), extending the duration", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Seq([Instant(K("A")), Delay(23)]),
+        Instant(K("B")),
+        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
+        Seq([Instant(K("D")), Delay(19)]),
+    ]).take(3).dur(31), 17);
+    Deck({ tape }).now = 49;
+    t.equal(dump(par),
+`* Par-0 [17, 48[ <B,D,A>
+  * Instant-1 @17 <B>
+  * Seq-2 [17, 36[ <D>
+    * Instant-3 @17 <D>
+    * Delay-4 [17, 36[ <D>
+  * Seq-5 [17, 40[ <A>
+    * Instant-6 @17 <A>
+    * Delay-7 [17, 40[ <A>`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

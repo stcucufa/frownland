@@ -1,8 +1,10 @@
-import { assign, create, extend, I, isNumber, nop, push, remove } from "./util.js";
+import { assign, create, extend, I, isNumber, nop, partition, push, remove } from "./util.js";
 
 const Fail = Error("Instantiation failure");
-const Capacity = new Map();
 const RepeatMax = 17;
+
+const Capacity = new Map(); // capacity for items, set by take()
+const Duration = new Map(); // duration for items, set by dur()
 
 // The score is the root of the tree of timing items.
 export const Score = Object.assign(children => create().call(Score, { children: children ?? [] }), {
@@ -12,9 +14,9 @@ export const Score = Object.assign(children => create().call(Score, { children: 
 
     // Add an item to the score.
     add(item) {
-        this.children.push(item);
+        console.assert(!Object.hasOwn(item, parent));
         item.parent = this;
-        return item;
+        return push(this.children, item);
     },
 
     inputForChildInstance: nop,
@@ -25,13 +27,13 @@ export const Score = Object.assign(children => create().call(Score, { children: 
 
 // Instant(f) evaluates f instantly. f should not have any side effect and
 // defaults to I (identity). Repeatable, cannot fail.
-export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) : Instant, {
+export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) : Object.create(Instant), {
     tag: "Instant",
     show,
     repeat,
 
     // An instant has no duration.
-    get dur() {
+    get duration() {
         return 0;
     },
 
@@ -50,104 +52,102 @@ export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) 
     pruneInstance: pruned,
 });
 
-// Create a new delay (see below) with dur as a read-only property.
-function createDelay(dur) {
+// Create a new delay (see below) with duration as a read-only property.
+// Treat any illegal value as 0, which defaults to an Instant().
+function createDelay(duration) {
     const properties = {
-        dur: {
+        duration: {
             enumerable: true,
-            value: dur
-        }
+            value: duration >= 0 ? duration : 0
+        },
     };
-    if (dur < 0) {
-        properties.failible = {
-            enumerable: true,
-            value: true
-        }
-    } else if (dur === 0) {
+    if (properties.duration.value === 0) {
         return Instant();
     }
     return Object.create(Delay, properties);
 }
 
-// Delay(dur) delays its value for `dur` amount of time, which should be greater
-// than or equal to zero (otherwise fails to instantiate); a zero duration delay
-// is the same as Instant(). Repeatable.
+// Delay(duration) delays its value for `duration` amount of time, which is
+// greater than zero. Repeatable, cannot fail.
 export const Delay = Object.assign(createDelay, {
     tag: "Delay",
 
     show() {
-        return `${this.tag}<${this.dur}>`;
+        return `${this.tag}<${this.duration}>`;
     },
 
     repeat,
 
     // The instance for a delay is an interval, with an occurrence at the end
-    // of the interval. Fails if the duration is not greater than zero.
-    instantiate(instance, t) {
-        if (this.dur <= 0) {
-            throw Fail;
+    // of the interval. The parent duration may cut off the delay, which is
+    // reported by the instance.
+    instantiate(instance, t, dur) {
+        if (dur === 0) {
+            // This is a degenerate case where the delay must fit in zero
+            // duration.
+            return Object.assign(instance, { t, cutoff: true, forward });
         }
         instance.begin = t;
-        instance.end = t + this.dur;
+        if (this.duration < dur) {
+            instance.end = t + this.duration;
+        } else {
+            instance.end = t + dur;
+            instance.cutoff = true;
+        }
         return Object.assign(instance, { t: instance.end, forward });
     },
 
+    // Delay just returns its input value after the delay has passed.
     valueForInstance: I,
+
     cancelInstance: cancelled,
     pruneInstance: pruned,
 });
 
-// Par is a container for items to all start at the same time, ending when the
+// Par is a container for items that all begin at the same time, ending when
 // all children have ended. The value is the list of all values of the
-// individual items in the order that children were specified.
-// This behaviour can be modified with take(), in which case the result values
-// are in the order in which the children finished.
+// individual items in the order that children were specified. This behaviour
+// can be modified with take(), in which case the result values are
+// in the order in which the children finished. Fails if too many children
+// fail. Repeatable (as long as the duration is non zero).
 export const Par = assign(children => create().call(Par, { children: children ?? [] }), {
     tag: "Par",
     show,
     repeat,
     take,
+    dur,
     init,
 
     // The duration of a par is the duration of the child that finishes last.
-    // A par with no children has no duration.
-    get dur() {
-        const n = Capacity.get(this);
-        if (n === 0) {
-            return 0;
+    // A par with no children has zero duration.
+    get duration() {
+        if (Duration.has(this)) {
+            return Duration.get(this);
         }
-        const children = itemsByDuration(this.children, n);
-        if (children.length === 0) {
-            return 0;
-        }
-        if (children.some(([dur]) => dur === Infinity)) {
-            return Infinity;
-        }
-        if (children.every(([dur]) => isNumber(dur))) {
-            if (isFinite(n)) {
-                // The children are sorted by duration and all durations are
-                // resolved so the last one is the longest.
-                return children.at(-1)[0];
-            }
-            let dur = 0;
-            for (let i = 0; i < children.length; ++i) {
-                const d = children[i][0];
-                if (isNaN(d)) {
-                    // If any duration is unresolved, the max is unresolved.
-                    return;
-                }
-                dur = Math.max(dur, d);
-            }
-            return dur;
-        }
+        const children = itemsByDuration(this.children, Capacity.get(this));
+        const firstDuration = children[0]?.[0];
+        const lastDuration = children.at(-1)?.[0];
+        return children.length === 0 ? 0 :
+            // If the last child has an indefinite duration then the par has
+            // an indefinite duration. Otherwise the duration may be unresolved,
+            // which depends on whether the first item has an unresolved
+            // duration or not; if the first child has a resolved duration, then
+            // the last one is the longest, otherwise the duration is
+            // unresolved.
+            lastDuration === Infinity ? Infinity :
+            isNaN(firstDuration) ? firstDuration : lastDuration;
     },
 
     // Fail if not enough children can be instantiated.
     get failible() {
-        const failingChildCount = this.children.filter(child => child.failible).length;
+        return this.failibleChildren(this.children);
+    },
+
+    failibleChildren(children) {
+        const failingChildCount = children.filter(child => child.failible).length;
         const n = Capacity.get(this);
         if (isFinite(n)) {
-            return this.children.length - failingChildCount < n;
+            return children.length - failingChildCount < n;
         } else {
             return failingChildCount > 0;
         }
@@ -170,35 +170,57 @@ export const Par = assign(children => create().call(Par, { children: children ??
 
     // A Par instance is an interval (unless all of its children have zero
     // duration), and needs no occurrence of its own (because the children have
-    // their own occurrences scheduled as needed), unless it is empty. Fails
-    // if enough children fail that the capacity of the map cannot be
-    // fulfilled.
-    instantiate(instance, t) {
-        if (this.failible) {
+    // their own occurrences scheduled as needed), unless it is empty.
+    instantiate(instance, t, dur) {
+        return this.instantiateChildren(instance, this.children, t, dur);
+    },
+
+    instantiateChildren(instance, children, t, dur) {
+        if (this.failibleChildren(children)) {
             throw Fail;
         }
 
-        instance.children = []; // children in instantiation order
-        instance.finished = []; // children in ending order
+        // itemDur is the duration potentially set by .dur(), which may be
+        // lower than the available duration so we take the minimum value.
+        const itemDur = Duration.get(this);
+        dur = min(dur, itemDur);
 
-        const n = Capacity.get(this);
-        const children = n === 0 ? [] :
-            isFinite(n) ? (xs => xs.map(([_, x]) => x))(itemsByDuration(this.children, n)) : this.children;
+        // Gather the children and instantiate them.
+        if (Capacity.has(this)) {
+            instance.capacity = Capacity.get(this);
+            children = (xs => xs.map(([_, x]) => x))(itemsByDuration(children, instance.capacity));
+        }
+        // Set the capacity to exactly how many children are expected to finish.
+        if (!isFinite(instance.capacity)) {
+            instance.capacity = children.length;
+        }
+        instance.children = children.map(child => {
+            const childInstance = instance.tape.instantiate(child, t, dur);
+            if (childInstance.cutoff) {
+                instance.cutoff = true;
+                delete childInstance.cutoff;
+            }
+            return Object.assign(childInstance, { parent: instance });
+        });
+        instance.finished = [];
 
-        const end = children.reduce((end, child) => max(end, endOf(Object.assign(
-            push(instance.children, instance.tape.instantiate(child, t)),
-            { parent: instance }
-        ))), t);
+        // Set t or begin/end for the par instance and create an occurrence at
+        // the end if there are no children.
+        const end = isNumber(itemDur) ?
+            t + dur :
+            instance.children.reduce((end, child) => max(end, endOf(child)), t);
         if (end === t) {
             instance.t = t;
             if (instance.children.length === 0) {
                 return Object.assign(instance, { forward });
             }
         } else {
-            console.assert(instance.children.length > 0);
             instance.begin = t;
             if (isNumber(end)) {
                 instance.end = end;
+            }
+            if (instance.children.length === 0) {
+                return extend(instance, { t, forward });
             }
         }
     },
@@ -218,7 +240,7 @@ export const Par = assign(children => create().call(Par, { children: children ??
         const instance = childInstance.parent;
         console.assert(instance.item === this);
         instance.finished.push(childInstance);
-        if (instance.finished.length === min(instance.children.length, Capacity.get(this))) {
+        if (instance.finished.length === instance.capacity) {
             for (const child of instance.children) {
                 if (instance.finished.indexOf(child) < 0) {
                     child.item.cancelInstance(child, t);
@@ -307,20 +329,23 @@ export const Par = assign(children => create().call(Par, { children: children ??
 export const ParMap = {
     tag: "Par/map",
 
-    // Cannot fail at instantiation time.
+    // Cannot fail at instantiation time (unlike Par which may fail depending
+    // on its children).
     get failible() {
         return false;
     },
 
-    // Duration is unresolved, unless it is modified by take(0).
-    get dur() {
+    // Duration is unresolved, unless it is modified by take(0) or has a set
+    // duration.
+    get duration() {
         if (Capacity.get(this) === 0) {
             return 0;
         }
+        return Duration.get(this);
     },
 
     // Schedule instantiation of the contents.
-    instantiate(instance, t) {
+    instantiate(instance, t, dur) {
         if (Capacity.get(this) === 0) {
             instance.finished = [];
             return Object.assign(instance, { t, forward });
@@ -328,79 +353,54 @@ export const ParMap = {
 
         instance.begin = t;
         return extend(instance, { t, forward(t) {
-            if (instance.item.instantiateChildren(
-                instance, instance.parent?.item.inputForChildInstance(instance), t
-            ) === Fail) {
-                failed(instance, t);
-            }
+            instance.item.instantiateChildren(
+                instance, instance.parent?.item.inputForChildInstance(instance), t, dur
+            );
         } });
     },
 
     // Actually instantiate the children from the input.
-    instantiateChildren(instance, xs, t) {
+    instantiateChildren(instance, xs, t, dur) {
         console.assert(t === instance.begin);
         if (!Array.isArray(xs)) {
-            return Fail;
+            return failed(instance, t);
         }
 
         // Get the child elements first.
-        instance.input = xs;
-        let children = instance.input.map((x, i) => {
+        const children = xs.map((x, i) => {
             try {
                 return this.g(x, i);
-            } catch (_) {
+            } catch {
             }
-        }).filter(x => x && typeof x.instantiate === "function");
-        const n = Capacity.get(this);
-        if (isFinite(n)) {
-            children = itemsByDuration(children, n).map(([_, item]) => item);
-            if (children.length < n) {
-                return Fail;
+        });
+
+        // Instantiate children, which may fail.
+        try {
+            const occurrence = Par.instantiateChildren.call(this, instance, children, t, dur);
+            const end = endOf(instance);
+            instance.children.forEach(child => {
+                child.input = xs[children.indexOf(child.item)];
+            });
+            if (isNumber(end)) {
+                if (instance.children.length === 0) {
+                    instance.value = this.valueForInstance.call(instance);
+                    instance.parent?.item.childInstanceDidEnd(instance, t);
+                }
+                instance.parent?.item.childInstanceEndWasResolved(instance, end);
             }
-        }
-
-        // Instantiate the generated child elements.
-        instance.children = [];
-        instance.finished = [];
-        const end = Capacity.get(this) === 0 ? t : children.reduce((end, child) => {
-            const childInstance = instance.tape.instantiate(child, t);
-            return childInstance ? Math.max(
-                end,
-                endOf(push(instance.children, Object.assign(childInstance, { parent: instance })))
-            ) : end;
-        }, t);
-
-        if (instance.children.length < children.length) {
-            return Fail;
-        }
-
-        if (end === t) {
-            delete instance.begin;
-            instance.t = t;
-            if (instance.children.length === 0) {
-                instance.value = this.valueForInstance.call(instance);
-                instance.parent?.item.childInstanceDidEnd(instance, t);
-            }
-        } else {
-            console.assert(instance.children.length > 0);
-            instance.begin = t;
-            if (isFinite(end)) {
-                instance.end = end;
-            }
-        }
-
-        if (isFinite(end)) {
-            instance.parent?.item.childInstanceEndWasResolved(instance, end);
+            return occurrence;
+        } catch {
+            failed(instance, t);
         }
     },
 
-    // Input values are distributed to the children as their input.
+    // Input values are distributed to the children as their input. Because
+    // child instances may be reordered, each instance records its input value.
     inputForChildInstance(childInstance) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        const index = instance.children.indexOf(childInstance);
-        console.assert(index >= 0);
-        return instance.input[index];
+        console.assert(Object.hasOwn(childInstance, "input"));
+        const input = childInstance.input;
+        delete childInstance.input;
+        return input;
     },
 };
 
@@ -413,46 +413,67 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     show,
     init,
     take,
+    dur,
     repeat,
 
-    // The duration of a Seq is the sum of the duration of its children.
+    // The duration of a Seq is the sum of the duration of its children, unless
+    // an explicit duration is set. A failing Seq will have a zero duration.
     // Addition of course gets a little more involved when we take into account
     // unresolved durations (such as folds and maps) and indefinite durations
     // (unbounded repetitions).
-    get dur() {
-        const n = Capacity.get(this);
-        if (n === 0 || (isFinite(n) && this.children.length < n)) {
-            return 0;
+    get duration() {
+        const duration = this.durationForChildren(this.children);
+        return duration === null ? 0 : duration;
+    },
+
+    // This helper function returns null if the item is failible, or a possibly
+    // unresolved or indefinite duration.
+    durationForChildren(children) {
+        if (Duration.has(this)) {
+            return Duration.get(this);
         }
 
-        let dur = 0;
-        const m = min(this.children.length, n);
+        const n = Capacity.get(this);
+        if (n === 0) {
+            return 0;
+        }
+        if (isFinite(n) && children.length < n) {
+            return null;
+        }
+
+        let duration = 0;
+        const m = min(children.length, n);
         for (let i = 0; i < m; ++i) {
-            const d = this.children[i].dur;
+            const child = children[i];
+            if (child.failible) {
+                return null;
+            }
+            const d = child.duration;
             if (d === Infinity) {
                 // If any duration is indefinite, the total is indefinite.
                 return Infinity;
             }
             if (isNaN(d)) {
                 // If either duration is unresolved, the sum is unresolved.
-                dur = d;
-            } else if (!isNaN(dur)) {
+                duration = d;
+            } else if (!isNaN(duration)) {
                 // Simply add two resolved durations.
-                dur += d;
+                duration += d;
             }
         }
-        return dur;
+
+        return duration;
+    },
+
+    // Fail if not enough children can be instantiated or if the requested
+    // duration cannot be achieved.
+    get failible() {
+        return this.durationForChildren(this.children) === null;
     },
 
     // The value of a Seq is the value of its last child.
     valueForInstance() {
         return this.children?.at(-1)?.value;
-    },
-
-    // Fail if not enough children can be instantiated.
-    get failible() {
-        const n = Capacity.get(this);
-        return isFinite(n) && n > this.children.length;
     },
 
     // Create a new SeqMap object with the given generator function.
@@ -468,24 +489,32 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         return extend(SeqFold, { g, z });
     },
 
-    // A Seq instance is an interval (unless all of its children have zero
-    // duration), and needs no occurrence of its own (because the children have
+    // A Seq instance is an interval, unless all of its children have zero
+    // duration, and needs no occurrence of its own (because the children have
     // their own occurrences scheduled as needed), unless it is empty. Fails
     // if any child fails.
-    // Instantiate children as long as they have a definite duration. The next
-    // children will be instantiated later when resolving the child with an
-    // unresolved, or never if the child has an indefinite duration (which is
-    // perfectly cromulent and not a failure).
-    instantiate(instance, t) {
+    instantiate(instance, t, dur) {
         if (this.failible) {
             throw Fail;
         }
 
+        // The duration of the seq is contrained by the parent duration or the
+        // item duration itself (if set). min can handle a second parameter that
+        // is undefined so this duration is always going to be defined.
+        const end = t + min(dur, Duration.get(this));
+
+        // Instantiate children as long as they have a definite duration. The
+        // following children will be instantiated later when resolving the
+        // child with an unresolved duration, or never if the child has an
+        // indefinite duration (which is perfectly cromulent and not a failure).
+        // Keep track of the number of children n of the instance since it can
+        // be shortened by take() and dur() and is needed to verify that the
+        // sequence ended.
         instance.children = [];
+        instance.capacity = min(this.children.length, Capacity.get(this));
         const begin = t;
-        const n = min(this.children.length, Capacity.get(this));
-        for (let i = 0; i < n && isFinite(t); ++i) {
-            const childInstance = instance.tape.instantiate(this.children[i], t);
+        for (let i = 0; i < instance.capacity && t <= end; ++i) {
+            const childInstance = instance.tape.instantiate(this.children[i], t, end - t);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
                     childInstance.item.pruneInstance(childInstance);
@@ -493,6 +522,18 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
                 throw Fail;
             }
             t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+
+            // If a child instance is cut off then we cannot go any further.
+            if (childInstance.cutoff) {
+                delete childInstance.cutoff;
+                instance.capacity = min(instance.children.length, Capacity.get(this));
+                instance.cutoff = true;
+                break;
+            }
+        }
+
+        if (Duration.has(this)) {
+            t = end;
         }
 
         if (begin === t) {
@@ -501,13 +542,22 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
                 return Object.assign(instance, { forward });
             }
         } else {
-            console.assert(instance.children.length > 0);
             instance.begin = begin;
             if (isNumber(t)) {
                 instance.end = t;
             }
+            if (instance.children.length === 0) {
+                console.assert(isNumber(t));
+                return extend(instance, { t, forward });
+            }
         }
+
         instance.currentChildIndex = 0;
+        if (instance.children.length < instance.capacity) {
+            // Record the maximum end time of the item to use when the next
+            // children will be instantiated.
+            instance.maxEnd = end;
+        }
     },
 
     // A child with an unresolved duration becomes solved, so the following
@@ -518,18 +568,40 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         console.assert(instance.item === this);
         console.assert(instance.children.at(-1) === childInstance);
         const n = min(this.children.length, Capacity.get(this));
-        const m = instance.children.length;
-        for (let i = m; i < n && isFinite(t); ++i) {
-            const childInstance = instance.tape.instantiate(this.children[i], t);
-            if (!childInstance) {
-                for (let j = m; j < i; ++j) {
-                    instance.children[j].item.pruneInstance(instance.children[j]);
+
+        if (childInstance.cutoff) {
+            // Stop instantiation here.
+            delete childInstance.cutoff;
+            instance.capacity = min(instance.children.length, Capacity.get(this));
+            instance.cutoff = true;
+        } else {
+            // Continue instantiation starting from the next child.
+            const m = instance.children.length;
+            for (let i = m; i < n && t <= instance.maxEnd; ++i) {
+                const childInstance = instance.tape.instantiate(this.children[i], t, instance.maxEnd - t);
+                if (!childInstance) {
+                    for (let j = m; j < i; ++j) {
+                        instance.children[j].item.pruneInstance(instance.children[j]);
+                    }
+                    instance.children.length = m;
+                    failed(instance, t);
+                    return;
                 }
-                instance.children.length = m;
-                failed(instance, t);
-                return;
+                t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+
+                // If a child instance is cut off then we cannot go any further.
+                if (childInstance.cutoff) {
+                    delete childInstance.cutoff;
+                    instance.capacity = min(instance.children.length, Capacity.get(this));
+                    instance.cutoff = true;
+                    break;
+                }
             }
-            t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+        }
+
+        if (Duration.has(this)) {
+            // The end was already set.
+            return;
         }
 
         if (instance.children.length === n && isNumber(t)) {
@@ -563,10 +635,12 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         console.assert(instance.item === this);
         console.assert(instance.children[instance.currentChildIndex] === childInstance);
         instance.currentChildIndex += 1;
-        if (instance.currentChildIndex === min(this.children.length, Capacity.get(this))) {
+        if (instance.currentChildIndex === instance.capacity) {
             instance.value = this.valueForInstance.call(instance);
-            instance.end = t;
-            instance.parent?.item.childInstanceDidEnd(instance, t);
+            if (!Duration.has(instance.item)) {
+                instance.end = t;
+            }
+            instance.parent?.item.childInstanceDidEnd(instance, instance.end);
             delete instance.currentChildIndex;
         }
     },
@@ -610,6 +684,122 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
     },
 });
 
+// Repeat is a special kind of Seq that keeps instantiating its child when it
+// finishes and never ends (unless capped by take()).
+const Repeat = assign(child => extend(Repeat, { child }), {
+    tag: "Seq/repeat",
+    show,
+    init,
+    take,
+    dur,
+
+    // Duration is indefinite, unless it is modified by take in which case it
+    // is a product of the number of iterations by the duration of the item
+    // being repeated.
+    get duration() {
+        if (Duration.has(this)) {
+            return Duration.get(this);
+        }
+        const repeats = Capacity.get(this);
+        const duration = repeats === 0 ? 0 : repeats > 0 ? this.child.duration * repeats : Infinity;
+        if (!isNaN(duration)) {
+            // Limited repetition of an unresolved duration is unresolved,
+            // so only return resolved durations.
+            return duration;
+        }
+    },
+
+    // Fails if the inner item fails, or if it has zero duration and repeats
+    // indefinitely.
+    get failible() {
+        if (this.child.failible) {
+            return true;
+        }
+        const n = Capacity.get(this) ?? Infinity;
+        return this.child.duration === 0 && n === Infinity;
+    },
+
+    // Instantiate the first iteration of the repeat, or immediately return a
+    // single occurrence if there are no iterations.
+    instantiate(instance, t, dur) {
+        if (this.failible) {
+            throw Fail;
+        }
+
+        if (Capacity.get(this) === 0) {
+            return Object.assign(instance, { t, forward });
+        }
+
+        instance.maxEnd = t + min(dur, Duration.get(this));
+        instance.capacity = Capacity.get(this) ?? Infinity;
+        if (instance.maxEnd === t) {
+            instance.t = t;
+        } else {
+            instance.begin = t;
+            if (Duration.has(this)) {
+                instance.end = instance.maxEnd;
+            }
+        }
+        instance.children = [
+            Object.assign(instance.tape.instantiate(this.child, t, dur), { parent: instance })
+        ];
+    },
+
+    // Because repeat children are instantiated one at a time, the child
+    // instance that needs input is always the last one, and its input the
+    // output of the instance preceding, or the the input of the parent in the
+    // case of the first child instance.
+    inputForChildInstance(childInstance) {
+        const instance = childInstance.parent;
+        console.assert(instance.item === this);
+        const index = instance.children.length - 1;
+        console.assert(childInstance === instance.children[index]);
+        return index === 0 ?
+            instance.parent?.item.inputForChildInstance(instance) :
+            instance.children[index - 1].value;
+    },
+
+    // When an instance ends, immediately instantiate its contents again,
+    // unless the total number of iterations has been reached. If the end of
+    // the duration is reached, the instance may fail if it did not reach the
+    // required number of iterations as specified by take().
+    childInstanceDidEnd(childInstance, t) {
+        const instance = childInstance.parent;
+        console.assert(instance.item === this);
+        if (childInstance.cutoff) {
+            delete childInstance.cutoff;
+            if (isFinite(instance.capacity)) {
+                return failed(instance, t);
+            }
+            instance.cutoff = true;
+            return ended(instance, t, childInstance.value);
+        }
+
+        if (instance.children.length > RepeatMax) {
+            // This is just for debug purposes and should be removed eventually.
+            throw Error("Too many repeats");
+        }
+        if (instance.children.length === instance.capacity) {
+            ended(instance, t, childInstance.value);
+        } else {
+            instance.children.push(Object.assign(
+                instance.tape.instantiate(this.child, t, instance.maxEnd - t), { parent: instance }
+            ));
+        }
+    },
+
+    // Fail if the child fails.
+    childInstanceDidFail(childInstance, t) {
+        const instance = childInstance.parent;
+        console.assert(instance.item === this);
+        console.assert(childInstance === instance.children.at(-1));
+        failed(instance, t);
+    },
+
+    valueForInstance: I,
+    childInstanceEndWasResolved: nop,
+});
+
 // Seq/fold is similar to Seq but its children are produced by mapping its
 // input through the g function, and the initial value of the fold is given by
 // z. The initial instantiation is an interval with an unresolved end time and
@@ -618,7 +808,19 @@ const SeqFold = {
     tag: "Seq/fold",
     show,
     take,
+    dur,
     repeat,
+
+    // Duration is unresolved, unless it is specified by dur() or modified by
+    // take(0).
+    get duration() {
+        if (Duration.has(this)) {
+            return Duration.get(this);
+        }
+        if (Capacity.get(this) === 0) {
+            return 0;
+        }
+    },
 
     // Return the last child value, but in the case of no inputs, return the
     // initial accumulator value.
@@ -626,41 +828,34 @@ const SeqFold = {
         return this.children?.at(-1)?.value ?? this.item.z;
     },
 
-    // Duration is unresolved, unless it is modified by take(0).
-    get dur() {
-        if (Capacity.get(this) === 0) {
-            return 0;
-        }
-    },
-
     // Schedule instantiation of the contents.
-    instantiate(instance, t) {
+    instantiate(instance, t, dur) {
         if (Capacity.get(this) === 0) {
             return Object.assign(instance, { t, forward });
         }
 
         instance.begin = t;
         return extend(instance, { t, forward(t) {
-            if (instance.item.instantiateChildren(
-                instance, instance.parent?.item.inputForChildInstance(instance), t
-            ) === Fail) {
-                failed(instance, t);
-            }
+            instance.item.instantiateChildren(
+                instance, instance.parent?.item.inputForChildInstance(instance), t, dur
+            );
         } });
     },
 
     // Actually instantiate the children from the input.
-    instantiateChildren(instance, xs, t) {
+    instantiateChildren(instance, xs, t, dur) {
         console.assert(t === instance.begin);
         if (!Array.isArray(xs)) {
-            return Fail;
+            return failed(instance, t);
         }
+
+        const end = t + min(dur, Duration.get(this));
 
         // Check that we have the right number of input values.
         const n = Capacity.get(this);
         if (isFinite(n)) {
             if (xs.length < n) {
-                return Fail;
+                return failed(instance, t);
             }
             instance.input = xs.slice(0, n);
         } else {
@@ -668,15 +863,28 @@ const SeqFold = {
         }
 
         instance.children = [];
-        for (let i = 0; i < instance.input.length && isFinite(t); ++i) {
-            const childInstance = instance.tape.instantiate(this.g(xs[i]), t);
+        instance.capacity = instance.input.length;
+        for (let i = 0; i < instance.capacity && t <= end; ++i) {
+            const childInstance = instance.tape.instantiate(this.g(xs[i]), t, end - t);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
                     childInstance.item.pruneInstance(childInstance, t);
                 }
-                throw Fail;
+                return failed(instance, t);
             }
             t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+
+            // If a child instance is cut off then we cannot go any further
+            if (childInstance.cutoff) {
+                delete childInstance.cutoff;
+                instance.cutoff = true;
+                instance.capacity = min(instance.children.length, n);
+                break;
+            }
+        }
+
+        if (Duration.has(this)) {
+            t = end;
         }
 
         if (instance.begin === t) {
@@ -687,9 +895,12 @@ const SeqFold = {
                 instance.parent?.item.childInstanceDidEnd(instance, t);
             }
         } else {
-            console.assert(instance.children.length > 0);
             if (isNumber(t)) {
                 instance.end = t;
+            }
+            if (instance.children.length === 0) {
+                console.assert(isNumber(t));
+                instance.parent?.item.childInstanceDidEnd(instance, t);
             }
         }
 
@@ -697,6 +908,9 @@ const SeqFold = {
             instance.parent?.item.childInstanceEndWasResolved(instance, t);
         }
         instance.currentChildIndex = 0;
+        if (instance.children.length < instance.input.length) {
+            instance.maxEnd = end;
+        }
     },
 
     // Feed the input of the preceding child to the current child, or that of
@@ -710,22 +924,7 @@ const SeqFold = {
             instance.children[instance.currentChildIndex - 1].value;
     },
 
-    // Move to the next child when a child finishes by keeping track of the
-    // index of the current child in the list of children. Done if the last
-    // child of the list ended.
-    childInstanceDidEnd(childInstance, t) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        console.assert(instance.children[instance.currentChildIndex] === childInstance);
-        instance.currentChildIndex += 1;
-        if (instance.currentChildIndex === min(instance.input.length, Capacity.get(this))) {
-            instance.value = this.valueForInstance.call(instance);
-            instance.end = t;
-            instance.parent?.item.childInstanceDidEnd(instance, t);
-            delete instance.currentChildIndex;
-        }
-    },
-
+    childInstanceDidEnd: Seq.childInstanceDidEnd,
     childInstanceDidFail: Seq.childInstanceDidFail,
     cancelInstance: Seq.cancelInstance,
     pruneInstance: Seq.pruneInstance,
@@ -747,97 +946,6 @@ export const SeqMap = extend(SeqFold, {
         console.assert(instance.item === this);
         return instance.input[instance.currentChildIndex];
     },
-});
-
-// Repeat is a special kind of Seq that keeps instantiating its child when it
-// finishes and never ends (unless capped by take()).
-const Repeat = assign(child => extend(Repeat, { child }), {
-    tag: "Seq/repeat",
-    show,
-    init,
-    take,
-
-    // Duration is indefinite, unless it is modified by take in which case it
-    // is a product of the number of iterations by the duration of the item
-    // being repeated.
-    get dur() {
-        const repeats = Capacity.get(this);
-        const dur = repeats === 0 ? 0 : repeats > 0 ? this.child.dur * repeats : Infinity;
-        if (!isNaN(dur)) {
-            // Limited repetition of an unresolved duration is unresolved,
-            // so only return resolved durations.
-            return dur;
-        }
-    },
-
-    // Fails if the inner item fails, or if it has zero duration and repeats
-    // indefinitely.
-    get failible() {
-        if (this.child.failible) {
-            return true;
-        }
-        const n = Capacity.get(this) ?? Infinity;
-        return this.child.dur === 0 && n === Infinity;
-    },
-
-    instantiate(instance, t) {
-        if (this.failible) {
-            throw Fail;
-        }
-
-        if (Capacity.get(this) === 0) {
-            return Object.assign(instance, { t, forward });
-        }
-        if (this.dur === 0) {
-            instance.t = t;
-        } else {
-            instance.begin = t;
-        }
-        instance.children = [Object.assign(instance.tape.instantiate(this.child, t), { parent: instance })];
-    },
-
-    // Because repeat children are instantiated one at a time, the child
-    // instance that needs input is always the last one, and its input the
-    // output of the instance preceding, or the the input of the parent in the
-    // case of the first child instance.
-    inputForChildInstance(childInstance) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        const index = instance.children.length - 1;
-        console.assert(childInstance === instance.children[index]);
-        return index === 0 ?
-            instance.parent?.item.inputForChildInstance(instance) :
-            instance.children[index - 1].value;
-    },
-
-    // When an instance ends, immediately instantiate its contents again,
-    // unless the total number of iterations has been reached.
-    childInstanceDidEnd(childInstance, t) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        if (instance.children.length > RepeatMax) {
-            // This is just for debug purposes and should be removed eventually.
-            throw Error("Too many repeats");
-        }
-        if (instance.children.length === Capacity.get(this)) {
-            ended(instance, t, childInstance.value);
-        } else {
-            instance.children.push(Object.assign(
-                instance.tape.instantiate(this.child, t), { parent: instance }
-            ));
-        }
-    },
-
-    // Fail if the child fails.
-    childInstanceDidFail(childInstance, t) {
-        const instance = childInstance.parent;
-        console.assert(instance.item === this);
-        console.assert(childInstance === instance.children.at(-1));
-        failed(instance, t);
-    },
-
-    valueForInstance: I,
-    childInstanceEndWasResolved: nop,
 });
 
 // Dump an instance and its children for debugging and testing.
@@ -863,6 +971,7 @@ export function dump(instance, indent = "* ") {
 // children.
 function init() {
     for (const child of this.children) {
+        console.assert(!Object.hasOwn(child, "parent"));
         child.parent = this;
     }
 }
@@ -876,7 +985,16 @@ function show() {
 function take(n = Infinity) {
     console.assert(!Capacity.has(this));
     console.assert(n >= 0);
-    Capacity.set(this, Math.max(0, n));
+    Capacity.set(this, n >= 0 ? n : 0);
+    return this;
+}
+
+// Set the duration of an item with dur.
+function dur(d) {
+    console.assert(!Duration.has(this));
+    if (d >= 0) {
+        Duration.set(this, d);
+    }
     return this;
 }
 
@@ -932,8 +1050,13 @@ function failed(instance, t) {
 // parent instance is notified.
 function ended(...args) {
     const [instance, t, value] = args;
+    const endsWithValue = args.length > 2;
     if (Object.hasOwn(instance, "begin")) {
-        if (instance.begin === t) {
+        if (endsWithValue && Duration.has(instance.item)) {
+            // Do not overwrite the end that was already set for normal
+            // termination from dur.
+            console.assert(t <= instance.end);
+        } else if (instance.begin === t) {
             delete instance.begin;
             instance.t = t;
         } else {
@@ -941,14 +1064,14 @@ function ended(...args) {
             instance.end = t;
         }
     }
-    if (args.length > 2) {
+    if (endsWithValue) {
         instance.value = value;
-        instance.parent?.item.childInstanceDidEnd(instance, t);
+        instance.parent?.item.childInstanceDidEnd(instance, endOf(instance));
     }
 }
 
 // Minimum function accepting an undefined value as its second argument, for
-// use with Capacity.get().
+// use with Capacity.get() and Duration.get().
 const min = (x, y) => isNumber(y) ? Math.min(x, y) : x;
 
 // Maximum function accepting an undefined value as its second argument, which
@@ -957,16 +1080,18 @@ const max = (x, y) => isNumber(y) ? Math.max(x, y) : x === Infinity ? x : y;
 
 // Sort a list of items by their duration, optionally capping the list at a
 // maximum of n items. Failible items (at instantiation) are filtered out first.
-// When an item has an unresolved duration, no sorting occurs and the cap is not
-// applied as the eventual order is unknown yet.
+// Items with an unresolved duration or with an effect do not count toward the
+// duration. Return a list of [duration, item] pairs sorted by duration, with
+// items with unresolved duration coming before any other.
 function itemsByDuration(items, n) {
-    const itemsWithDuration = items.filter(item => !item.failible).map(item => [item.dur, item]);
-    if (itemsWithDuration.some(([dur]) => !isNumber(dur))) {
-        return itemsWithDuration;
+    if (n === 0) {
+        return [];
     }
+    const itemsWithDuration = items.filter(item => !item.failible).map(item => [item.duration, item]);
     if (isFinite(n) && n > itemsWithDuration.length) {
         return [];
     }
-    itemsWithDuration.sort(([a], [b]) => a - b);
-    return n < itemsWithDuration.length ? itemsWithDuration.slice(0, n) : itemsWithDuration;
+    const [resolved, unresolved] = partition(itemsWithDuration, ([duration]) => duration >= 0);
+    resolved.sort(([a], [b]) => a - b);
+    return unresolved.concat(n < itemsWithDuration.length ? resolved.slice(0, n) : resolved);
 }

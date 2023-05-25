@@ -15,9 +15,10 @@ export const Tape = Object.assign(() => create().call(Tape), {
         return `Tape<${this.occurrences.map(occurrence => occurrence.t)}>`
     },
 
-    // Instantiate an item beginning at time t and commit its occurrences to
-    // this tape. Return an instance on success or nothing on failure.
-    instantiate(item, t) {
+    // Instantiate an item beginning at time t with a maximum duration dur, and
+    // commit its occurrences to this tape. Return an instance on success or
+    // nothing on failure.
+    instantiate(item, t, dur = Infinity) {
         // An instance points to this tape (so that its children can be
         // instantiated in the same tape), its item, and is given an ID for
         // debugging purposes.
@@ -25,7 +26,7 @@ export const Tape = Object.assign(() => create().call(Tape), {
         try {
             // Item-specific instantiation may return an occurrence to be added
             // to the tape.
-            const occurrence = item.instantiate(instance, t);
+            const occurrence = item.instantiate(instance, t, dur);
             if (occurrence) {
                 this.instances.set(instance, this.addOccurrence(occurrence));
             }
