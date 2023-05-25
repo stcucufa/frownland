@@ -120,6 +120,11 @@ export const Deck = assign(properties => create(properties).call(Deck), {
         return this._now + (this.request ? (t - this.lastUpdateTime) * this._speed : 0);
     },
 
+    // Send a notification that an Await instance ended.
+    awaitInstanceDidEnd(instance) {
+        notify(this, "await", { instance });
+    },
+
     // Get the current update interval and evaluate updates in that interval.
     update(updateTime) {
         for (const interval of this.intervals) {

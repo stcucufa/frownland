@@ -185,6 +185,7 @@ const DelayUntil = assign(t => extend(DelayUntil, { t }), {
     pruneInstance: pruned,
 });
 
+// Schedule an async function and await its return.
 export const Await = assign(f => extend(Await, { instanceDidBegin: f }), {
     tag: "Await",
     show,
@@ -203,6 +204,7 @@ export const Await = assign(f => extend(Await, { instanceDidBegin: f }), {
                 instance.value = value;
                 instance.end = instance.tape.deck.now;
                 instance.parent?.item.childInstanceDidEnd(instance, instance.end);
+                instance.tape.deck.awaitInstanceDidEnd(instance);
             });
         } });
     },
