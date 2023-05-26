@@ -78,6 +78,12 @@ export const Delay = Object.assign(createDelay, {
 
     repeat,
 
+    // Create a new DelayUntil item.
+    until(t) {
+        console.assert(this === Delay);
+        return t > 0 ? DelayUntil(t) : Instant();
+    },
+
     // The instance for a delay is an interval, with an occurrence at the end
     // of the interval. The parent duration may cut off the delay, which is
     // reported by the instance.
@@ -100,6 +106,42 @@ export const Delay = Object.assign(createDelay, {
     // Delay just returns its input value after the delay has passed.
     valueForInstance: I,
 
+    cancelInstance: cancelled,
+    pruneInstance: pruned,
+});
+
+// Delay until time t relative to the begin of the parent. If the delay begins
+// after the requested time, this acts just like an Instant. Not failible, and
+// *not* repeatable (since the delay can apply at most once).
+const DelayUntil = assign(t => extend(DelayUntil, { t }), {
+    tag: "Delay/until",
+
+    get duration() {},
+
+    show() {
+        return `${this.tag}<${this.t}>`;
+    },
+
+    // Instantiate an interval, unless the time for the delay has already
+    // passed, in which case this is just an instant.
+    instantiate(instance, t, dur, parent) {
+        const maxEnd = t + dur;
+        const itemEnd = (beginOf(parent) ?? t) + this.t;
+        const end = min(itemEnd, maxEnd);
+        if (itemEnd > maxEnd) {
+            // There is a delay but it is cutoff from the desired duration.
+            instance.cutoff = true;
+        }
+        if (end <= t) {
+            // The time has already passed.
+            return Object.assign(instance, { t, forward });
+        }
+        instance.begin = t;
+        instance.end = end;
+        return extend(instance, { t: end, forward });
+    },
+
+    valueForInstance: I,
     cancelInstance: cancelled,
     pruneInstance: pruned,
 });
@@ -195,12 +237,12 @@ export const Par = assign(children => create().call(Par, { children: children ??
             instance.capacity = children.length;
         }
         instance.children = children.map(child => {
-            const childInstance = instance.tape.instantiate(child, t, dur);
+            const childInstance = instance.tape.instantiate(child, t, dur, instance);
             if (childInstance.cutoff) {
                 instance.cutoff = true;
                 delete childInstance.cutoff;
             }
-            return Object.assign(childInstance, { parent: instance });
+            return childInstance;
         });
         instance.finished = [];
 
@@ -512,16 +554,16 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
         // sequence ended.
         instance.children = [];
         instance.capacity = min(this.children.length, Capacity.get(this));
-        const begin = t;
+        instance.begin = t;
         for (let i = 0; i < instance.capacity && t <= end; ++i) {
-            const childInstance = instance.tape.instantiate(this.children[i], t, end - t);
+            const childInstance = instance.tape.instantiate(this.children[i], t, end - t, instance);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
                     childInstance.item.pruneInstance(childInstance);
                 }
                 throw Fail;
             }
-            t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+            t = endOf(push(instance.children, childInstance));
 
             // If a child instance is cut off then we cannot go any further.
             if (childInstance.cutoff) {
@@ -536,13 +578,13 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             t = end;
         }
 
-        if (begin === t) {
+        if (instance.begin === t) {
+            delete instance.begin;
             instance.t = t;
             if (instance.children.length === 0) {
                 return Object.assign(instance, { forward });
             }
         } else {
-            instance.begin = begin;
             if (isNumber(t)) {
                 instance.end = t;
             }
@@ -578,7 +620,9 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             // Continue instantiation starting from the next child.
             const m = instance.children.length;
             for (let i = m; i < n && t <= instance.maxEnd; ++i) {
-                const childInstance = instance.tape.instantiate(this.children[i], t, instance.maxEnd - t);
+                const childInstance = instance.tape.instantiate(
+                    this.children[i], t, instance.maxEnd - t, instance
+                );
                 if (!childInstance) {
                     for (let j = m; j < i; ++j) {
                         instance.children[j].item.pruneInstance(instance.children[j]);
@@ -587,7 +631,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
                     failed(instance, t);
                     return;
                 }
-                t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+                t = endOf(push(instance.children, childInstance));
 
                 // If a child instance is cut off then we cannot go any further.
                 if (childInstance.cutoff) {
@@ -740,9 +784,7 @@ const Repeat = assign(child => extend(Repeat, { child }), {
                 instance.end = instance.maxEnd;
             }
         }
-        instance.children = [
-            Object.assign(instance.tape.instantiate(this.child, t, dur), { parent: instance })
-        ];
+        instance.children = [instance.tape.instantiate(this.child, t, dur, instance)];
     },
 
     // Because repeat children are instantiated one at a time, the child
@@ -782,9 +824,9 @@ const Repeat = assign(child => extend(Repeat, { child }), {
         if (instance.children.length === instance.capacity) {
             ended(instance, t, childInstance.value);
         } else {
-            instance.children.push(Object.assign(
-                instance.tape.instantiate(this.child, t, instance.maxEnd - t), { parent: instance }
-            ));
+            instance.children.push(
+                instance.tape.instantiate(this.child, t, instance.maxEnd - t, instance)
+            );
         }
     },
 
@@ -865,14 +907,14 @@ const SeqFold = {
         instance.children = [];
         instance.capacity = instance.input.length;
         for (let i = 0; i < instance.capacity && t <= end; ++i) {
-            const childInstance = instance.tape.instantiate(this.g(xs[i]), t, end - t);
+            const childInstance = instance.tape.instantiate(this.g(xs[i]), t, end - t, instance);
             if (!childInstance) {
                 for (const childInstance of instance.children) {
                     childInstance.item.pruneInstance(childInstance, t);
                 }
                 return failed(instance, t);
             }
-            t = endOf(push(instance.children, Object.assign(childInstance, { parent: instance })));
+            t = endOf(push(instance.children, childInstance));
 
             // If a child instance is cut off then we cannot go any further
             if (childInstance.cutoff) {
