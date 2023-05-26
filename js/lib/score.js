@@ -122,14 +122,18 @@ const DelayUntil = assign(t => extend(DelayUntil, { t }), {
         return `${this.tag}<${this.t}>`;
     },
 
+    // Instantiate an interval, unless the time for the delay has already
+    // passed, in which case this is just an instant.
     instantiate(instance, t, dur, parent) {
         const maxEnd = t + dur;
         const itemEnd = (beginOf(parent) ?? t) + this.t;
         const end = min(itemEnd, maxEnd);
         if (itemEnd > maxEnd) {
+            // There is a delay but it is cutoff from the desired duration.
             instance.cutoff = true;
         }
         if (end <= t) {
+            // The time has already passed.
             return Object.assign(instance, { t, forward });
         }
         instance.begin = t;

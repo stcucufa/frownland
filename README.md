@@ -125,9 +125,9 @@ are pruned.
     finished, then the element fails, otherwise only the first _n_ child elements that have finished are
     returned.
 * `Delay.until(t)` is a dynamic variant of `Delay`. Instead of waiting for a set duration, this waits for
-the time `t` from the beginning of the parent container; _i.e._, if the parent `Seq` or `Par` began at time
-`t0`, then `Delay.until(t)` is the same as `Delay(t - t0)`. If this value is negative, then the Delay has
-no effect.
+the time `t` from the beginning of the parent container (usually a `Seq`, since it behaves like a regular
+delay inside a `Par`). If the delay begins _after_ the time _t_, then it has no effect. This is *not*
+repeatable since the delay can occur at most once.
 * `Par.map(g)` and `Seq.map(g)` map the function _g_ to an input list in parallel or in sequence.
 * `Seq.fold(g, z)` folds over an input list with the function _g_ and an initial value _z_ in sequence.
 
