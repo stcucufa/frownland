@@ -224,6 +224,11 @@ occurrences and play them back at different speeds.
 * A `Score` is a kind of `Par` element to which new elements can be added with a time offset. It never
 finishes, so that new elements can be added at any time. This also means that a `Score` can be nested
 in another `Score`, which will be explored in the future.
+    * Items are added to the score with `Score.add(item)`; the begin time of the item is the time at
+    which it was added.
+    * When an item ends, the tape to which the score was instantiated sends an `end` notification with
+    the value of the instance of the item that ended.
+    * When an item fails, the tape to which the score was instantiated sends a `fail` notification.
 * A `Tape` is used to `instantiate` elements from a score; because of repetition, the same element may have more than one occurrences at different times. An instance can be an instant at a given time, or an interval
 with a begin and end time.
 * A `Deck` is used to record and play a tape. It is where the conversion between physical and logical time

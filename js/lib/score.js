@@ -1,4 +1,5 @@
 import { assign, create, extend, I, isNumber, nop, partition, push, remove } from "./util.js";
+import { notify } from "./events.js";
 import { Tape } from "./tape.js";
 
 const Fail = Error("Instantiation failure");
@@ -40,10 +41,27 @@ export const Score = Object.assign(properties => create(properties).call(Score),
         return item;
     },
 
+    // Send a notification with the value of the child instance when it ends.
+    childInstanceDidEnd(childInstance) {
+        console.assert(childInstance.parent === this.instance);
+        notify(this.tape, "end", {
+            t: endOf(childItem),
+            item: childInstance.item,
+            value: childInstance.value,
+        });
+    },
+
+    // Send a notification for a child that fails.
+    childInstanceDidFail(childInstance) {
+        console.assert(childInstance.parent === this.instance);
+        notify(this.tape, "fail", {
+            t: endOf(childItem),
+            item: childInstance.item
+        });
+    },
+
     inputForChildInstance: nop,
-    childInstanceDidEnd: nop,
     childInstanceEndWasResolved: nop,
-    childInstanceDidFail: nop,
 });
 
 // Instant(f) evaluates f instantly. f should not have any side effect and
