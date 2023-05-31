@@ -7,26 +7,31 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { Score, Instant, Delay, Seq, Par } from "../lib/score.js";
+import { Deck } from "../lib/deck.js";
+import { Tape } from "../lib/tape.js";
+import { Score, Instant, Delay, dump } from "../lib/score.js";
 
 test("Score()", t => {
     const score = Score();
     t.equal(score.show(), "Score/0", "show");
     t.equal(score.children, [], "no children");
+    t.equal(score.tape.show(), "Tape<>", "default tape");
+    t.equal(dump(score.instance), "* Score-0 [0, ∞[", "dump matches");
 });
 
-test("Score(xs)", t => {
-    const delay = Delay(23);
-    const instant = Instant();
-    const score = Score([delay, instant]);
-    t.equal(score.show(), "Score/2", "show");
-    t.equal(score.children, [delay, instant], "children");
-    t.equal(delay.parent, score, "parent (1)");
-    t.equal(instant.parent, score, "parent (2)");
+test("Score({ tape })", t => {
+    const tape = Tape();
+    const score = Score({ tape });
+    t.equal(score.show(), "Score/0", "show");
+    t.equal(score.children, [], "no children");
+    t.equal(score.tape, tape, "tape");
+    t.equal(dump(score.instance), "* Score-0 [0, ∞[", "dump matches");
 });
 
 test("Score.add(child)", t => {
-    const score = Score();
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
     const delay = score.add(Delay(23));
     const instant = score.add(Instant());
     t.equal(instant.show(), "Instant", "show added child");
@@ -34,6 +39,10 @@ test("Score.add(child)", t => {
     t.equal(score.children, [delay, instant], "children after add");
     t.equal(delay.parent, score, "parent (1)");
     t.equal(instant.parent, score, "parent (2)");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Delay-1 [0, 23[
+  * Instant-2 @0`, "dump matches");
 });
 
         </script>

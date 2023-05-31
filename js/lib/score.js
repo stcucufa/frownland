@@ -1,4 +1,5 @@
 import { assign, create, extend, I, isNumber, nop, partition, push, remove } from "./util.js";
+import { Tape } from "./tape.js";
 
 const Fail = Error("Instantiation failure");
 const RepeatMax = 17;
@@ -7,16 +8,38 @@ const Capacity = new Map(); // capacity for items, set by take()
 const Duration = new Map(); // duration for items, set by dur()
 
 // The score is the root of the tree of timing items.
-export const Score = Object.assign(children => create().call(Score, { children: children ?? [] }), {
+export const Score = Object.assign(properties => create(properties).call(Score), {
     tag: "Score",
     show,
-    init,
 
-    // Add an item to the score.
+    // Set up children and tape.
+    init() {
+        this.children = [];
+        this.tape ??= Tape();
+        this.instance = this.tape.instantiate(this, 0, Infinity);
+    },
+
+    // Instantiate the score to fill up the entire available duration.
+    instantiate(instance, t, dur) {
+        if (!(dur > 0)) {
+            throw Fail;
+        }
+        instance.begin = t;
+        instance.end = t + dur;
+        instance.children = [];
+    },
+
+    // Add an item to the score and instantiate it. The item is returned.
     add(item) {
         console.assert(!Object.hasOwn(item, parent));
+        this.children.push(item);
         item.parent = this;
-        return push(this.children, item);
+        if (this.tape.deck) {
+            this.instance.children.push(this.tape.instantiate(
+                item, this.tape.deck.now, this.instance.end - this.instance.begin, this.instance
+            ));
+        }
+        return item;
     },
 
     inputForChildInstance: nop,

@@ -10,13 +10,17 @@ import { test } from "./test.js";
 import { timeout } from "../lib/util.js";
 import { on, notification, notifications } from "../lib/events.js";
 import { Deck } from "../lib/deck.js";
+import { Tape } from "../lib/tape.js";
 
-test("Deck({ now?, speed? })", t => {
+test("Deck({ now?, speed?, tape? })", t => {
     const deck = Deck();
     t.equal(deck.speed, 1, "default speed");
     t.equal(deck.now, 0, "start at 0");
     t.equal(deck.playing, false, "not playing by default");
-    const d = Deck({ speed: -1, now: 23, intervals: 17, foo: "bar" });
+    const tape = Tape();
+    const d = Deck({ tape, speed: -1, now: 23, intervals: 17, foo: "bar" });
+    t.equal(d.tape, tape, "tape");
+    t.equal(tape.deck, d, "tape points back to deck");
     t.equal(d.speed, -1, "custom speed");
     t.equal(d.now, 23, "now is later");
     t.equal(d.foo, "bar", "custom property");
