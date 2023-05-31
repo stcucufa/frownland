@@ -7,6 +7,7 @@
         <script type="module">
 
 import { test } from "./test.js";
+import { K } from "../lib/util.js";
 import { Deck } from "../lib/deck.js";
 import { Tape } from "../lib/tape.js";
 import { Score, Instant, Delay, dump } from "../lib/score.js";
@@ -28,10 +29,8 @@ test("Score({ tape })", t => {
     t.equal(dump(score.instance), "* Score-0 [0, ∞[", "dump matches");
 });
 
-test("Score.add(child)", t => {
-    const tape = Tape();
-    const deck = Deck({ tape });
-    const score = Score({ tape });
+test("Score.add(child), no deck", t => {
+    const score = Score();
     const delay = score.add(Delay(23));
     const instant = score.add(Instant());
     t.equal(instant.show(), "Instant", "show added child");
@@ -42,8 +41,23 @@ test("Score.add(child)", t => {
     t.equal(dump(score.instance),
 `* Score-0 [0, ∞[
   * Delay-1 [0, 23[
-  * Instant-2 @0`, "dump matches");
+  * Instant-2 @0`, "children are instantiated");
 });
+
+test("Score.add(child), with deck", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const instant = score.add(Instant(K("ok")));
+    deck.now = 17;
+    const delay = score.add(Delay(23));
+    deck.now = 41;
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Instant-1 @0 <ok>
+  * Delay-2 [17, 40[ <undefined>`, "dump matches");
+});
+
 
         </script>
     </head>

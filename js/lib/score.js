@@ -34,11 +34,9 @@ export const Score = Object.assign(properties => create(properties).call(Score),
         console.assert(!Object.hasOwn(item, parent));
         this.children.push(item);
         item.parent = this;
-        if (this.tape.deck) {
-            this.instance.children.push(this.tape.instantiate(
-                item, this.tape.deck.now, this.instance.end - this.instance.begin, this.instance
-            ));
-        }
+        this.instance.children.push(this.tape.instantiate(
+            item, this.tape.deck?.now ?? 0, this.instance.end - this.instance.begin, this.instance
+        ));
         return item;
     },
 
