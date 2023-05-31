@@ -31,12 +31,12 @@ export const Score = Object.assign(properties => create(properties).call(Score),
     },
 
     // Add an item to the score and instantiate it. The item is returned.
-    add(item) {
+    add(item, at) {
         console.assert(!Object.hasOwn(item, parent));
         this.children.push(item);
         item.parent = this;
         this.instance.children.push(this.tape.instantiate(
-            item, this.tape.deck?.now ?? 0, this.instance.end - this.instance.begin, this.instance
+            item, at ?? this.tape.deck?.now ?? 0, this.instance.end - this.instance.begin, this.instance
         ));
         return item;
     },
@@ -45,7 +45,7 @@ export const Score = Object.assign(properties => create(properties).call(Score),
     childInstanceDidEnd(childInstance) {
         console.assert(childInstance.parent === this.instance);
         notify(this.tape, "end", {
-            t: endOf(childItem),
+            t: endOf(childInstance),
             item: childInstance.item,
             value: childInstance.value,
         });
@@ -55,7 +55,7 @@ export const Score = Object.assign(properties => create(properties).call(Score),
     childInstanceDidFail(childInstance) {
         console.assert(childInstance.parent === this.instance);
         notify(this.tape, "fail", {
-            t: endOf(childItem),
+            t: endOf(childInstance),
             item: childInstance.item
         });
     },

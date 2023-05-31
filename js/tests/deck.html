@@ -109,11 +109,13 @@ test("running updates (end with success)", async t => {
     const seq = score.add(Seq([Delay(100), Instant(K("ok"))]));
     const phi = performance.now();
     deck.start();
-    const { item, value } = await notification(tape, "end");
+    const event = await notification(tape, "end");
     const end = performance.now() - phi;
-    t.atLeast(end, 100, `Item ended at φ = ${end}`);
-    t.equal(item, seq, "Seq ended");
-    t.equal(value, "ok", "with the correct value");
+    t.equal(event.t, 100, "Item ended at the expected time");
+    t.atLeast(end, event.t, ` φ = ${end} ≥ ${event.t}`);
+    t.equal(event.item, seq, "Seq ended");
+    t.equal(event.value, "ok", "with the correct value");
+    deck.stop();
 });
 
 test("running updates (failure)", async t => {
@@ -129,8 +131,25 @@ test("running updates (failure)", async t => {
     t.equal(item, seq, "Seq failed");
 });
 
-
-
+test("running updates (after the tape has started)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const phi = performance.now();
+    const seq = Seq([Delay(100), Instant(K("ok"))]);
+    deck.start();
+    tape.addOccurrence({
+        t: 50,
+        forward: async at => { score.add(seq, at); }
+    });
+    const event = await notification(tape, "end");
+    const end = performance.now() - phi;
+    t.equal(event.t, 150, "Item ended at the expected time");
+    t.atLeast(end, event.t, ` φ = ${end} ≥ ${event.t}`);
+    t.equal(event.item, seq, "Seq ended");
+    t.equal(event.value, "ok", "with the correct value");
+    deck.stop();
+});
 
         </script>
     </head>
