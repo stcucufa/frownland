@@ -91,6 +91,9 @@ export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) 
     pruneInstance: pruned,
 });
 
+// Effect is similar to Instant but has side effects.
+export const Effect = assign(f => extend(Instant, { valueForInstance: f, tag: "Effect" }));
+
 // Create a new delay (see below) with duration as a read-only property.
 // Treat any illegal value as 0, which defaults to an Instant().
 function createDelay(duration) {
@@ -202,9 +205,10 @@ export const Await = assign(f => extend(Await, { instanceDidBegin: f }), {
                 instance, instance.parent?.item.inputForChildInstance(instance), t, interval
             ).then(value => {
                 instance.value = value;
-                instance.end = instance.tape.deck.now;
-                instance.parent?.item.childInstanceDidEnd(instance, instance.end);
-                instance.tape.deck.awaitInstanceDidEnd(instance);
+                instance.tape.deck.awaitInstanceDidEnd(
+                    instance,
+                    () => { instance.parent?.item.childInstanceDidEnd(instance, instance.end); }
+                );
             });
         } });
     },

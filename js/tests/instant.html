@@ -8,7 +8,7 @@
 
 import { test } from "./test.js";
 import { K } from "../lib/util.js";
-import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Instant, Effect, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -86,6 +86,21 @@ test("Prune instant", t => {
     ]), 17), "instantiation failed");
     Deck({ tape }).now = 18;
     t.equal(tape.occurrences, [], "no occurrence on tape");
+});
+
+test("Effect(f)", t => {
+    const effect = Effect(() => {
+        console.warn("Some effect");
+        return "ok";
+    });
+    t.equal(effect.show(), "Effect", "show");
+    t.equal(effect.duration, 0, "zero duration");
+    t.equal(!effect.failible, true, "infailible (at instantiation)");
+
+    const tape = Tape();
+    const instance = tape.instantiate(effect, 17);
+    t.warns(() => { Deck({ tape }).now = 18; }, "has effect when running");
+    t.equal(dump(instance), "* Effect-0 @17 <ok>", "dump matches");
 });
 
         </script>

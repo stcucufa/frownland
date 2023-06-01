@@ -121,8 +121,15 @@ export const Deck = assign(properties => create(properties).call(Deck), {
     },
 
     // Send a notification that an Await instance ended.
-    awaitInstanceDidEnd(instance) {
-        notify(this, "await", { instance });
+    awaitInstanceDidEnd(instance, k) {
+        const end = this.instantAtTime(performance.now());
+        if (end > instance.begin) {
+            instance.end = end;
+            k();
+            notify(this, "await", { instance });
+        } else {
+            todo();
+        }
     },
 
     // Get the current update interval and evaluate updates in that interval.
