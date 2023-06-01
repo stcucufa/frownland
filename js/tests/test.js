@@ -193,7 +193,22 @@ const TestCase = assign(properties => create(properties).call(TestCase), {
             value === void 0,
             [() => `${this.expected} ${show(value)} to be undefined`, context]
         );
-    }
+    },
+
+    warns(f, context) {
+        const warn = console.warn;
+        let warnings = 0;
+        console.warn = () => { ++warnings; };
+        f();
+        console.warn = warn;
+        if (warnings > 0) {
+            this.expectations.push([context ?? "", true]);
+        } else {
+            const message = (context ? `${context}: ` : "") + "expected a warning";
+            this.expectations.push([message, false]);
+            this.failures.push(message);
+        }
+    },
 });
 
 const icon = (function() {
