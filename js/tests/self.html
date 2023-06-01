@@ -44,16 +44,14 @@ pass("t.not", t => { t.not.equal(true, false, "not equal"); });
 pass("t.not", t => { t.not.not.equal(true, true, "not not equal"); });
 fail("t.not", t => { t.not.above(23, 17, "not above"); });
 
-pass("t.throws", t => {
-    t.throws(() => {
-        throw new Error("This is expected");
-    }, "Did throw");
-});
-
+pass("t.throws()", t => { t.throws(() => { throw new Error("This is expected"); }, "Did throw"); });
 fail("t.throws()", t => { t.throws(nop, "Did not throw"); });
 
 pass("t.undefined()", t => { t.undefined(nop(), "nop() returns nothing"); });
 fail("t.undefined()", t => { t.undefined("something", "String is not undefined"); });
+
+pass("t.warns()", t => { t.warns(() => { console.warn("Does warn"); }, "Did warn"); });
+fail("t.warns()", t => { t.warns(nop, "Did not warn"); });
 
 skip("t.skip()", t => { t.skip(); });
 
