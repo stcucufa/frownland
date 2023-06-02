@@ -9,9 +9,9 @@
 import { test } from "./test.js";
 import { Deck } from "../lib/deck.js";
 import { notification } from "../lib/events.js";
-import { Await, dump } from "../lib/score.js";
+import { Score, Instant, Delay, Await, Seq, Par, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
-import { timeout } from "../lib/util.js";
+import { K, timeout } from "../lib/util.js";
 
 test("Await(f)", t => {
     const item = Await(() => timeout(100));
@@ -28,6 +28,72 @@ test("Instantiation", async t => {
     const e = await notification(deck, "await");
     t.equal(e.instance, instance, "instance did end");
     t.equal(dump(instance), "* Await-0 [17, 27[ <undefined>", "dump matches");
+});
+
+test("Running deck", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(() => timeout(10)), 17);
+    deck.start();
+    await notification(deck, "await");
+    const [_, end] = dump(score.instance).match(/Await-1 \[17, (.+)\[/);
+    const dur = parseFloat(end) - 17;
+    t.atLeast(dur, 0, `call dur > 0 (${dur})`);
+});
+
+test("Stopped deck", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(async () => {
+        await timeout(10);
+        return "ok";
+    }), 17);
+    deck.now = 18;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Await-1 [17, 18[ <ok>`, "dump matches");
+});
+
+test("Cancel", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Await(() => timeout(100))
+    ]).take(1), 17);
+    deck.now = 37;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Par-1 [17, 36[ <19>
+    * Seq-2 [17, 36[ <19>
+      * Instant-3 @17 <19>
+      * Par/map-4 [17, 36[ <19>
+        * Delay-6 [17, 36[ <19>
+    * Await-5 [17, 36[ (cancelled)`, "dump matches");
+});
+
+test("Prune", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Seq([Delay(23), Await(() => timeout(7777))])
+    ]).take(1), 17);
+    Deck({ tape }).now = 37;
+    t.equal(dump(choice),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19>
+    * Par/map-3 [17, 36[ <19>
+      * Delay-7 [17, 36[ <19>
+  * Seq-4 [17, 36[ (cancelled)
+    * Delay-5 [17, 36[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
+
 });
 
         </script>

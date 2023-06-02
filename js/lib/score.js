@@ -204,14 +204,22 @@ export const Await = assign(f => extend(Await, { instanceDidBegin: f }), {
             this.instanceDidBegin.call(
                 instance, instance.parent?.item.inputForChildInstance(instance), t, interval
             ).then(value => {
-                instance.value = value;
-                instance.tape.deck.awaitInstanceDidEnd(
-                    instance,
-                    () => { instance.parent?.item.childInstanceDidEnd(instance, instance.end); }
-                );
+                const deck = instance.tape.deck;
+                if (!instance.cancelled) {
+                    instance.value = value;
+                    instance.end = deck.instantAtTime(performance.now());
+                    console.assert(instance.end > instance.begin);
+                    instance.parent?.item.childInstanceDidEnd(instance, instance.end);
+                }
+                // Send a notification whether the instance was cancelled or
+                // not (useful for testing or integration with the outside).
+                notify(deck, "await", { instance });
             });
         } });
     },
+
+    cancelInstance: cancelled,
+    pruneInstance: pruned,
 });
 
 // Par is a container for items that all begin at the same time, ending when

@@ -1,4 +1,4 @@
-import { assign, create, isNumber, todo } from "./util.js";
+import { assign, create, isNumber } from "./util.js";
 import { notify } from "./events.js";
 
 // The deck records to and plays a tape.
@@ -118,18 +118,6 @@ export const Deck = assign(properties => create(properties).call(Deck), {
     // of the deck.
     instantAtTime(t) {
         return this._now + (this.request ? (t - this.lastUpdateTime) * this._speed : 0);
-    },
-
-    // Send a notification that an Await instance ended.
-    awaitInstanceDidEnd(instance, k) {
-        const end = this.instantAtTime(performance.now());
-        if (end > instance.begin) {
-            instance.end = end;
-            k();
-            notify(this, "await", { instance });
-        } else {
-            todo();
-        }
     },
 
     // Get the current update interval and evaluate updates in that interval.
