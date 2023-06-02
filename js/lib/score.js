@@ -209,6 +209,7 @@ export const Await = assign(f => extend(Await, { instanceDidBegin: f }), {
                     instance.value = value;
                     instance.end = deck.instantAtTime(performance.now());
                     console.assert(instance.end > instance.begin);
+                    instance.parent?.item.childInstanceEndWasResolved(instance, instance.end);
                     instance.parent?.item.childInstanceDidEnd(instance, instance.end);
                 }
                 // Send a notification whether the instance was cancelled or
@@ -731,6 +732,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             } else {
                 instance.end = t;
             }
+            this.parent.childInstanceEndWasResolved(instance, t);
         } else if (t === Infinity) {
             instance.end = t;
         }
