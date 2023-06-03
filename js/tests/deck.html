@@ -7,16 +7,21 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { timeout } from "../lib/util.js";
+import { K, timeout } from "../lib/util.js";
 import { on, notification, notifications } from "../lib/events.js";
 import { Deck } from "../lib/deck.js";
+import { Tape } from "../lib/tape.js";
+import { Delay, Instant, Par, Score, Seq } from "../lib/score.js";
 
-test("Deck({ now?, speed? })", t => {
+test("Deck({ now?, speed?, tape? })", t => {
     const deck = Deck();
     t.equal(deck.speed, 1, "default speed");
     t.equal(deck.now, 0, "start at 0");
     t.equal(deck.playing, false, "not playing by default");
-    const d = Deck({ speed: -1, now: 23, intervals: 17, foo: "bar" });
+    const tape = Tape();
+    const d = Deck({ tape, speed: -1, now: 23, intervals: 17, foo: "bar" });
+    t.equal(d.tape, tape, "tape");
+    t.equal(tape.deck, d, "tape points back to deck");
     t.equal(d.speed, -1, "custom speed");
     t.equal(d.now, 23, "now is later");
     t.equal(d.foo, "bar", "custom property");
@@ -95,6 +100,55 @@ test("now (not playing)", t => {
     t.equal(updates, [[0, 23, true], [23, 37, true]], "now (still forward)");
     deck.now = 27;
     t.equal(updates, [[0, 23, true], [23, 37, true], [37, 27, false]], "now (backward)");
+});
+
+test("running updates (end with success)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const seq = score.add(Seq([Delay(100), Instant(K("ok"))]));
+    const phi = performance.now();
+    deck.start();
+    const event = await notification(tape, "end");
+    const end = performance.now() - phi;
+    t.equal(event.t, 100, "Item ended at the expected time");
+    t.atLeast(end, event.t, ` φ = ${end} ≥ ${event.t}`);
+    t.equal(event.item, seq, "Seq ended");
+    t.equal(event.value, "ok", "with the correct value");
+    deck.stop();
+});
+
+test("running updates (failure)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const seq = score.add(Seq([Delay(100), Instant(), Par.map(Delay)]));
+    const phi = performance.now();
+    deck.start();
+    const { item } = await notification(tape, "fail");
+    const end = performance.now() - phi;
+    t.atLeast(end, 100, `Item ended at φ = ${end}`);
+    t.equal(item, seq, "Seq failed");
+});
+
+test("running updates (after the tape has started)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const phi = performance.now();
+    const seq = Seq([Delay(100), Instant(K("ok"))]);
+    deck.start();
+    tape.addOccurrence({
+        t: 50,
+        forward: async at => { score.add(seq, at); }
+    });
+    const event = await notification(tape, "end");
+    const end = performance.now() - phi;
+    t.equal(event.t, 150, "Item ended at the expected time");
+    t.atLeast(end, event.t, ` φ = ${end} ≥ ${event.t}`);
+    t.equal(event.item, seq, "Seq ended");
+    t.equal(event.value, "ok", "with the correct value");
+    deck.stop();
 });
 
         </script>

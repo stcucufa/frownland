@@ -1,4 +1,6 @@
 import { assign, create, extend, I, isNumber, nop, partition, push, remove } from "./util.js";
+import { notify } from "./events.js";
+import { Tape } from "./tape.js";
 
 const Fail = Error("Instantiation failure");
 const RepeatMax = 17;
@@ -7,22 +9,59 @@ const Capacity = new Map(); // capacity for items, set by take()
 const Duration = new Map(); // duration for items, set by dur()
 
 // The score is the root of the tree of timing items.
-export const Score = Object.assign(children => create().call(Score, { children: children ?? [] }), {
+export const Score = Object.assign(properties => create(properties).call(Score), {
     tag: "Score",
     show,
-    init,
 
-    // Add an item to the score.
-    add(item) {
+    // Set up children and tape.
+    init() {
+        this.children = [];
+        this.tape ??= Tape();
+        this.instance = this.tape.instantiate(this, 0, Infinity);
+    },
+
+    // Instantiate the score to fill up the entire available duration.
+    instantiate(instance, t, dur) {
+        if (!(dur > 0)) {
+            throw Fail;
+        }
+        instance.begin = t;
+        instance.end = t + dur;
+        instance.children = [];
+    },
+
+    // Add an item to the score and instantiate it. The item is returned.
+    add(item, at) {
         console.assert(!Object.hasOwn(item, parent));
+        this.children.push(item);
         item.parent = this;
-        return push(this.children, item);
+        this.instance.children.push(this.tape.instantiate(
+            item, at ?? this.tape.deck?.now ?? 0, this.instance.end - this.instance.begin, this.instance
+        ));
+        return item;
+    },
+
+    // Send a notification with the value of the child instance when it ends.
+    childInstanceDidEnd(childInstance) {
+        console.assert(childInstance.parent === this.instance);
+        notify(this.tape, "end", {
+            t: endOf(childInstance),
+            item: childInstance.item,
+            value: childInstance.value,
+        });
+    },
+
+    // Send a notification for a child that fails.
+    childInstanceDidFail(childInstance) {
+        console.assert(childInstance.parent === this.instance);
+        notify(this.tape, "fail", {
+            t: endOf(childInstance),
+            item: childInstance.item
+        });
     },
 
     inputForChildInstance: nop,
-    childInstanceDidEnd: nop,
     childInstanceEndWasResolved: nop,
-    childInstanceDidFail: nop,
 });
 
 // Instant(f) evaluates f instantly. f should not have any side effect and

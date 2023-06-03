@@ -8,6 +8,9 @@ export const Deck = assign(properties => create(properties).call(Deck), {
         this.speed ??= 1;
         this.lastUpdateTime = 0;
         this.intervals = [];
+        if (this.tape) {
+            this.tape.deck = this;
+        }
     },
 
     // Get the current time.
