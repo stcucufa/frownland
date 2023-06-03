@@ -241,8 +241,15 @@ that were committed to the tape are played again, using the undo/redo actions of
 
 The first goal of Frownland is to provide a framework for writing Web applications with rich user
 interfaces (using animations, gestures, and handling remote data). The current prototype for this framework
-is a work in progress and can be found in the `js` directory.
+is a work in progress.
 
 A further goal is to leverage the declarative nature of the language to build more tools for development
 with the framework (such as a test runner and debugging tools to examine timelines of applications using
 the timing model), but more importantly a more comprehensive authoring tool.
+
+## Testing
+
+To run the test suite, start a Web server in the frownland repo (_e.g._, with
+`python3 -m http.server 7890`), then visit
+[http://localhost:7890/js/tests/index.html](http://localhost:78910/js/tests/index.html).
+The test page should give an indication of the current implementation status.
