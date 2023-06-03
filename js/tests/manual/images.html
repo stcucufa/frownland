@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Images</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <style>
+
+img {
+    width: 200px;
+    height: 200px;
+    margin: 4px;
+}
+
+        </style>
+        <script type="module">
+
+import { Deck } from "../../lib/deck.js";
+import { Await, Delay, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
+import { Tape } from "../../lib/tape.js";
+import { imagePromise, K, range } from "../../lib/util.js";
+
+const tape = Tape();
+const deck = Deck({ tape });
+const score = Score({ tape });
+
+score.add(Seq([
+    Seq([...range(2, 6)].map(size => Seq([
+        Await(async () => {
+            const s = size * 100;
+            const image = await imagePromise(`https://placekitten.com/${s}/${s}`);
+            document.body.appendChild(image);
+        }),
+        Delay.until(500),
+    ]))),
+    Effect((_, t) => document.querySelector("p").textContent += ` ended at time ${t}.`)
+]));
+
+deck.start();
+
+        </script>
+    </head>
+    <body>
+        <p>Fetch images of increasing size, waiting 500ms after each one...</p>
+        <p><a href="../">Back</a></p>
+    </body>
+</html>

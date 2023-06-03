@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Await</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { Deck } from "../lib/deck.js";
+import { notification } from "../lib/events.js";
+import { Score, Instant, Delay, Await, Seq, Par, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { K, timeout } from "../lib/util.js";
+
+async function ok() {
+    await timeout(10);
+    return "ok";
+};
+
+test("Await(f)", t => {
+    const item = Await(() => timeout(100));
+    t.equal(item.show(), "Await", "show");
+    t.undefined(item.duration, "unresolved duration");
+    t.equal(!item.failible, true, "infailible (at instantiation)");
+});
+
+test("Instantiation", async t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Await(() => timeout(10)), 17);
+    const deck = Deck({ tape });
+    deck.now = 27;
+    const e = await notification(deck, "await");
+    t.equal(e.instance, instance, "instance did end");
+    t.equal(dump(instance), "* Await-0 [17, 27[ <undefined>", "dump matches");
+});
+
+test("Running deck", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(() => timeout(10)), 17);
+    deck.start();
+    await notification(deck, "await");
+    const [_, end] = dump(score.instance).match(/Await-1 \[17, (.+)\[/);
+    const dur = parseFloat(end) - 17;
+    t.atLeast(dur, 0, `call dur > 0 (${dur})`);
+});
+
+test("Stopped deck", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(ok), 17);
+    deck.now = 18;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Await-1 [17, 18[ <ok>`, "dump matches");
+});
+
+test("Await in sequence", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Seq([Await(ok), Delay(23), Await(ok)]), 17)
+    deck.now = 41;
+    // Await first timeout
+    await notification(deck, "await");
+    deck.now = 65;
+    // Await second timeout
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Seq-1 [17, 65[ <ok>
+    * Await-2 [17, 41[ <ok>
+    * Delay-3 [41, 64[ <ok>
+    * Await-4 [64, 65[ <ok>`, "dump matches");
+});
+
+test("Await in parallel", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Par([Await(ok), Delay(23), Await(ok)]), 17)
+    deck.now = 41;
+    // Await two timeouts
+    await notification(deck, "await");
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Par-1 [17, 41[ <ok,,ok>
+    * Await-2 [17, 41[ <ok>
+    * Delay-3 [17, 40[ <undefined>
+    * Await-4 [17, 41[ <ok>`, "dump matches");
+});
+
+
+test("Cancel", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Await(() => timeout(100))
+    ]).take(1), 17);
+    deck.now = 37;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Par-1 [17, 36[ <19>
+    * Seq-2 [17, 36[ <19>
+      * Instant-3 @17 <19>
+      * Par/map-4 [17, 36[ <19>
+        * Delay-6 [17, 36[ <19>
+    * Await-5 [17, 36[ (cancelled)`, "dump matches");
+});
+
+test("Prune", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Seq([Delay(23), Await(() => timeout(7777))])
+    ]).take(1), 17);
+    Deck({ tape }).now = 37;
+    t.equal(dump(choice),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19>
+    * Par/map-3 [17, 36[ <19>
+      * Delay-7 [17, 36[ <19>
+  * Seq-4 [17, 36[ (cancelled)
+    * Delay-5 [17, 36[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

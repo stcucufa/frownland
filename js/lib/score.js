@@ -91,6 +91,9 @@ export const Instant = assign(f => f ? extend(Instant, { valueForInstance: f }) 
     pruneInstance: pruned,
 });
 
+// Effect is similar to Instant but has side effects.
+export const Effect = assign(f => extend(Instant, { valueForInstance: f, tag: "Effect" }));
+
 // Create a new delay (see below) with duration as a read-only property.
 // Treat any illegal value as 0, which defaults to an Instant().
 function createDelay(duration) {
@@ -181,6 +184,41 @@ const DelayUntil = assign(t => extend(DelayUntil, { t }), {
     },
 
     valueForInstance: I,
+    cancelInstance: cancelled,
+    pruneInstance: pruned,
+});
+
+// Schedule an async function and await its return.
+export const Await = assign(f => extend(Await, { instanceDidBegin: f }), {
+    tag: "Await",
+    show,
+
+    // The duration is unresolved.
+    get duration() {},
+
+    // Schedule f to run when the instance begins.
+    instantiate(instance, t, dur) {
+        instance.begin = t;
+        return extend(instance, { t, forward: (t, interval) => {
+            console.assert(t === instance.begin);
+            this.instanceDidBegin.call(
+                instance, instance.parent?.item.inputForChildInstance(instance), t, interval
+            ).then(value => {
+                const deck = instance.tape.deck;
+                if (!instance.cancelled) {
+                    instance.value = value;
+                    instance.end = deck.instantAtTime(performance.now());
+                    console.assert(instance.end > instance.begin);
+                    instance.parent?.item.childInstanceEndWasResolved(instance, instance.end);
+                    instance.parent?.item.childInstanceDidEnd(instance, instance.end);
+                }
+                // Send a notification whether the instance was cancelled or
+                // not (useful for testing or integration with the outside).
+                notify(deck, "await", { instance });
+            });
+        } });
+    },
+
     cancelInstance: cancelled,
     pruneInstance: pruned,
 });
@@ -694,6 +732,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             } else {
                 instance.end = t;
             }
+            this.parent?.childInstanceEndWasResolved(instance, t);
         } else if (t === Infinity) {
             instance.end = t;
         }
@@ -986,7 +1025,7 @@ const SeqFold = {
         }
 
         if (isNumber(t)) {
-            instance.parent?.item.childInstanceEndWasResolved(instance, t);
+            this.parent?.childInstanceEndWasResolved(instance, t);
         }
         instance.currentChildIndex = 0;
         if (instance.children.length < instance.input.length) {
