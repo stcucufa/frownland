@@ -241,8 +241,7 @@ that were committed to the tape are played again, using the undo/redo actions of
 
 The first goal of Frownland is to provide a framework for writing Web applications with rich user
 interfaces (using animations, gestures, and handling remote data). The current prototype for this framework
-can be found in the `js` directory (currently, only the synchronous core is implemented, so it is not very
-useful yet as discussed above).
+is a work in progress and can be found in the `js` directory.
 
 A further goal is to leverage the declarative nature of the language to build more tools for development
 with the framework (such as a test runner and debugging tools to examine timelines of applications using
