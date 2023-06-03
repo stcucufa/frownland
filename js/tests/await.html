@@ -13,6 +13,11 @@ import { Score, Instant, Delay, Await, Seq, Par, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { K, timeout } from "../lib/util.js";
 
+async function ok() {
+    await timeout(10);
+    return "ok";
+};
+
 test("Await(f)", t => {
     const item = Await(() => timeout(100));
     t.equal(item.show(), "Await", "show");
@@ -46,16 +51,50 @@ test("Stopped deck", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Await(async () => {
-        await timeout(10);
-        return "ok";
-    }), 17);
+    score.add(Await(ok), 17);
     deck.now = 18;
     await notification(deck, "await");
     t.equal(dump(score.instance),
 `* Score-0 [0, ∞[
   * Await-1 [17, 18[ <ok>`, "dump matches");
 });
+
+test("Await in sequence", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Seq([Await(ok), Delay(23), Await(ok)]), 17)
+    deck.now = 41;
+    // Await first timeout
+    await notification(deck, "await");
+    deck.now = 65;
+    // Await second timeout
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Seq-1 [17, 65[ <ok>
+    * Await-2 [17, 41[ <ok>
+    * Delay-3 [41, 64[ <ok>
+    * Await-4 [64, 65[ <ok>`, "dump matches");
+});
+
+test("Await in parallel", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Par([Await(ok), Delay(23), Await(ok)]), 17)
+    deck.now = 41;
+    // Await two timeouts
+    await notification(deck, "await");
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Par-1 [17, 41[ <ok,,ok>
+    * Await-2 [17, 41[ <ok>
+    * Delay-3 [17, 40[ <undefined>
+    * Await-4 [17, 41[ <ok>`, "dump matches");
+});
+
 
 test("Cancel", async t => {
     const tape = Tape();
@@ -93,7 +132,6 @@ test("Prune", t => {
   * Seq-4 [17, 36[ (cancelled)
     * Delay-5 [17, 36[ (cancelled)`, "dump matches");
     t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
-
 });
 
         </script>

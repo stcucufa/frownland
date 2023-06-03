@@ -732,7 +732,7 @@ export const Seq = assign(children => create().call(Seq, { children: children ??
             } else {
                 instance.end = t;
             }
-            this.parent.childInstanceEndWasResolved(instance, t);
+            this.parent?.childInstanceEndWasResolved(instance, t);
         } else if (t === Infinity) {
             instance.end = t;
         }
@@ -1025,7 +1025,7 @@ const SeqFold = {
         }
 
         if (isNumber(t)) {
-            instance.parent?.item.childInstanceEndWasResolved(instance, t);
+            this.parent?.childInstanceEndWasResolved(instance, t);
         }
         instance.currentChildIndex = 0;
         if (instance.children.length < instance.input.length) {
