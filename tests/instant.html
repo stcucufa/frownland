@@ -18,6 +18,7 @@ test("Instant()", t => {
     t.equal(instant.valueForInstance(17), 17, "valueForInstance defaults to I");
     t.equal(instant.duration, 0, "zero duration");
     t.equal(!instant.failible, true, "infailible (at instantiation)");
+    t.equal(!instant.hasEffect, true, "has no effect");
 });
 
 test("Instant(f)", t => {
@@ -96,6 +97,7 @@ test("Effect(f)", t => {
     t.equal(effect.show(), "Effect", "show");
     t.equal(effect.duration, 0, "zero duration");
     t.equal(!effect.failible, true, "infailible (at instantiation)");
+    t.equal(effect.hasEffect, true, "has effect");
 
     const tape = Tape();
     const instance = tape.instantiate(effect, 17);

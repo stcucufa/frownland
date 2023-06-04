@@ -86,10 +86,10 @@ test("Instantiation; unresolved durations result in more than n children", t => 
     ]).take(3), 17);
     t.equal(dump(par),
 `* Par-0 [17, ∞[
-  * Par/map-1 [17, ∞[
-  * Delay-2 [17, 36[
-  * Delay-3 [17, 40[
-  * Delay-4 [17, 48[`, "dump matches");
+  * Delay-1 [17, 40[
+  * Delay-2 [17, 48[
+  * Par/map-3 [17, ∞[
+  * Delay-4 [17, 36[`, "dump matches");
 });
 
 test("Instantiation failure in child after nth", t => {
@@ -128,9 +128,9 @@ test("Allowing failure during instantiation", t => {
     ]).take(3), 17);
     t.equal(dump(par),
 `* Par-0 [17, 48[
-  * Delay-1 [17, 36[
-  * Delay-2 [17, 40[
-  * Delay-3 [17, 48[`, "dump matches");
+  * Delay-1 [17, 40[
+  * Delay-2 [17, 48[
+  * Delay-3 [17, 36[`, "dump matches");
 });
 
         </script>

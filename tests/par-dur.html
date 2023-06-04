@@ -156,13 +156,13 @@ test("Par.take(n).dur(d), cutting off the duration", t => {
     Deck({ tape }).now = 38;
     t.equal(dump(par),
 `* Par-0 [17, 37[ <B,D,A>
-  * Instant-1 @17 <B>
-  * Seq-2 [17, 36[ <D>
-    * Instant-3 @17 <D>
-    * Delay-4 [17, 36[ <D>
-  * Seq-5 [17, 37[ <A>
-    * Instant-6 @17 <A>
-    * Delay-7 [17, 37[ <A>`, "dump matches");
+  * Seq-1 [17, 37[ <A>
+    * Instant-2 @17 <A>
+    * Delay-3 [17, 37[ <A>
+  * Instant-4 @17 <B>
+  * Seq-5 [17, 36[ <D>
+    * Instant-6 @17 <D>
+    * Delay-7 [17, 36[ <D>`, "dump matches");
 });
 
 test("Par.take(n).dur(d), extending the duration", t => {
@@ -176,13 +176,13 @@ test("Par.take(n).dur(d), extending the duration", t => {
     Deck({ tape }).now = 49;
     t.equal(dump(par),
 `* Par-0 [17, 48[ <B,D,A>
-  * Instant-1 @17 <B>
-  * Seq-2 [17, 36[ <D>
-    * Instant-3 @17 <D>
-    * Delay-4 [17, 36[ <D>
-  * Seq-5 [17, 40[ <A>
-    * Instant-6 @17 <A>
-    * Delay-7 [17, 40[ <A>`, "dump matches");
+  * Seq-1 [17, 40[ <A>
+    * Instant-2 @17 <A>
+    * Delay-3 [17, 40[ <A>
+  * Instant-4 @17 <B>
+  * Seq-5 [17, 36[ <D>
+    * Instant-6 @17 <D>
+    * Delay-7 [17, 36[ <D>`, "dump matches");
 });
 
         </script>
