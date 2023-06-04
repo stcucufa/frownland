@@ -8,7 +8,7 @@
 
 import { test } from "./test.js";
 import { K } from "../lib/util.js";
-import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Instant, Effect, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -131,6 +131,22 @@ test("Allowing failure during instantiation", t => {
   * Delay-1 [17, 40[
   * Delay-2 [17, 48[
   * Delay-3 [17, 36[`, "dump matches");
+});
+
+test("Effects", t => {
+    const tape = Tape();
+    const par = tape.instantiate(Par([
+        Instant(K("ok")),
+        Effect(() => {
+            console.warn("Some effect");
+            return "ko";
+        })
+    ]).take(1), 17);
+    t.warns(() => { Deck({ tape }).now = 18; }, "effect occurred");
+    t.equal(dump(par),
+`* Par-0 @17 <ok>
+  * Instant-1 @17 <ok>
+  * Effect-2 @17 <ko>`, "dump matches");
 });
 
         </script>
