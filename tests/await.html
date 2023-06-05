@@ -59,6 +59,25 @@ test("Stopped deck", async t => {
   * Await-1 [17, 18[ <ok>`, "dump matches");
 });
 
+test("Repeat", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(ok).repeat().take(3), 17);
+    deck.now = 27;
+    await notification(deck, "await");
+    deck.now = 37;
+    await notification(deck, "await");
+    deck.now = 47;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Seq/repeat-1 [17, 47[ <ok>
+    * Await-2 [17, 27[ <ok>
+    * Await-3 [27, 37[ <ok>
+    * Await-4 [37, 47[ <ok>`, "dump matches");
+});
+
 test("Await in sequence", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
@@ -94,7 +113,6 @@ test("Await in parallel", async t => {
     * Delay-3 [17, 40[ <undefined>
     * Await-4 [17, 41[ <ok>`, "dump matches");
 });
-
 
 test("Cancel", async t => {
     const tape = Tape();
