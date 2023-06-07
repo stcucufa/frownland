@@ -19,7 +19,7 @@ test("DOMEvent(target, event)", t => {
     t.equal(!item.failible, true, "infailible (at instantiation)");
 });
 
-test("Instantiation", async t => {
+test("Instantiation", t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const instance = tape.instantiate(DOMEvent(window, "synth"), 17);
@@ -30,7 +30,24 @@ test("Instantiation", async t => {
     t.match(dump(instance), /^\* DOMEvent-0 \[17, 27\[ <[^>]+>$/, "dump matches");
 });
 
-test("Cancel", async t => {
+test("Repeat", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const seq = tape.instantiate(Seq([
+        DOMEvent(window, "synth").repeat().take(3),
+        Instant(K("ok"))
+    ]), 17);
+    deck.now = 27;
+    window.dispatchEvent(new Event("synth"));
+    deck.now = 37;
+    window.dispatchEvent(new Event("synth"));
+    deck.now = 47;
+    window.dispatchEvent(new Event("synth"));
+    deck.now = 48;
+    t.match(dump(seq), /^\* Seq-0 \[17, 47\[ <ok>\n  \* Seq\/repeat-1 \[17, 47\[ <[^>]+>\n    \* DOMEvent-2 \[17, 27\[ <[^>]+>\n    \* DOMEvent-3 \[27, 37\[ <[^>]+>\n    \* DOMEvent-4 \[37, 47\[ <[^>]+>\n  \* Instant-5 @47 <ok>$/, "dump matches");
+});
+
+test("Cancel", t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const instance = tape.instantiate(Par([
@@ -47,6 +64,22 @@ test("Cancel", async t => {
   * DOMEvent-4 [17, 36[ (cancelled)`, "dump matches");
 });
 
+test("Cancel with repeat", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const par = tape.instantiate(Par([
+        DOMEvent(window, "synth").repeat(),
+        Delay(23),
+    ]).take(1), 17);
+    deck.now = 27;
+    window.dispatchEvent(new Event("synth"));
+    deck.now = 37;
+    window.dispatchEvent(new Event("synth"));
+    deck.now = 47;
+    window.dispatchEvent(new Event("synth"));
+    t.match(dump(par), /^\* Par-0 \[17, 40\[ <>\n  \* Seq\/repeat-1 \[17, 40\[ \(cancelled\)\n    \* DOMEvent-2 \[17, 27\[ <[^>]+>\n    \* DOMEvent-4 \[27, 37\[ <[^>]+>\n    \* DOMEvent-5 \[37, 40\[ \(cancelled\)\n  \* Delay-3 \[17, 40\[ <undefined>$/, "dump matches");
+});
+
 test("Prune", t => {
     const tape = Tape();
     const deck = Deck({ tape });
@@ -61,6 +94,25 @@ test("Prune", t => {
     * Instant-2 @17 <19>
     * Par/map-3 [17, 36[ <19>
       * Delay-7 [17, 36[ <19>
+  * Seq-4 [17, 36[ (cancelled)
+    * Delay-5 [17, 36[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
+});
+
+test("Prune with repeat", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const choice = tape.instantiate(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Seq([Delay(23), DOMEvent(window, "synth").repeat()]),
+    ]).take(1), 17);
+    deck.now = 37;
+    t.equal(dump(choice),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19>
+    * Par/map-3 [17, 36[ <19>
+      * Delay-8 [17, 36[ <19>
   * Seq-4 [17, 36[ (cancelled)
     * Delay-5 [17, 36[ (cancelled)`, "dump matches");
     t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
