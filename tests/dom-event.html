@@ -47,6 +47,33 @@ test("Repeat", t => {
     t.match(dump(seq), /^\* Seq-0 \[17, 47\[ <ok>\n  \* Seq\/repeat-1 \[17, 47\[ <[^>]+>\n    \* DOMEvent-2 \[17, 27\[ <[^>]+>\n    \* DOMEvent-3 \[27, 37\[ <[^>]+>\n    \* DOMEvent-4 \[37, 47\[ <[^>]+>\n  \* Instant-5 @47 <ok>$/, "dump matches");
 });
 
+test("Event(target, type).dur(0)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const zero = DOMEvent(window, "synth").dur(0);
+    t.equal(zero.duration, 0, "zero duration");
+    t.undefined(tape.instantiate(zero, 17), "fails to instantiate");
+});
+
+test("DOMEvent(target, type).dur(d); event occurs early", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const event = tape.instantiate(DOMEvent(window, "synth").dur(23), 17);
+    deck.now = 18;
+    window.dispatchEvent(new Event("synth"));
+    deck.now = 41;
+    t.match(dump(event), /^\* DOMEvent-0 \[17, 40\[ <[^>]+>$/, "dump matches");
+});
+
+test("DOMEvent(target, type).dur(d); event occurs late", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const event = tape.instantiate(DOMEvent(window, "synth").dur(23), 17);
+    deck.now = 51;
+    window.dispatchEvent(new Event("synth"));
+    t.equal(dump(event), "* DOMEvent-0 [17, 40[ (failed)", "dump matches");
+});
+
 test("Cancel", t => {
     const tape = Tape();
     const deck = Deck({ tape });
