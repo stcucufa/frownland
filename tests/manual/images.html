@@ -8,7 +8,6 @@
 
 img {
     width: 200px;
-    height: 200px;
     margin: 4px;
 }
 
@@ -29,14 +28,11 @@ score.add(Seq([
     DOMEvent(button, "click").repeat().take(3),
     Effect(() => { button.disabled = true; }),
     Effect((_, t) => { document.querySelector("p").textContent += ` started at time ${t}...`; }),
-    Seq([...range(2, 6)].map(size => Seq([
-        Await(async () => {
-            const s = size * 100;
-            const image = await imagePromise(`https://placekitten.com/${s}/${s}`);
-            document.body.appendChild(image);
-        }),
+    Await(async () => await (await fetch("images.json")).json()),
+    Seq.map(url => Seq([
+        Await(async () => { document.body.appendChild(await imagePromise(url)); }),
         Delay.until(500),
-    ]))),
+    ])),
     Effect((_, t) => { document.querySelector("p").textContent += ` ended at time ${t}.`; })
 ]));
 
