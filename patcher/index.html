@@ -10,13 +10,25 @@
         <svg class="canvas">
             <defs>
                 <pattern id="grid" patternUnits="userSpaceOnUse" width="24" height="24">
-                    <g stroke="#aaa">
+                    <rect fill="#f8f9f0" width="24" height="24"/>
+                    <g stroke="#abc">
                         <line y2="100%"/>
                         <line x2="100%"/>
                     </g>
                 </pattern>
+                <g id="box">
+                    <rect stroke="#102040" fill="#f8f9f0" width="104" height="28"/>
+                    <g fill="#102040">
+                        <rect width="12" height="3"/>
+                        <rect width="12" height="3" x="92"/>
+                        <rect width="12" height="3" y="25"/>
+                    </g>
+                </g>
             </defs>
+
             <rect width="100%" height="100%" fill="url(#grid)"/>
+            <use href="#box" x="400" y="300"/>
+            <use href="#box" x="600" y="200"/>
         </svg>
     </body>
 </html>
