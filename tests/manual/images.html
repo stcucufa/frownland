@@ -17,7 +17,7 @@ img {
 import { Deck } from "../../lib/deck.js";
 import { Await, Delay, DOMEvent, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
 import { Tape } from "../../lib/tape.js";
-import { imagePromise, K, range } from "../../lib/util.js";
+import { imagePromise, K, range, timeout } from "../../lib/util.js";
 
 const tape = Tape();
 const deck = Deck({ tape });
@@ -27,13 +27,15 @@ const button = document.querySelector("button");
 score.add(Seq([
     DOMEvent(button, "click").repeat().take(3),
     Effect(() => { button.disabled = true; }),
-    Effect((_, t) => { document.querySelector("p").textContent += ` started at time ${t}...`; }),
     Await(async () => await (await fetch("images.json")).json()),
-    Seq.map(url => Seq([
-        Await(async () => { document.body.appendChild(await imagePromise(url)); }),
-        Delay.until(500),
-    ])),
-    Effect((_, t) => { document.querySelector("p").textContent += ` ended at time ${t}.`; })
+    Seq.map(url => Await(async () => {
+        document.body.appendChild(await imagePromise(url));
+        return url;
+    }).dur(500)),
+    Effect(() => {
+        setTimeout(() => { console.log(dump(score.instance)); });
+        return "ok";
+    })
 ]));
 
 deck.start();
@@ -41,8 +43,8 @@ deck.start();
         </script>
     </head>
     <body>
-        <p>Fetch images of increasing size, waiting 500ms after each one...</p>
         <p><a href="../">Back</a></p>
+        <p>Fetch images of increasing size, waiting 500ms after each one.</p>
         <p><button type="button">Begin</button> (press three times!)</p>
     </body>
 </html>

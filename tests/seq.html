@@ -7,8 +7,9 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { K } from "../lib/util.js";
-import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { K, timeout } from "../lib/util.js";
+import { notification } from "../lib/events.js";
+import { Await, Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -150,6 +151,20 @@ test("Instantiation failure", t => {
         Instant(() => { throw Error("should not be intantiated"); })
     ]), 17), "failed to instantiate seq");
     t.equal(tape.occurrences.length, 0, "no occurrences on tape");
+});
+
+test("Child failure (not the last child)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const seq = tape.instantiate(Seq([
+        Await(async () => await timeout(10)).dur(19),
+        Instant(K("ok"))
+    ]), 17);
+    deck.now = 51;
+    await notification(deck, "await");
+    t.equal(dump(seq),
+`* Seq-0 [17, 36[ (failed)
+  * Await-1 [17, 36[ (failed)`, "dump matches");
 });
 
 test("Cancel Seq", t => {
