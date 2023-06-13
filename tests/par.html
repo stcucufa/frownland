@@ -12,14 +12,6 @@ import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
-test("Par()", t => {
-    const par = Par();
-    t.equal(par.show(), "Par/0", "show");
-    t.equal(par.children, [], "no children");
-    t.equal(par.duration, 0, "no duration");
-    t.equal(!par.failible, true, "not failible");
-});
-
 test("Par(xs)", t => {
     const delay = Delay(17);
     const instant = Instant(x => x * 2);
@@ -30,6 +22,12 @@ test("Par(xs)", t => {
     t.equal(instant.parent, par, "parent (second child)");
     t.equal(par.duration, 17, "duration");
     t.equal(!par.failible, true, "not failible");
+});
+
+test("Empty par", t => {
+    t.undefined(Par(), "no argument");
+    t.undefined(Par([]), "empty list of children");
+    t.undefined(Tape().instantiate(Par(), 17), "nothing to instantiate");
 });
 
 test("Par duration", t => {
