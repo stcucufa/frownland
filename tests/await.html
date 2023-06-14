@@ -138,7 +138,7 @@ test("Await(f) constrained by parent; call ends late", async t => {
     t.equal(dump(score.instance),
 `* Score-0 [0, ∞[
   * Par-1 [17, 36[ (failed)
-    * Await-2 [17, 36[ (failed)`, "dump matches");
+    * Await-2 [17, 36[ (timeout)`, "dump matches");
 });
 
 test("Await(f).dur(0)", t => {
@@ -184,7 +184,7 @@ test("Await(f).dur(d); call ends late", async t => {
     await notification(deck, "await");
     t.equal(dump(score.instance),
 `* Score-0 [0, ∞[
-  * Await-1 [17, 40[ (failed)`, "dump matches");
+  * Await-1 [17, 40[ (timeout)`, "dump matches");
 });
 
 test("Await(f).dur(d) constrained by parent; call ends early", async t => {
@@ -211,7 +211,7 @@ test("Await(f).dur(d) constrained by parent; call ends late", async t => {
     t.equal(dump(score.instance),
 `* Score-0 [0, ∞[
   * Par-1 [17, 36[ (failed)
-    * Await-2 [17, 36[ (failed)`, "dump matches");
+    * Await-2 [17, 36[ (timeout)`, "dump matches");
 });
 
 test("Cancel", async t => {
@@ -270,6 +270,31 @@ test("Prune", t => {
   * Seq-4 [17, 36[ (cancelled)
     * Delay-5 [17, 36[ (cancelled)`, "dump matches");
     t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
+});
+
+test("Runtime error", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(async () => { throw window.Error("Augh!"); }), 17);
+    deck.now = 18;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Await-1 [17, 18[ error<Augh!>`, "dump matches");
+});
+
+test("Runtime error (with dur)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(async () => { throw window.Error("Augh!"); }).dur(23), 17);
+    deck.now = 18;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Await-1 [17, 18[ error<Augh!>`, "dump matches");
+    t.equal(tape.show(), "Tape<>", "occurrences were removed from the tape");
 });
 
         </script>

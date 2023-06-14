@@ -8,7 +8,7 @@
 
 import { test } from "./test.js";
 import { K } from "../lib/util.js";
-import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Instant, Delay, Event, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -70,7 +70,7 @@ test("Seq.map(g).take(n); fails at runtime when n > input length", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq([Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take(7)]), 17);
     Deck({ tape }).now = 18;
-    t.equal(seq.failed, true, "failed to instantiate map");
+    t.equal(seq.error.message, "failed", "failed to instantiate map");
 });
 
 test("Seq.map(g).take(n); n < input length", t => {
@@ -97,6 +97,47 @@ test("Seq.map(g).take(0)", t => {
     t.equal(seq.value, [], "empty list");
 });
 
+test("Seq.map(g) failure; input is not an array", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([Instant(K("oops")), Seq.map(Delay)]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <oops>
+  * Seq/map-2 @17 (input error)`, "dump matches");
+});
+
+test("Seq.map(g) failure; could not instantiate input", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq([
+        Instant(K([1, 2, 3])),
+        Seq.map(() => { throw window.Error("Augh!"); })
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <1,2,3>
+  * Seq/map-2 @17 (input error)`, "dump matches");
+});
+
+test("Seq.map(g) failure; could not instantiate input (after an unresolved duration)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const seq = tape.instantiate(Seq([
+        Instant(K([1, 2, 3])),
+        Seq.map((_, i) => {
+            if (i > 0) {
+                throw window.Error("Augh!");
+            }
+            return Event(window, "synth");
+        })
+    ]), 17);
+    deck.now = 51;
+    window.dispatchEvent(new window.Event("synth"));
+    deck.now = 52;
+    t.match(dump(seq), /^\* Seq-0 \[17, 51\[ \(failed\)\n  \* Instant-1 @17 <1,2,3>\n  \* Seq\/map-2 \[17, 51\[ \(input error\)\n    \* Event-3 \[17, 51\[ <[^>]+>$/, "dump matches");
+});
+
 test("Seq.map(g) failure", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq([Instant(K("oops")), Seq.map(Delay)]), 17);
@@ -104,7 +145,7 @@ test("Seq.map(g) failure", t => {
     t.equal(dump(seq),
 `* Seq-0 @17 (failed)
   * Instant-1 @17 <oops>
-  * Seq/map-2 @17 (failed)`, "dump matches");
+  * Seq/map-2 @17 (input error)`, "dump matches");
 });
 
 test("Seq.map(g).repeat(); instantiation", t => {

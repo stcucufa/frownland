@@ -78,7 +78,7 @@ test("Par.map(g).take(n); fails at runtime when n > input length", t => {
         Instant(xs => xs.map(([i]) => i))
     ]), 17);
     Deck({ tape }).now = 18;
-    t.equal(instance.failed, true, "failed to instantiate map");
+    t.equal(instance.error.message, "failed", "failed to instantiate map");
 });
 
 test("Par.map(g).take(n); n < input length", t => {
@@ -185,7 +185,7 @@ test("Par.map(g).take(n).dur(d); extending duration", t => {
     * Delay-5 [17, 36[ <19>`, "dump matches");
 });
 
-test("Par.map(g) failure", t => {
+test("Par.map(g) failure: input is not an array", t => {
     const tape = Tape();
     const instance = tape.instantiate(Seq([
         Instant(K("oops")),
@@ -195,7 +195,20 @@ test("Par.map(g) failure", t => {
     t.equal(dump(instance),
 `* Seq-0 @17 (failed)
   * Instant-1 @17 <oops>
-  * Par/map-2 @17 (failed)`, "dump matches");
+  * Par/map-2 @17 (input error)`, "dump matches");
+});
+
+test("Par.map(g) failure: could not instantiate input", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Instant(K([1, 2, 3])),
+        Par.map(() => { throw window.Error("Augh!"); })
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <1,2,3>
+  * Par/map-2 @17 (input error)`, "dump matches");
 });
 
 test("Par.map(g).repeat()", t => {
@@ -298,6 +311,13 @@ test("Prune Par.map", t => {
   * Seq-4 [17, 36[ (cancelled)
     * Delay-5 [17, 36[ (cancelled)`, "dump matches");
     t.equal(tape.show(), "Tape<17,17,36>", "occurrences where removed from the tape");
+});
+
+test("Input error", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par.map(Delay), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance), "* Par/map-0 @17 (input error)", "dump matches");
 });
 
         </script>

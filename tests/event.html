@@ -73,7 +73,7 @@ test("Event(target, type) constrained by parent; event occurs late", async t => 
     window.dispatchEvent(new window.Event("synth"));
     t.equal(dump(par),
 `* Par-0 [17, 40[ (failed)
-  * Event-1 [17, 40[ (failed)`, "dump matches");
+  * Event-1 [17, 40[ (timeout)`, "dump matches");
 });
 
 test("Event(target, type).dur(d); event occurs early", async t => {
@@ -92,7 +92,7 @@ test("Event(target, type).dur(d); event occurs late", async t => {
     const event = tape.instantiate(Event(window, "synth").dur(23), 17);
     deck.now = 51;
     window.dispatchEvent(new window.Event("synth"));
-    t.equal(dump(event), "* Event-0 [17, 40[ (failed)", "dump matches");
+    t.equal(dump(event), "* Event-0 [17, 40[ (timeout)", "dump matches");
 });
 
 test("Cancel", t => {
