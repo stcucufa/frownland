@@ -114,10 +114,11 @@ elements by default.
     same as just `Seq(xs)`.
     * It is possible to limit the number of occurrences of `repeat()` with `take(n)`:
     `x.repeate().take(3)` is the same as `Seq([x, x, x])`.
-* `dur(d)` applies to Par, Seq or repeat, and sets the duration to exactly _d_ ≥ 0. If the natural duration
-of the element is less than _d_, then it is padded as if a Delay was added to it. If the natural duration
-of the element is more than _d_, then it is cut off earlier and the children that have not finished yet
-are pruned.
+* `dur(d)` applies to any item (except Delay), and sets the duration to exactly _d_ ≥ 0. If the natural
+duration of the element is less than _d_, then it is padded as if a Delay was added to it. If the natural
+duration of the element is more than _d_, then it is cut off earlier and the children that have not
+finished yet are pruned.
+    * `Instant(f).dur(d)` delays the return value of _f_ by _d_.
     * `Par(xs).dur(d)` sets the duration of the par to _d_ and returns the elements that have finished
     in the order in which they finished.
     * `Seq(xs).dur(d)` sets the duration of the seq to _d_ and returns the last value that finished by _d_.
@@ -197,7 +198,15 @@ until _f_ is actually evaluated.
 when an event notification is received.
 
 These elements can be combined with the synchronous elements defined above, and accept the `repeat()`
-modifier. `Effect` comes with two modifiers of its own and will be detailed when describing the execution
+modifier. The `dur(d)` modified also applies as follows:
+
+* `Effect(f).dur(d)` applies the effect of _f_ after the duration _d_.
+* `Await(f).dur(d)` delays the return of _f_ if it ends before the duration _d_, and fails if the call does
+not finish by that time.
+* `DOMEvent(target, type).dur(d)` delays the event value it occurs before the duration _d_, and fails if
+the event does not occur by that time.
+
+`Effect` comes with two modifiers of its own and will be detailed when describing the execution
 model below:
 
 * `undo(g)` provides an undo function for the effect if it is evaluated again backward;
