@@ -20,7 +20,7 @@ div {
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, DOMEvent, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
+import { Await, Delay, Event, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
 import { Tape } from "../../lib/tape.js";
 import { imagePromise, K, range } from "../../lib/util.js";
 
@@ -30,15 +30,15 @@ const score = Score({ tape });
 const box = document.querySelector("div");
 
 score.add(Seq([
-    DOMEvent(box, "pointerdown"),
+    Event(box, "pointerdown"),
     Effect(event => { console.log(">>> Drag start", event); }),
     Par([
         Seq([
-            DOMEvent(document, "pointermove"),
+            Event(document, "pointermove"),
             Effect(event => { console.log("... dragging", event); })
         ]).repeat(),
         Seq([
-            DOMEvent(document, "pointerup"),
+            Event(document, "pointerup"),
             Effect(event => { console.log("<<< Drag end", event); })
         ])
     ]).take(1)

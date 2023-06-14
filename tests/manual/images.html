@@ -15,7 +15,7 @@ img {
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, DOMEvent, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
+import { Await, Delay, Event, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
 import { Tape } from "../../lib/tape.js";
 import { imagePromise, K, range, timeout } from "../../lib/util.js";
 
@@ -25,7 +25,7 @@ const score = Score({ tape });
 const button = document.querySelector("button");
 
 score.add(Seq([
-    DOMEvent(button, "click").repeat().take(3),
+    Event(button, "click").repeat().take(3),
     Effect(() => { button.disabled = true; }),
     Await(async () => await (await fetch("images.json")).json()),
     Seq.map(url => Await(async () => {
