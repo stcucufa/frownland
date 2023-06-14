@@ -19,11 +19,11 @@ Video(src);
 ```
 
 This plays the video when the user clicks on a play button. The Video element is embedded into a Seq
-(sequence) container, and follows a DOMEvent element that waits for a click event from an HTML button.
+(sequence) container, and follows an Event element that waits for a click event from an HTML button.
 
 ```
 Seq([
-    DOMEvent(playButton, "click"),
+    Event(playButton, "click"),
     Video(src)
 ]);
 ```
@@ -49,7 +49,7 @@ choice([
     Seq([
         choice([
             Seq([Delay(10000), Send(skip)]),
-            DOMEvent(playButton, "click")
+            Event(playButton, "click")
         ]),
         Video(src)
     ])
@@ -194,7 +194,7 @@ comprised of three new elements:
 * `Effect(f)` is similar to `Instant(f)` but is allowed to produce side effects.
 * `Await(f)` evaluates an asynchronous function _f_ and finishes when _f_ finishes, which is _unresolved_
 until _f_ is actually evaluated.
-* `DOMEvent(target, type)` starts listening to an event of a given _type_ from a _target_, and finishes
+* `Event(target, type)` starts listening to an event of a given _type_ from a _target_, and finishes
 when an event notification is received.
 
 These elements can be combined with the synchronous elements defined above, and accept the `repeat()`
@@ -203,7 +203,7 @@ modifier. The `dur(d)` modified also applies as follows:
 * `Effect(f).dur(d)` applies the effect of _f_ after the duration _d_.
 * `Await(f).dur(d)` delays the return of _f_ if it ends before the duration _d_, and fails if the call does
 not finish by that time.
-* `DOMEvent(target, type).dur(d)` delays the event value it occurs before the duration _d_, and fails if
+* `Event(target, type).dur(d)` delays the event value it occurs before the duration _d_, and fails if
 the event does not occur by that time.
 
 `Effect` comes with two modifiers of its own and will be detailed when describing the execution
