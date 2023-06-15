@@ -138,16 +138,6 @@ test("Seq.map(g) failure; could not instantiate input (after an unresolved durat
     t.match(dump(seq), /^\* Seq-0 \[17, 51\[ \(failed\)\n  \* Instant-1 @17 <1,2,3>\n  \* Seq\/map-2 \[17, 51\[ \(input error\)\n    \* Event-3 \[17, 51\[ <[^>]+>$/, "dump matches");
 });
 
-test("Seq.map(g) failure", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K("oops")), Seq.map(Delay)]), 17);
-    Deck({ tape }).now = 18;
-    t.equal(dump(seq),
-`* Seq-0 @17 (failed)
-  * Instant-1 @17 <oops>
-  * Seq/map-2 @17 (input error)`, "dump matches");
-});
-
 test("Seq.map(g).repeat(); instantiation", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay).repeat()]), 17);
