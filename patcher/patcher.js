@@ -1,4 +1,6 @@
-const Drag = {
+import { svg } from "../lib/util.js";
+
+const DragEventListener = {
     handleEvent(event) {
         switch (event.type) {
             case "pointerdown":
@@ -22,6 +24,8 @@ const Drag = {
             case "pointerup":
                 delete this.x0;
                 delete this.y0;
+                delete this.x;
+                delete this.y;
                 delete this.box;
                 document.removeEventListener("pointermove", this);
                 document.removeEventListener("pointerup", this);
@@ -30,6 +34,34 @@ const Drag = {
     }
 };
 
-for (const box of document.querySelectorAll("use")) {
-    box.addEventListener("pointerdown", Object.create(Drag));
+const DocumentEventListener = {
+    x: 0,
+    y: 0,
+
+    handleEvent(event) {
+        switch (event.type) {
+            case "pointermove":
+                this.x = event.clientX;
+                this.y = event.clientY;
+                break;
+            case "keyup":
+                if (event.key === "n") {
+                    addBox();
+                }
+        }
+    }
+};
+
+document.addEventListener("pointermove", DocumentEventListener);
+document.addEventListener("keyup", DocumentEventListener);
+
+const canvas = document.querySelector("svg.canvas");
+
+function addBox() {
+    const box = canvas.appendChild(svg("use", {
+        href: "#box",
+        x: DocumentEventListener.x,
+        y: DocumentEventListener.y
+    }));
+    box.addEventListener("pointerdown", DragEventListener);
 }
