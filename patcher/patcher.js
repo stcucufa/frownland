@@ -1,4 +1,4 @@
-import { svg } from "../lib/util.js";
+import { create, svg } from "../lib/util.js";
 
 const DragEventListener = {
     handleEvent(event) {
@@ -8,19 +8,22 @@ const DragEventListener = {
                 document.addEventListener("pointerup", this);
                 document.addEventListener("pointercancel", this);
                 event.preventDefault();
-                this.box = event.target;
-                this.x = parseFloat(this.box.getAttribute("x"));
-                this.y = parseFloat(this.box.getAttribute("y"));
+                this.box = Box.elements.get(event.currentTarget);
+                this.x = this.box.x;
+                this.y = this.box.y;
                 this.x0 = event.clientX;
                 this.y0 = event.clientY;
                 break;
             case "pointermove":
-                this.box.setAttribute("x", this.x + event.clientX - this.x0);
-                this.box.setAttribute("y", this.y + event.clientY - this.y0);
+                this.box.x = this.x + event.clientX - this.x0;
+                this.box.y = this.y + event.clientY - this.y0;
+                this.box.updatePosition();
                 break;
             case "pointercancel":
-                this.box.setAttribute("x", this.x);
-                this.box.setAttribute("y", this.y);
+                this.box.x = this.x;
+                this.box.y = this.y;
+                this.box.updatePosition();
+                // Fallthrough
             case "pointerup":
                 delete this.x0;
                 delete this.y0;
@@ -46,7 +49,9 @@ const DocumentEventListener = {
                 break;
             case "keyup":
                 if (event.key === "n") {
-                    addBox();
+                    const box = Box({ x: this.x, y: this.y });
+                    Box.elements.set(box.element, box);
+                    canvas.appendChild(box.element).addEventListener("pointerdown", DragEventListener);
                 }
         }
     }
@@ -57,11 +62,39 @@ document.addEventListener("keyup", DocumentEventListener);
 
 const canvas = document.querySelector("svg.canvas");
 
-function addBox() {
-    const box = canvas.appendChild(svg("use", {
-        href: "#box",
-        x: DocumentEventListener.x,
-        y: DocumentEventListener.y
-    }));
-    box.addEventListener("pointerdown", DragEventListener);
-}
+const Box = Object.assign(properties => create(properties).call(Box), {
+    elements: new Map(),
+
+    x: 0,
+    y: 0,
+    width: 104,
+    height: 28,
+    portWidth: 12,
+    portHeight: 3,
+    foregroundColor: "#102040",
+    backgroundColor: "#f8f9f0",
+
+    init() {
+        const inlets = [
+            svg("rect", { width: this.portWidth, height: this.portHeight }),
+            svg("rect", { width: this.portWidth, height: this.portHeight, x: this.width - this.portWidth })
+        ];
+        const outlet = svg("rect", {
+            width: this.portWidth, height: this.portHeight, y: this.height - this.portHeight
+        });
+        this.element = svg("g",
+            svg("rect", {
+                stroke: this.foregroundColor,
+                fill: this.backgroundColor,
+                width: this.width,
+                height: this.height
+            }),
+            svg("g", { fill: this.foregroundColor }, ...inlets, outlet)
+        );
+        this.updatePosition();
+    },
+
+    updatePosition() {
+        this.element.setAttribute("transform", `translate(${this.x}, ${this.y})`);
+    }
+});
