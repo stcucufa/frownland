@@ -42,6 +42,7 @@ const DragEventListener = {
                 this.y = this.box.y;
                 this.x0 = event.clientX;
                 this.y0 = event.clientY;
+                this.box.bringToFront();
                 break;
             case "pointermove":
                 this.box.x = this.x + event.clientX - this.x0;
@@ -106,6 +107,12 @@ const Box = Object.assign(properties => create(properties).call(Box), {
         );
         this.updatePosition();
         this.elements.set(this.element, this);
+    },
+
+    bringToFront() {
+        const parent = this.element.parentElement;
+        this.element.remove();
+        parent.appendChild(this.element);
     },
 
     updatePosition() {
