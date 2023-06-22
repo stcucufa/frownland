@@ -1,5 +1,34 @@
 import { create, svg } from "../lib/util.js";
 
+// The main canvas element
+const canvas = document.querySelector("svg.canvas");
+
+// Event listener for the main document to handle keyboard commands.
+const DocumentEventListener = {
+    x: 0,
+    y: 0,
+
+    handleEvent(event) {
+        switch (event.type) {
+            case "pointermove":
+                // Keep track of the pointer to place new boxes.
+                this.x = event.clientX;
+                this.y = event.clientY;
+                break;
+            case "keyup":
+                if (event.key === "n") {
+                    // N for new box
+                    const box = Box({ x: this.x, y: this.y });
+                    canvas.appendChild(box.element).addEventListener("pointerdown", DragEventListener);
+                }
+        }
+    }
+};
+
+document.addEventListener("pointermove", DocumentEventListener);
+document.addEventListener("keyup", DocumentEventListener);
+
+// Drag event listener for boxes.
 const DragEventListener = {
     handleEvent(event) {
         switch (event.type) {
@@ -37,31 +66,22 @@ const DragEventListener = {
     }
 };
 
-const DocumentEventListener = {
+// Ports are inlets and outlets.
+const Port = Object.assign(properties => create(properties).call(Port), {
+    elements: new Map(),
+
     x: 0,
     y: 0,
+    width: 12,
+    height: 3,
 
-    handleEvent(event) {
-        switch (event.type) {
-            case "pointermove":
-                this.x = event.clientX;
-                this.y = event.clientY;
-                break;
-            case "keyup":
-                if (event.key === "n") {
-                    const box = Box({ x: this.x, y: this.y });
-                    Box.elements.set(box.element, box);
-                    canvas.appendChild(box.element).addEventListener("pointerdown", DragEventListener);
-                }
-        }
+    init() {
+        this.element = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
+        this.elements.set(this, this.element);
     }
-};
+});
 
-document.addEventListener("pointermove", DocumentEventListener);
-document.addEventListener("keyup", DocumentEventListener);
-
-const canvas = document.querySelector("svg.canvas");
-
+// A box represents objects.
 const Box = Object.assign(properties => create(properties).call(Box), {
     elements: new Map(),
 
@@ -69,19 +89,12 @@ const Box = Object.assign(properties => create(properties).call(Box), {
     y: 0,
     width: 104,
     height: 28,
-    portWidth: 12,
-    portHeight: 3,
     foregroundColor: "#102040",
     backgroundColor: "#f8f9f0",
 
     init() {
-        const inlets = [
-            svg("rect", { width: this.portWidth, height: this.portHeight }),
-            svg("rect", { width: this.portWidth, height: this.portHeight, x: this.width - this.portWidth })
-        ];
-        const outlet = svg("rect", {
-            width: this.portWidth, height: this.portHeight, y: this.height - this.portHeight
-        });
+        const inlets = [Port(), Port({ x: this.width - Port.width })];
+        const outlet = Port({ y: this.height - Port.height });
         this.element = svg("g",
             svg("rect", {
                 stroke: this.foregroundColor,
@@ -89,9 +102,10 @@ const Box = Object.assign(properties => create(properties).call(Box), {
                 width: this.width,
                 height: this.height
             }),
-            svg("g", { fill: this.foregroundColor }, ...inlets, outlet)
+            svg("g", { fill: this.foregroundColor }, inlets.map(inlet => inlet.element), outlet.element)
         );
         this.updatePosition();
+        this.elements.set(this.element, this);
     },
 
     updatePosition() {
