@@ -82,7 +82,7 @@ const Port = Object.assign(properties => create(properties).call(Port), {
     }
 });
 
-// A box represents objects.
+// A box represents an object. It has two inlets and one outlet by default.
 const Box = Object.assign(properties => create(properties).call(Box), {
     elements: new Map(),
 
