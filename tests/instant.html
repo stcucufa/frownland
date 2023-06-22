@@ -135,6 +135,20 @@ test("Effect(f).dur(d)", t => {
   * Effect-2 @40 <ok>`, "dump matches");
 });
 
+test("Runtime error (Instant)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Instant(() => { throw window.Error("Augh!"); }), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance), "* Instant-0 @17 error<Augh!>", "dump matches");
+});
+
+test("Runtime error (Effect)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Effect(() => { throw window.Error("Augh!"); }), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance), "* Effect-0 @17 error<Augh!>", "dump matches");
+});
+
         </script>
     </head>
     <body>
