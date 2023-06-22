@@ -64,17 +64,23 @@ const DragEventListener = {
     }
 };
 
-// Ports are inlets and outlets.
+// Ports are inlets and outlets. Inlets and outlets from different boxes can
+// be connected through cords (which are simple SVG lines).
 const Port = assign(properties => create(properties).call(Port), {
     x: 0,
     y: 0,
     width: 12,
     height: 3,
+    r: 10,
 
     init() {
-        this.element = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
-        this.element.addEventListener("pointerdown", DragEventListener);
-        Elements.set(this.element, this);
+        const rect = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
+        const target = svg("circle", {
+            cx: this.x + this.width / 2, cy: this.y + this.height / 2, r: this.r
+        });
+        this.element = svg("g", { class: "port" }, rect, target);
+        target.addEventListener("pointerdown", DragEventListener);
+        Elements.set(target, this);
         this.cords = new Map();
     },
 
@@ -86,6 +92,7 @@ const Port = assign(properties => create(properties).call(Port), {
         return this.box.y + this.y + this.height / 2;
     },
 
+    // When the box moves, one end of every cord for this box must move as well.
     updateCords() {
         if (this.isOutlet) {
             for (const cord of this.cords.values()) {
@@ -100,6 +107,7 @@ const Port = assign(properties => create(properties).call(Port), {
         }
     },
 
+    // Highlight when a current target for a coord.
     get isTargetForCord() {
         return this.element.classList.contains("target");
     },
@@ -114,9 +122,10 @@ const Port = assign(properties => create(properties).call(Port), {
         }
     },
 
+    // Create a coord from this port.
     dragDidBegin(x, y) {
         this.cord = this.box.element.parentElement.appendChild(svg("line", {
-            stroke: this.box.foregroundColor,
+            class: "cord",
             x1: this.centerX,
             y1: this.centerY,
             x2: x,
@@ -124,12 +133,11 @@ const Port = assign(properties => create(properties).call(Port), {
         }));
     },
 
+    // Update the cord and decide whether it can be connected to a target.
     dragDidProgress(_, __, x, y) {
         const element = document.elementsFromPoint(x, y)[1];
         const target = Elements.get(element)?.possibleTargetForCord?.(this);
         if (target) {
-            this.cord.setAttribute("x2", target.centerX);
-            this.cord.setAttribute("y2", target.centerY);
             if (this.target !== target) {
                 if (this.target) {
                     this.target.isTargetForCord = false;
@@ -138,13 +146,13 @@ const Port = assign(properties => create(properties).call(Port), {
                 this.target.isTargetForCord = true;
             }
         } else {
-            this.cord.setAttribute("x2", x);
-            this.cord.setAttribute("y2", y);
             if (this.target) {
                 this.target.isTargetForCord = false;
                 delete this.target;
             }
         }
+        this.cord.setAttribute("x2", x);
+        this.cord.setAttribute("y2", y);
     },
 
     dragWasCancelled() {
@@ -154,14 +162,17 @@ const Port = assign(properties => create(properties).call(Port), {
         }
     },
 
+    // Actually connect to the target if there is any and keep the coord;
+    // otherwise, remove it.
     dragDidEnd() {
         if (this.target) {
             this.target.isTargetForCord = false;
             this.cords.set(this.target, this.cord);
             this.target.cords.set(this, this.cord);
-            if (!this.isOutlet) {
-                // Swap coordinates of the coord line so that it always goes
-                // from the outlet to the inlet.
+            if (this.isOutlet) {
+                this.cord.setAttribute("x2", this.target.centerX);
+                this.cord.setAttribute("y2", this.target.centerY);
+            } else {
                 this.cord.setAttribute("x1", this.target.centerX);
                 this.cord.setAttribute("y1", this.target.centerY);
                 this.cord.setAttribute("x2", this.centerX);
@@ -183,39 +194,44 @@ const Box = Object.assign(properties => create(properties).call(Box), {
     y: 0,
     width: 104,
     height: 28,
-    foregroundColor: "#102040",
-    backgroundColor: "#f8f9f0",
 
     init() {
         this.inlets = [Port({ box: this }), Port({ box: this, x: this.width - Port.width })];
-        this.outlet = Port({ box: this, y: this.height - Port.height, isOutlet: true });
-        const rect = svg("rect", {
-            stroke: this.foregroundColor,
-            fill: this.backgroundColor,
-            width: this.width,
-            height: this.height
-        });
-        this.element = svg("g",
+        this.outlets = [Port({ box: this, y: this.height - Port.height, isOutlet: true })];
+        const rect = svg("rect", { width: this.width, height: this.height });
+        this.element = svg("g", { class: "box" },
             rect,
-            svg("g", { fill: this.foregroundColor },
-                this.inlets.map(inlet => inlet.element),
-                this.outlet.element
-            )
+            [...this.ports()].map(port => port.element)
         );
         rect.addEventListener("pointerdown", DragEventListener);
         this.updatePosition();
         Elements.set(rect, this);
     },
 
+    // Get all the ports (both inlets and outlets)
+    *ports() {
+        for (const inlet of this.inlets) {
+            yield inlet;
+        }
+        for (const outlet of this.outlets) {
+            yield outlet;
+        }
+    },
+
     updatePosition() {
         this.element.setAttribute("transform", `translate(${this.x}, ${this.y})`);
-        for (const port of [...this.inlets, this.outlet]) {
+        for (const port of this.ports()) {
             port.updateCords();
         }
     },
 
     // Drag handling
     dragDidBegin() {
+        for (const port of this.ports()) {
+            for (const cord of port.cords.values()) {
+                bringElementFrontward(cord);
+            }
+        }
         bringElementFrontward(this.element);
         this.x0 = this.x;
         this.y0 = this.y;

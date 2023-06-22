@@ -15,6 +15,23 @@ body, text {
     font-size: 16px;
 }
 
-rect.target {
-    fill: #ff4040;
+g.box rect {
+    stroke: #102040;
+    fill: #f8f9f0;
+}
+
+g.box g.port rect {
+    fill: #102040;
+}
+
+g.port circle {
+    fill: transparent;
+}
+
+g.port.target circle {
+    fill: rgba(64, 255, 64, 0.25);
+}
+
+line.cord {
+    stroke: #102040;
 }
