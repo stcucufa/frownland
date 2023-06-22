@@ -246,6 +246,13 @@ this time gets converted to the logical time _t’_ of the score, based on when 
 speed the tape is rolling. In playback mode, the tape can be rewound and fast-forwarded, and occurrences
 that were committed to the tape are played again, using the undo/redo actions of `Effect` when applicable.
 
+## Testing
+
+To run the test suite, start a Web server in the frownland repo (_e.g._, with
+`python3 -m http.server 7890`), then visit
+[http://localhost:7890/tests/index.html](http://localhost:78910/tests/index.html).
+The test page should give an indication of the current implementation status.
+
 ## Applications
 
 The first goal of Frownland is to provide a framework for writing Web applications with rich user
@@ -254,11 +261,6 @@ is a work in progress.
 
 A further goal is to leverage the declarative nature of the language to build more tools for development
 with the framework (such as a test runner and debugging tools to examine timelines of applications using
-the timing model), but more importantly a more comprehensive authoring tool.
-
-## Testing
-
-To run the test suite, start a Web server in the frownland repo (_e.g._, with
-`python3 -m http.server 7890`), then visit
-[http://localhost:7890/tests/index.html](http://localhost:78910/tests/index.html).
-The test page should give an indication of the current implementation status.
+the timing model), but more importantly a more comprehensive authoring tool. It currently takes the shape
+of a patcher prototype; to run it, start a server (as above) and visit
+[http://localhost:7890/patcher/](http://localhost:7890/patcher/).
