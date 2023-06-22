@@ -75,7 +75,7 @@ const Port = assign(properties => create(properties).call(Port), {
         this.element = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
         this.element.addEventListener("pointerdown", DragEventListener);
         Elements.set(this.element, this);
-        this.cords = [];
+        this.cords = new Map();
     },
 
     get centerX() {
@@ -88,12 +88,12 @@ const Port = assign(properties => create(properties).call(Port), {
 
     updateCords() {
         if (this.isOutlet) {
-            for (const cord of this.cords) {
+            for (const cord of this.cords.values()) {
                 cord.setAttribute("x1", this.centerX);
                 cord.setAttribute("y1", this.centerY);
             }
         } else {
-            for (const cord of this.cords) {
+            for (const cord of this.cords.values()) {
                 cord.setAttribute("x2", this.centerX);
                 cord.setAttribute("y2", this.centerY);
             }
@@ -109,8 +109,8 @@ const Port = assign(properties => create(properties).call(Port), {
     },
 
     possibleTargetForCord(port) {
-        if (port.box !== this.box && port.isOutlet !== this.isOutlet) {
-            return { port: this, x: this.centerX, y: this.centerY };
+        if (port.box !== this.box && port.isOutlet !== this.isOutlet && !this.cords.has(port)) {
+            return this;
         }
     },
 
@@ -128,13 +128,13 @@ const Port = assign(properties => create(properties).call(Port), {
         const element = document.elementsFromPoint(x, y)[1];
         const target = Elements.get(element)?.possibleTargetForCord?.(this);
         if (target) {
-            this.cord.setAttribute("x2", target.x);
-            this.cord.setAttribute("y2", target.y);
-            if (this.target !== target.port) {
+            this.cord.setAttribute("x2", target.centerX);
+            this.cord.setAttribute("y2", target.centerY);
+            if (this.target !== target) {
                 if (this.target) {
                     this.target.isTargetForCord = false;
                 }
-                this.target = target.port;
+                this.target = target;
                 this.target.isTargetForCord = true;
             }
         } else {
@@ -157,9 +157,11 @@ const Port = assign(properties => create(properties).call(Port), {
     dragDidEnd() {
         if (this.target) {
             this.target.isTargetForCord = false;
-            this.cords.push(this.cord);
-            this.target.cords.push(this.cord);
+            this.cords.set(this.target, this.cord);
+            this.target.cords.set(this, this.cord);
             if (!this.isOutlet) {
+                // Swap coordinates of the coord line so that it always goes
+                // from the outlet to the inlet.
                 this.cord.setAttribute("x1", this.target.centerX);
                 this.cord.setAttribute("y1", this.target.centerY);
                 this.cord.setAttribute("x2", this.centerX);
