@@ -35,7 +35,7 @@ const DragEventListener = {
     }
 };
 
-// A patch cord between an inlet and an outlet.
+// A patch cord between an outlet and an inlet.
 const Cord = Object.assign((port, x2, y2) => {
     const properties = {
         element: App.canvas.appendChild(svg("g", { class: "cord" },
@@ -49,40 +49,48 @@ const Cord = Object.assign((port, x2, y2) => {
     }
     return extend(Cord, properties);
 }, {
+    // Set the outlet of the cord that was started from an inlet. Switch the
+    // end points of the line so that it is always from outlet to inlet.
     setOutlet(port) {
         this.outlet = port;
-        this.updateDestination(this.outlet.centerX, this.outlet.centerY, "x1", "y1");
-        this.updateDestination(this.inlet.centerX, this.inlet.centerY);
+        this.updateEndpoint(this.outlet.centerX, this.outlet.centerY, "x1", "y1");
+        this.updateEndpoint(this.inlet.centerX, this.inlet.centerY);
         this.addTarget();
     },
 
+    // Set the inlet of the cord that was started from an outlet.
     setInlet(port) {
         this.inlet = port;
-        this.updateDestination(this.inlet.centerX, this.inlet.centerY);
+        this.updateEndpoint(this.inlet.centerX, this.inlet.centerY);
         this.addTarget();
     },
 
-    updateDestination(x, y, xAttribute = "x2", yAttribute = "y2") {
+    // Update one end point of the lines.
+    updateEndpoint(x, y, xAttribute = "x2", yAttribute = "y2") {
         for (const child of this.element.children) {
             child.setAttribute(xAttribute, x);
             child.setAttribute(yAttribute, y);
         }
     },
 
+    // One of the ports of the cord has moved so update the cord accordingly.
     updatePortPosition(port) {
         const x = port.centerX;
         const y = port.centerY;
         if (port === this.outlet) {
-            this.updateDestination(x, y, "x1", "y1");
+            this.updateEndpoint(x, y, "x1", "y1");
         } else {
-            this.updateDestination(x, y);
+            this.updateEndpoint(x, y);
         }
     },
 
+    // Toggle the selected state of the cord.
     toggleSelected(selected) {
         this.element.classList.toggle("selected", selected);
+        bringElementFrontward(this.element);
     },
 
+    // Add a target line (transparent and thick) to help with selection.
     addTarget() {
         const target = this.element.appendChild(svg("line", {
             opacity: 0, "stroke-width": 8,
@@ -92,6 +100,7 @@ const Cord = Object.assign((port, x2, y2) => {
         target.addEventListener("pointerdown", this);
     },
 
+    // Select the line on pointerdown.
     handleEvent(event) {
         switch (event.type) {
             case "pointerdown":
@@ -152,7 +161,7 @@ const Port = assign(properties => create(properties).call(Port), {
         }
     },
 
-    // Create a coord from this port.
+    // Create a cord from this port.
     dragDidBegin(x, y) {
         this.cord = Cord(this, x, y);
         App.deselect();
@@ -176,7 +185,7 @@ const Port = assign(properties => create(properties).call(Port), {
                 delete this.target;
             }
         }
-        this.cord.updateDestination(x, y);
+        this.cord.updateEndpoint(x, y);
     },
 
     dragWasCancelled() {
@@ -282,6 +291,7 @@ const Box = assign(properties => create(properties).call(Box), {
     },
 });
 
+// The main application (singleton object).
 export const App = {
     init() {
         this.elements.set(this.canvas, this);
@@ -293,6 +303,7 @@ export const App = {
     pointerX: 0,
     pointerY: 0,
 
+    // Keyboard commands
     commands: {
         n() {
             const box = Box({ x: this.pointerX, y: Math.max(0, this.pointerY - Box.height) });
