@@ -1,4 +1,4 @@
-import { assign, create, extend, svg } from "../lib/util.js";
+import { assign, create, extend, html, svg } from "../lib/util.js";
 
 // Drag event listener for canvas, boxes and cords.
 const DragEventListener = {
@@ -300,14 +300,33 @@ const Box = assign(properties => create(properties).call(Box), {
         }
     },
 
+    toggleEditing(editing) {
+        if (editing) {
+            const input = html("input", { type: "text" });
+            window.setTimeout(() => { input.focus(); });
+            this.input = this.element.appendChild(
+                svg("foreignObject", {
+                    y: Port.height,
+                    width: this.width,
+                    height: this.height - 2 * Port.height
+                }, input)
+            );
+        } else {
+            this.input.remove();
+            delete this.input;
+        }
+    },
+
     // Drag handling
     dragDidBegin() {
+        this.willEdit = App.selection.has(this);
         App.select(this);
         this.x0 = this.x;
         this.y0 = this.y;
     },
 
     dragDidProgress(dx, dy) {
+        this.willEdit = false;
         this.x = this.x0 + dx;
         this.y = this.y0 + dy;
         this.updatePosition();
@@ -322,6 +341,10 @@ const Box = assign(properties => create(properties).call(Box), {
     dragDidEnd() {
         delete this.x0;
         delete this.y0;
+        if (this.willEdit) {
+            delete this.willEdit;
+            App.willEdit(this);
+        }
     },
 });
 
@@ -344,6 +367,7 @@ export const App = {
             const box = Box({ x: this.pointerX, y: Math.max(0, this.pointerY - Box.height) });
             this.canvas.appendChild(box.element);
             this.select(box);
+            this.willEdit(box);
         },
 
         // Delete the selection (box or cord).
@@ -364,8 +388,11 @@ export const App = {
                 this.pointerY = event.clientY;
                 break;
             case "keyup":
-                // Execute the command associated with the key.
-                this.commands[event.key]?.call(this);
+                // Execute the command associated with the key (when not
+                // otherwise editing).
+                if (!this.editItem) {
+                    this.commands[event.key]?.call(this);
+                }
                 break;
         }
     },
@@ -391,8 +418,31 @@ export const App = {
     deselect() {
         for (const selectedItem of this.selection) {
             selectedItem.toggleSelected(false);
+            if (selectedItem === this.editItem) {
+                this.didEdit();
+            }
         }
         this.selection.clear();
+    },
+
+    // Track item being edited
+    willEdit(item) {
+        if (this.editItem !== item) {
+            console.log("+++ Will edit!");
+            if (this.editItem) {
+                this.editItem.toggleEditing(false);
+            }
+            this.editItem = item;
+            item.toggleEditing(true);
+        }
+    },
+
+    didEdit() {
+        if (this.editItem) {
+            console.log("--- Stop editing");
+            this.editItem.toggleEditing(false);
+            delete this.editItem;
+        }
     },
 
     dragDidMove() {
