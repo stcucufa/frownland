@@ -20,6 +20,10 @@ g.box rect {
     fill: #f8f9f0;
 }
 
+g.box.selected > rect {
+    outline: auto;
+}
+
 g.box g.port rect {
     fill: #102040;
 }
