@@ -1,4 +1,4 @@
-import { assign, create, svg } from "../lib/util.js";
+import { assign, create, extend, svg } from "../lib/util.js";
 
 // Drag event listener for canvas, boxes and cords.
 const DragEventListener = {
@@ -35,6 +35,73 @@ const DragEventListener = {
     }
 };
 
+// A patch cord between an inlet and an outlet.
+const Cord = Object.assign((port, x2, y2) => {
+    const properties = {
+        element: App.canvas.appendChild(svg("g", { class: "cord" },
+            svg("line", { x1: port.centerX, y1: port.centerY, x2, y2 }),
+        ))
+    };
+    if (port.isOutlet) {
+        properties.outlet = port;
+    } else {
+        properties.inlet = port;
+    }
+    return extend(Cord, properties);
+}, {
+    setOutlet(port) {
+        this.outlet = port;
+        this.updateDestination(this.outlet.centerX, this.outlet.centerY, "x1", "y1");
+        this.updateDestination(this.inlet.centerX, this.inlet.centerY);
+        this.addTarget();
+    },
+
+    setInlet(port) {
+        this.inlet = port;
+        this.updateDestination(this.inlet.centerX, this.inlet.centerY);
+        this.addTarget();
+    },
+
+    updateDestination(x, y, xAttribute = "x2", yAttribute = "y2") {
+        for (const child of this.element.children) {
+            child.setAttribute(xAttribute, x);
+            child.setAttribute(yAttribute, y);
+        }
+    },
+
+    updatePortPosition(port) {
+        const x = port.centerX;
+        const y = port.centerY;
+        if (port === this.outlet) {
+            this.updateDestination(x, y, "x1", "y1");
+        } else {
+            this.updateDestination(x, y);
+        }
+    },
+
+    toggleSelected(selected) {
+        this.element.classList.toggle("selected", selected);
+    },
+
+    addTarget() {
+        const target = this.element.appendChild(svg("line", {
+            opacity: 0, "stroke-width": 8,
+            x1: this.outlet.centerX, y1: this.outlet.centerY,
+            x2: this.inlet.centerX, y2: this.inlet.centerY,
+        }));
+        target.addEventListener("pointerdown", this);
+    },
+
+    handleEvent(event) {
+        switch (event.type) {
+            case "pointerdown":
+                event.preventDefault();
+                event.stopPropagation();
+                App.select(this);
+        }
+    }
+});
+
 // Ports are inlets and outlets. Inlets and outlets from different boxes can
 // be connected through cords (which are simple SVG lines).
 const Port = assign(properties => create(properties).call(Port), {
@@ -65,16 +132,8 @@ const Port = assign(properties => create(properties).call(Port), {
 
     // When the box moves, one end of every cord for this box must move as well.
     updateCords() {
-        if (this.isOutlet) {
-            for (const cord of this.cords.values()) {
-                cord.setAttribute("x1", this.centerX);
-                cord.setAttribute("y1", this.centerY);
-            }
-        } else {
-            for (const cord of this.cords.values()) {
-                cord.setAttribute("x2", this.centerX);
-                cord.setAttribute("y2", this.centerY);
-            }
+        for (const cord of this.cords.values()) {
+            cord.updatePortPosition(this);
         }
     },
 
@@ -95,13 +154,7 @@ const Port = assign(properties => create(properties).call(Port), {
 
     // Create a coord from this port.
     dragDidBegin(x, y) {
-        this.cord = this.box.element.parentElement.appendChild(svg("line", {
-            class: "cord",
-            x1: this.centerX,
-            y1: this.centerY,
-            x2: x,
-            y2: y,
-        }));
+        this.cord = Cord(this, x, y);
         App.deselect();
     },
 
@@ -123,8 +176,7 @@ const Port = assign(properties => create(properties).call(Port), {
                 delete this.target;
             }
         }
-        this.cord.setAttribute("x2", x);
-        this.cord.setAttribute("y2", y);
+        this.cord.updateDestination(x, y);
     },
 
     dragWasCancelled() {
@@ -141,18 +193,14 @@ const Port = assign(properties => create(properties).call(Port), {
             this.target.isTargetForCord = false;
             this.cords.set(this.target, this.cord);
             this.target.cords.set(this, this.cord);
-            if (this.isOutlet) {
-                this.cord.setAttribute("x2", this.target.centerX);
-                this.cord.setAttribute("y2", this.target.centerY);
+            if (this.target.isOutlet) {
+                this.cord.setOutlet(this.target);
             } else {
-                this.cord.setAttribute("x1", this.target.centerX);
-                this.cord.setAttribute("y1", this.target.centerY);
-                this.cord.setAttribute("x2", this.centerX);
-                this.cord.setAttribute("y2", this.centerY);
+                this.cord.setInlet(this.target);
             }
             delete this.target;
         } else {
-            this.cord.remove();
+            this.cord.element.remove();
         }
         delete this.cord;
         delete this.x0;
@@ -202,7 +250,7 @@ const Box = assign(properties => create(properties).call(Box), {
         if (selected) {
             for (const port of this.ports()) {
                 for (const cord of port.cords.values()) {
-                    bringElementFrontward(cord);
+                    bringElementFrontward(cord.element);
                 }
             }
             bringElementFrontward(this.element);
