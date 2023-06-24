@@ -252,8 +252,14 @@ const Box = assign(properties => create(properties).call(Box), {
         this.inlets = [Port({ box: this }), Port({ box: this, x: this.width - Port.width })];
         this.outlets = [Port({ box: this, y: this.height - Port.height, isOutlet: true })];
         this.rect = svg("rect", { width: this.width, height: this.height });
+        this.input = html("span", { class: "input", spellcheck: false });
         this.element = svg("g", { class: "box" },
             this.rect,
+            svg("foreignObject", {
+                y: Port.height,
+                width: this.width,
+                height: this.height - 2 * Port.height
+            }, this.input),
             [...this.ports()].map(port => port.element)
         );
         this.rect.addEventListener("pointerdown", DragEventListener);
@@ -297,23 +303,33 @@ const Box = assign(properties => create(properties).call(Box), {
                 }
             }
             bringElementFrontward(this.element);
+        } else {
+            deselectText();
         }
     },
 
     toggleEditing(editing) {
         if (editing) {
-            const input = html("input", { type: "text" });
-            window.setTimeout(() => { input.focus(); });
-            this.input = this.element.appendChild(
-                svg("foreignObject", {
-                    y: Port.height,
-                    width: this.width,
-                    height: this.height - 2 * Port.height
-                }, input)
-            );
+            this.input.contentEditable = "plaintext-only";
+            this.input.addEventListener("keyup", this);
+            window.setTimeout(() => {
+                this.input.focus();
+                const selection = deselectText();
+                const range = document.createRange();
+                range.selectNodeContents(this.input);
+                selection.addRange(range);
+            });
         } else {
-            this.input.remove();
-            delete this.input;
+            this.input.contentEditable = false;
+            this.input.removeEventListener("keyup", this);
+        }
+    },
+
+    handleEvent(event) {
+        switch (event.key) {
+            case "Enter":
+            case "Escape":
+                App.didEdit(this);
         }
     },
 
@@ -326,7 +342,10 @@ const Box = assign(properties => create(properties).call(Box), {
     },
 
     dragDidProgress(dx, dy) {
-        this.willEdit = false;
+        if (this.willEdit) {
+            delete this.willEdit;
+            deselectText();
+        }
         this.x = this.x0 + dx;
         this.y = this.y0 + dy;
         this.updatePosition();
@@ -428,7 +447,6 @@ export const App = {
     // Track item being edited
     willEdit(item) {
         if (this.editItem !== item) {
-            console.log("+++ Will edit!");
             if (this.editItem) {
                 this.editItem.toggleEditing(false);
             }
@@ -439,7 +457,6 @@ export const App = {
 
     didEdit() {
         if (this.editItem) {
-            console.log("--- Stop editing");
             this.editItem.toggleEditing(false);
             delete this.editItem;
         }
@@ -461,6 +478,12 @@ function bringElementFrontward(element) {
     const parent = element.parentElement;
     element.remove();
     parent.appendChild(element);
+}
+
+function deselectText() {
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    return selection;
 }
 
 App.init();

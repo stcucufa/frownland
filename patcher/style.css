@@ -15,9 +15,25 @@ body, text {
     font-size: 16px;
 }
 
+span.input {
+    white-space: nowrap;
+    pointer-events: none;
+    padding: 2px 4px;
+    display: inline-block;
+    height: 100%;
+}
+
+span.input:focus {
+    outline: none;
+}
+
 g.box rect {
     stroke: #102040;
     fill: #f8f9f0;
+}
+
+g.box foreignObject {
+    pointer-events: none;
 }
 
 g.box.selected > rect {
