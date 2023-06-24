@@ -49,13 +49,6 @@ const Cord = Object.assign((port, x2, y2) => {
     }
     return extend(Cord, properties);
 }, {
-    delete() {
-        this.outlet.disconnect(this.inlet, this);
-        this.inlet.disconnect(this.outlet, this);
-        this.target.removeEventListener("pointerdown", this);
-        this.element.remove();
-    },
-
     // Set the outlet of the cord that was started from an inlet. Switch the
     // end points of the line so that it is always from outlet to inlet.
     setOutlet(port) {
@@ -109,6 +102,14 @@ const Cord = Object.assign((port, x2, y2) => {
         this.target.addEventListener("pointerdown", this);
     },
 
+    // Remove a cord from both of its ports when deleting it. 
+    delete() {
+        this.outlet.disconnect(this.inlet, this);
+        this.inlet.disconnect(this.outlet, this);
+        this.target.removeEventListener("pointerdown", this);
+        this.element.remove();
+    },
+
     // Select the line on pointerdown.
     handleEvent(event) {
         switch (event.type) {
@@ -140,6 +141,7 @@ const Port = assign(properties => create(properties).call(Port), {
         this.cords = new Map();
     },
 
+    // Delete all cords from/to this port when deleting it.
     delete() {
         this.target.removeEventListener("pointerdown", DragEventListener);
         for (const cord of this.cords.values()) {
@@ -147,6 +149,7 @@ const Port = assign(properties => create(properties).call(Port), {
         }
     },
 
+    // Disconnect a cord from or to another port.
     disconnect(port, cord) {
         console.assert(this.cords.get(port) === cord);
         this.cords.delete(port);
@@ -268,6 +271,7 @@ const Box = assign(properties => create(properties).call(Box), {
         }
     },
 
+    // Delete all ports when deleting the box.
     delete() {
         for (const port of this.ports()) {
             port.delete();
@@ -276,6 +280,7 @@ const Box = assign(properties => create(properties).call(Box), {
         this.element.remove();
     },
 
+    // Move all cords from the ports when moving the box.
     updatePosition() {
         this.element.setAttribute("transform", `translate(${this.x}, ${this.y})`);
         for (const port of this.ports()) {
@@ -334,12 +339,14 @@ export const App = {
 
     // Keyboard commands
     commands: {
+        // Add a new box.
         n() {
             const box = Box({ x: this.pointerX, y: Math.max(0, this.pointerY - Box.height) });
             this.canvas.appendChild(box.element);
             this.select(box);
         },
 
+        // Delete the selection (box or cord).
         Backspace() {
             for (const item of this.selection) {
                 this.elements.delete(item);
@@ -357,6 +364,7 @@ export const App = {
                 this.pointerY = event.clientY;
                 break;
             case "keyup":
+                // Execute the command associated with the key.
                 this.commands[event.key]?.call(this);
                 break;
         }
