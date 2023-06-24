@@ -20,6 +20,10 @@ g.box rect {
     fill: #f8f9f0;
 }
 
+g.box.selected > rect {
+    outline: solid 3px #83ebf5;
+}
+
 g.box g.port rect {
     fill: #102040;
 }
@@ -32,6 +36,12 @@ g.port.target circle {
     fill: rgba(64, 255, 64, 0.25);
 }
 
-line.cord {
+g.cord line {
     stroke: #102040;
+}
+
+g.cord.selected line {
+    stroke: #83ebf5;
+    stroke-width: 4;
+    stroke-linecap: round;
 }

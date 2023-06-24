@@ -1,36 +1,6 @@
-import { assign, create, svg } from "../lib/util.js";
+import { assign, create, extend, svg } from "../lib/util.js";
 
-// The main canvas element
-const canvas = document.querySelector("svg.canvas");
-
-// Map between DOM elements and the objects that they represent on the canvas.
-const Elements = new Map();
-
-// Event listener for the main document to handle keyboard commands.
-const DocumentEventListener = {
-    x: 0,
-    y: 0,
-
-    handleEvent(event) {
-        switch (event.type) {
-            case "pointermove":
-                // Keep track of the pointer to place new boxes.
-                this.x = event.clientX;
-                this.y = event.clientY;
-                break;
-            case "keyup":
-                if (event.key === "n") {
-                    // N for new box
-                    canvas.appendChild(Box({ x: this.x, y: this.y }).element);
-                }
-        }
-    }
-};
-
-document.addEventListener("pointermove", DocumentEventListener);
-document.addEventListener("keyup", DocumentEventListener);
-
-// Drag event listener for boxes and cords.
+// Drag event listener for canvas, boxes and cords.
 const DragEventListener = {
     handleEvent(event) {
         switch (event.type) {
@@ -39,9 +9,10 @@ const DragEventListener = {
                 document.addEventListener("pointerup", this);
                 document.addEventListener("pointercancel", this);
                 event.preventDefault();
+                event.stopPropagation();
                 this.x0 = event.clientX;
                 this.y0 = event.clientY;
-                this.target = Elements.get(event.currentTarget);
+                this.target = App.elements.get(event.currentTarget);
                 this.target.dragDidBegin?.(this.x0, this.y0);
                 break;
             case "pointermove":
@@ -64,6 +35,82 @@ const DragEventListener = {
     }
 };
 
+// A patch cord between an outlet and an inlet.
+const Cord = Object.assign((port, x2, y2) => {
+    const properties = {
+        element: App.canvas.appendChild(svg("g", { class: "cord" },
+            svg("line", { x1: port.centerX, y1: port.centerY, x2, y2 }),
+        ))
+    };
+    if (port.isOutlet) {
+        properties.outlet = port;
+    } else {
+        properties.inlet = port;
+    }
+    return extend(Cord, properties);
+}, {
+    // Set the outlet of the cord that was started from an inlet. Switch the
+    // end points of the line so that it is always from outlet to inlet.
+    setOutlet(port) {
+        this.outlet = port;
+        this.updateEndpoint(this.outlet.centerX, this.outlet.centerY, "x1", "y1");
+        this.updateEndpoint(this.inlet.centerX, this.inlet.centerY);
+        this.addTarget();
+    },
+
+    // Set the inlet of the cord that was started from an outlet.
+    setInlet(port) {
+        this.inlet = port;
+        this.updateEndpoint(this.inlet.centerX, this.inlet.centerY);
+        this.addTarget();
+    },
+
+    // Update one end point of the lines.
+    updateEndpoint(x, y, xAttribute = "x2", yAttribute = "y2") {
+        for (const child of this.element.children) {
+            child.setAttribute(xAttribute, x);
+            child.setAttribute(yAttribute, y);
+        }
+    },
+
+    // One of the ports of the cord has moved so update the cord accordingly.
+    updatePortPosition(port) {
+        const x = port.centerX;
+        const y = port.centerY;
+        if (port === this.outlet) {
+            this.updateEndpoint(x, y, "x1", "y1");
+        } else {
+            this.updateEndpoint(x, y);
+        }
+    },
+
+    // Toggle the selected state of the cord.
+    toggleSelected(selected) {
+        this.element.classList.toggle("selected", selected);
+        bringElementFrontward(this.element);
+    },
+
+    // Add a target line (transparent and thick) to help with selection.
+    addTarget() {
+        const target = this.element.appendChild(svg("line", {
+            opacity: 0, "stroke-width": 8,
+            x1: this.outlet.centerX, y1: this.outlet.centerY,
+            x2: this.inlet.centerX, y2: this.inlet.centerY,
+        }));
+        target.addEventListener("pointerdown", this);
+    },
+
+    // Select the line on pointerdown.
+    handleEvent(event) {
+        switch (event.type) {
+            case "pointerdown":
+                event.preventDefault();
+                event.stopPropagation();
+                App.select(this);
+        }
+    }
+});
+
 // Ports are inlets and outlets. Inlets and outlets from different boxes can
 // be connected through cords (which are simple SVG lines).
 const Port = assign(properties => create(properties).call(Port), {
@@ -80,7 +127,7 @@ const Port = assign(properties => create(properties).call(Port), {
         });
         this.element = svg("g", { class: "port" }, rect, target);
         target.addEventListener("pointerdown", DragEventListener);
-        Elements.set(target, this);
+        App.elements.set(target, this);
         this.cords = new Map();
     },
 
@@ -94,16 +141,8 @@ const Port = assign(properties => create(properties).call(Port), {
 
     // When the box moves, one end of every cord for this box must move as well.
     updateCords() {
-        if (this.isOutlet) {
-            for (const cord of this.cords.values()) {
-                cord.setAttribute("x1", this.centerX);
-                cord.setAttribute("y1", this.centerY);
-            }
-        } else {
-            for (const cord of this.cords.values()) {
-                cord.setAttribute("x2", this.centerX);
-                cord.setAttribute("y2", this.centerY);
-            }
+        for (const cord of this.cords.values()) {
+            cord.updatePortPosition(this);
         }
     },
 
@@ -122,21 +161,16 @@ const Port = assign(properties => create(properties).call(Port), {
         }
     },
 
-    // Create a coord from this port.
+    // Create a cord from this port.
     dragDidBegin(x, y) {
-        this.cord = this.box.element.parentElement.appendChild(svg("line", {
-            class: "cord",
-            x1: this.centerX,
-            y1: this.centerY,
-            x2: x,
-            y2: y,
-        }));
+        this.cord = Cord(this, x, y);
+        App.deselect();
     },
 
     // Update the cord and decide whether it can be connected to a target.
     dragDidProgress(_, __, x, y) {
         const element = document.elementsFromPoint(x, y)[1];
-        const target = Elements.get(element)?.possibleTargetForCord?.(this);
+        const target = App.elements.get(element)?.possibleTargetForCord?.(this);
         if (target) {
             if (this.target !== target) {
                 if (this.target) {
@@ -151,8 +185,7 @@ const Port = assign(properties => create(properties).call(Port), {
                 delete this.target;
             }
         }
-        this.cord.setAttribute("x2", x);
-        this.cord.setAttribute("y2", y);
+        this.cord.updateEndpoint(x, y);
     },
 
     dragWasCancelled() {
@@ -169,18 +202,14 @@ const Port = assign(properties => create(properties).call(Port), {
             this.target.isTargetForCord = false;
             this.cords.set(this.target, this.cord);
             this.target.cords.set(this, this.cord);
-            if (this.isOutlet) {
-                this.cord.setAttribute("x2", this.target.centerX);
-                this.cord.setAttribute("y2", this.target.centerY);
+            if (this.target.isOutlet) {
+                this.cord.setOutlet(this.target);
             } else {
-                this.cord.setAttribute("x1", this.target.centerX);
-                this.cord.setAttribute("y1", this.target.centerY);
-                this.cord.setAttribute("x2", this.centerX);
-                this.cord.setAttribute("y2", this.centerY);
+                this.cord.setInlet(this.target);
             }
             delete this.target;
         } else {
-            this.cord.remove();
+            this.cord.element.remove();
         }
         delete this.cord;
         delete this.x0;
@@ -189,7 +218,7 @@ const Port = assign(properties => create(properties).call(Port), {
 });
 
 // A box represents an object. It has two inlets and one outlet by default.
-const Box = Object.assign(properties => create(properties).call(Box), {
+const Box = assign(properties => create(properties).call(Box), {
     x: 0,
     y: 0,
     width: 104,
@@ -205,7 +234,7 @@ const Box = Object.assign(properties => create(properties).call(Box), {
         );
         rect.addEventListener("pointerdown", DragEventListener);
         this.updatePosition();
-        Elements.set(rect, this);
+        App.elements.set(rect, this);
     },
 
     // Get all the ports (both inlets and outlets)
@@ -225,14 +254,21 @@ const Box = Object.assign(properties => create(properties).call(Box), {
         }
     },
 
+    toggleSelected(selected) {
+        this.element.classList.toggle("selected", selected);
+        if (selected) {
+            for (const port of this.ports()) {
+                for (const cord of port.cords.values()) {
+                    bringElementFrontward(cord.element);
+                }
+            }
+            bringElementFrontward(this.element);
+        }
+    },
+
     // Drag handling
     dragDidBegin() {
-        for (const port of this.ports()) {
-            for (const cord of port.cords.values()) {
-                bringElementFrontward(cord);
-            }
-        }
-        bringElementFrontward(this.element);
+        App.select(this);
         this.x0 = this.x;
         this.y0 = this.y;
     },
@@ -255,8 +291,81 @@ const Box = Object.assign(properties => create(properties).call(Box), {
     },
 });
 
+// The main application (singleton object).
+export const App = {
+    init() {
+        this.elements.set(this.canvas, this);
+        this.canvas.addEventListener("pointerdown", DragEventListener);
+        this.canvas.addEventListener("pointermove", this);
+        document.addEventListener("keyup", this);
+    },
+
+    pointerX: 0,
+    pointerY: 0,
+
+    // Keyboard commands
+    commands: {
+        n() {
+            const box = Box({ x: this.pointerX, y: Math.max(0, this.pointerY - Box.height) });
+            this.canvas.appendChild(box.element);
+            this.select(box);
+        }
+    },
+
+    handleEvent(event) {
+        switch (event.type) {
+            case "pointermove":
+                // Keep track of the pointer to place new boxes.
+                this.pointerX = event.clientX;
+                this.pointerY = event.clientY;
+                break;
+            case "keyup":
+                this.commands[event.key]?.call(this);
+                break;
+        }
+    },
+
+    // The main canvas element
+    canvas: document.querySelector("svg.canvas"),
+
+    // Map between DOM elements and the objects that they represent on the canvas.
+    elements: new Map(),
+
+    selection: new Set(),
+
+    // Select an item, deselecting everything else.
+    select(item) {
+        if (!this.selection.has(item)) {
+            this.deselect();
+            item.toggleSelected(true);
+            this.selection.add(item);
+        }
+    },
+
+    // Clear the selection.
+    deselect() {
+        for (const selectedItem of this.selection) {
+            selectedItem.toggleSelected(false);
+            this.selection.delete(selectedItem);
+        }
+    },
+
+    dragDidMove() {
+        this.selectionMoved = true;
+    },
+
+    dragDidEnd() {
+        if (!this.selectionMoved) {
+            this.deselect();
+        }
+        delete this.selectionMoved;
+    },
+};
+
 function bringElementFrontward(element) {
     const parent = element.parentElement;
     element.remove();
     parent.appendChild(element);
 }
+
+App.init();
