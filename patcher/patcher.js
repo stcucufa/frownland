@@ -247,6 +247,7 @@ const Box = assign(properties => create(properties).call(Box), {
     y: 0,
     width: 104,
     height: 28,
+    label: "",
 
     init() {
         this.inlets = [Port({ box: this }), Port({ box: this, x: this.width - Port.width })];
@@ -322,13 +323,15 @@ const Box = assign(properties => create(properties).call(Box), {
         } else {
             this.input.contentEditable = false;
             this.input.removeEventListener("keyup", this);
+            this.label = this.input.textContent;
         }
     },
 
     handleEvent(event) {
         switch (event.key) {
-            case "Enter":
             case "Escape":
+                this.input.textContent = this.label;
+            case "Enter":
                 App.didEdit(this);
         }
     },
