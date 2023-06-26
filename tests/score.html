@@ -7,10 +7,11 @@
         <script type="module">
 
 import { test } from "./test.js";
+import { on } from "../lib/events.js";
 import { K } from "../lib/util.js";
 import { Deck } from "../lib/deck.js";
 import { Tape } from "../lib/tape.js";
-import { Score, Instant, Delay, dump } from "../lib/score.js";
+import { Score, Instant, Delay, Event, Seq, dump } from "../lib/score.js";
 
 test("Score()", t => {
     const score = Score();
@@ -69,6 +70,30 @@ test("Score.add(child, at)", t => {
 `* Score-0 [0, ∞[
   * Instant-1 @0 <ok>
   * Delay-2 [17, 40[ <undefined>`, "dump matches");
+});
+
+test("Notification when a child instance ends (with value)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const seq = score.add(Seq([Instant(K("ok")), Delay(23)]), 17);
+    let event;
+    on(tape, "end", e => { event = e; });
+    deck.now = 41;
+    t.equal(event.item, seq, "Notification from item");
+    t.equal(event.value, "ok", "Value");
+});
+
+test("Notification when a child instance ends (with failure)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const seq = score.add(Seq([Instant(K("ok")), Event(window, "synth").dur(23)]), 17);
+    let event;
+    on(tape, "end", e => { event = e; });
+    deck.now = 41;
+    t.equal(event.item, seq, "Notification from item");
+    t.ok(event.error, "Error (timeout)");
 });
 
         </script>

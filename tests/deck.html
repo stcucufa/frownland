@@ -125,10 +125,11 @@ test("running updates (failure)", async t => {
     const seq = score.add(Seq([Delay(100), Instant(), Par.map(Delay)]));
     const phi = performance.now();
     deck.start();
-    const { item } = await notification(tape, "fail");
+    const { item, error } = await notification(tape, "end");
     const end = performance.now() - phi;
     t.atLeast(end, 100, `Item ended at φ = ${end}`);
     t.equal(item, seq, "Seq failed");
+    t.ok(error, "with an error");
 });
 
 test("running updates (after the tape has started)", async t => {
