@@ -131,11 +131,11 @@ const Port = assign(properties => create(properties).call(Port), {
     r: 10,
 
     init() {
-        const rect = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
+        this.rect = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
         this.target = svg("circle", {
             cx: this.x + this.width / 2, cy: this.y + this.height / 2, r: this.r
         });
-        this.element = svg("g", { class: "port" }, rect, this.target);
+        this.element = svg("g", { class: "port" }, this.rect, this.target);
         this.target.addEventListener("pointerdown", DragEventListener);
         App.elements.set(this.target, this);
         this.cords = new Map();
@@ -161,6 +161,13 @@ const Port = assign(properties => create(properties).call(Port), {
 
     get centerY() {
         return this.box.y + this.y + this.height / 2;
+    },
+
+    updateX(x) {
+        this.x = x;
+        this.rect.setAttribute("x", x);
+        this.target.setAttribute("cx", x + this.width / 2);
+        this.updateCords();
     },
 
     // When the box moves, one end of every cord for this box must move as well.
@@ -245,7 +252,7 @@ const Port = assign(properties => create(properties).call(Port), {
 const Box = assign(properties => create(properties).call(Box), {
     x: 0,
     y: 0,
-    width: 104,
+    width: 52,
     height: 28,
     label: "",
 
@@ -292,6 +299,17 @@ const Box = assign(properties => create(properties).call(Box), {
         this.element.setAttribute("transform", `translate(${this.x}, ${this.y})`);
         for (const port of this.ports()) {
             port.updateCords();
+        }
+    },
+
+    // Update the size of the box based on the size of the input control. Do
+    // not go under the base width for boxes.
+    updateSize(width) {
+        const w = this.rect.width.baseVal.value;
+        if ((width > w) || (width >= Box.width && width < w)) {
+            this.rect.setAttribute("width", width);
+            this.input.parentElement.setAttribute("width", width);
+            this.inlets[1].updateX(width - Port.width);
         }
     },
 
@@ -377,6 +395,9 @@ export const App = {
         this.canvas.addEventListener("pointerdown", DragEventListener);
         this.canvas.addEventListener("pointermove", this);
         document.addEventListener("keyup", this);
+        this.resizeObserver = new ResizeObserver((entries) => {
+            this.editItem.updateSize(entries[0]?.borderBoxSize[0]?.inlineSize);
+        });
     },
 
     pointerX: 0,
@@ -452,8 +473,10 @@ export const App = {
         if (this.editItem !== item) {
             if (this.editItem) {
                 this.editItem.toggleEditing(false);
+                this.resizeObserver.unobserve(this.editItem.input);
             }
             this.editItem = item;
+            this.resizeObserver.observe(this.editItem.input);
             item.toggleEditing(true);
         }
     },
@@ -461,6 +484,7 @@ export const App = {
     didEdit() {
         if (this.editItem) {
             this.editItem.toggleEditing(false);
+            this.resizeObserver.unobserve(this.editItem.input);
             delete this.editItem;
         }
     },
