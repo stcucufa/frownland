@@ -87,17 +87,27 @@ const Cord = Object.assign((port, x2, y2) => {
     // Toggle the selected state of the cord.
     toggleSelected(selected) {
         this.element.classList.toggle("selected", selected);
-        bringElementFrontward(this.element);
+        if (selected) {
+            bringElementFrontward(this.element);
+        }
     },
 
     // Add a target line (transparent and thick) to help with selection.
     addTarget() {
-        const target = this.element.appendChild(svg("line", {
+        this.target = this.element.appendChild(svg("line", {
             opacity: 0, "stroke-width": 8,
             x1: this.outlet.centerX, y1: this.outlet.centerY,
             x2: this.inlet.centerX, y2: this.inlet.centerY,
         }));
-        target.addEventListener("pointerdown", this);
+        this.target.addEventListener("pointerdown", this);
+    },
+
+    // Remove a cord from both of its ports when deleting it. 
+    delete() {
+        this.outlet.disconnect(this.inlet, this);
+        this.inlet.disconnect(this.outlet, this);
+        this.target.removeEventListener("pointerdown", this);
+        this.element.remove();
     },
 
     // Select the line on pointerdown.
@@ -122,13 +132,27 @@ const Port = assign(properties => create(properties).call(Port), {
 
     init() {
         const rect = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
-        const target = svg("circle", {
+        this.target = svg("circle", {
             cx: this.x + this.width / 2, cy: this.y + this.height / 2, r: this.r
         });
-        this.element = svg("g", { class: "port" }, rect, target);
-        target.addEventListener("pointerdown", DragEventListener);
-        App.elements.set(target, this);
+        this.element = svg("g", { class: "port" }, rect, this.target);
+        this.target.addEventListener("pointerdown", DragEventListener);
+        App.elements.set(this.target, this);
         this.cords = new Map();
+    },
+
+    // Delete all cords from/to this port when deleting it.
+    delete() {
+        this.target.removeEventListener("pointerdown", DragEventListener);
+        for (const cord of this.cords.values()) {
+            cord.delete();
+        }
+    },
+
+    // Disconnect a cord from or to another port.
+    disconnect(port, cord) {
+        console.assert(this.cords.get(port) === cord);
+        this.cords.delete(port);
     },
 
     get centerX() {
@@ -172,42 +196,42 @@ const Port = assign(properties => create(properties).call(Port), {
         const element = document.elementsFromPoint(x, y)[1];
         const target = App.elements.get(element)?.possibleTargetForCord?.(this);
         if (target) {
-            if (this.target !== target) {
-                if (this.target) {
-                    this.target.isTargetForCord = false;
+            if (this.dragTarget !== target) {
+                if (this.dragTarget) {
+                    this.dragTarget.isTargetForCord = false;
                 }
-                this.target = target;
-                this.target.isTargetForCord = true;
+                this.dragTarget = target;
+                this.dragTarget.isTargetForCord = true;
             }
         } else {
-            if (this.target) {
-                this.target.isTargetForCord = false;
-                delete this.target;
+            if (this.dragTarget) {
+                this.dragTarget.isTargetForCord = false;
+                delete this.dragTarget;
             }
         }
         this.cord.updateEndpoint(x, y);
     },
 
     dragWasCancelled() {
-        if (this.target) {
-            this.target.isTargetForCord = false;
-            delete this.target;
+        if (this.dragTarget) {
+            this.dragTarget.isTargetForCord = false;
+            delete this.dragTarget;
         }
     },
 
     // Actually connect to the target if there is any and keep the coord;
     // otherwise, remove it.
     dragDidEnd() {
-        if (this.target) {
-            this.target.isTargetForCord = false;
-            this.cords.set(this.target, this.cord);
-            this.target.cords.set(this, this.cord);
-            if (this.target.isOutlet) {
-                this.cord.setOutlet(this.target);
+        if (this.dragTarget) {
+            this.dragTarget.isTargetForCord = false;
+            this.cords.set(this.dragTarget, this.cord);
+            this.dragTarget.cords.set(this, this.cord);
+            if (this.dragTarget.isOutlet) {
+                this.cord.setOutlet(this.dragTarget);
             } else {
-                this.cord.setInlet(this.target);
+                this.cord.setInlet(this.dragTarget);
             }
-            delete this.target;
+            delete this.dragTarget;
         } else {
             this.cord.element.remove();
         }
@@ -227,14 +251,14 @@ const Box = assign(properties => create(properties).call(Box), {
     init() {
         this.inlets = [Port({ box: this }), Port({ box: this, x: this.width - Port.width })];
         this.outlets = [Port({ box: this, y: this.height - Port.height, isOutlet: true })];
-        const rect = svg("rect", { width: this.width, height: this.height });
+        this.rect = svg("rect", { width: this.width, height: this.height });
         this.element = svg("g", { class: "box" },
-            rect,
+            this.rect,
             [...this.ports()].map(port => port.element)
         );
-        rect.addEventListener("pointerdown", DragEventListener);
+        this.rect.addEventListener("pointerdown", DragEventListener);
         this.updatePosition();
-        App.elements.set(rect, this);
+        App.elements.set(this.rect, this);
     },
 
     // Get all the ports (both inlets and outlets)
@@ -247,6 +271,16 @@ const Box = assign(properties => create(properties).call(Box), {
         }
     },
 
+    // Delete all ports when deleting the box.
+    delete() {
+        for (const port of this.ports()) {
+            port.delete();
+        }
+        this.rect.removeEventListener("pointerdown", DragEventListener);
+        this.element.remove();
+    },
+
+    // Move all cords from the ports when moving the box.
     updatePosition() {
         this.element.setAttribute("transform", `translate(${this.x}, ${this.y})`);
         for (const port of this.ports()) {
@@ -305,11 +339,21 @@ export const App = {
 
     // Keyboard commands
     commands: {
+        // Add a new box.
         n() {
             const box = Box({ x: this.pointerX, y: Math.max(0, this.pointerY - Box.height) });
             this.canvas.appendChild(box.element);
             this.select(box);
-        }
+        },
+
+        // Delete the selection (box or cord).
+        Backspace() {
+            for (const item of this.selection) {
+                this.elements.delete(item);
+                item.delete();
+            }
+            this.deselect();
+        },
     },
 
     handleEvent(event) {
@@ -320,6 +364,7 @@ export const App = {
                 this.pointerY = event.clientY;
                 break;
             case "keyup":
+                // Execute the command associated with the key.
                 this.commands[event.key]?.call(this);
                 break;
         }
@@ -346,8 +391,8 @@ export const App = {
     deselect() {
         for (const selectedItem of this.selection) {
             selectedItem.toggleSelected(false);
-            this.selection.delete(selectedItem);
         }
+        this.selection.clear();
     },
 
     dragDidMove() {
