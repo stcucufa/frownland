@@ -10,8 +10,8 @@ import { test } from "./test.js";
 import {
     add, addBy, assign, assoc, clamp, create, cycle, escapeMarkup, extend, flip,
     fold1, get, I, imagePromise, isAsync, isEmpty, isIterable, isNumber,
-    isObject, K, mod, nop, partition, push, range, remove, shuffle, sign,
-    single, snd, timeout, todo, typeOf
+    isObject, K, mod, nop, parseTime, partition, push, range, remove, shuffle,
+    sign, single, snd, timeout, todo, typeOf
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -249,6 +249,21 @@ test("mod(x, m)", t => {
 
 test("nop()", t => {
     t.undefined(nop());
+});
+
+test("parseTime(string)", t => {
+    t.equal(parseTime("365.25d"), 31557600000, "1 average year = 31,557,600,000 ms");
+    t.equal(parseTime("1w"), 604800000, "1 week = 604,800,000 ms");
+    t.equal(parseTime("1d"), 86400000, "1 day = 86,400,000 ms");
+    t.equal(parseTime("1h"), 3600000, "1 hour = 3,600,000 ms");
+    t.equal(parseTime("1m"), 60000, "1 minute = 60,000 ms");
+    t.equal(parseTime("1s"), 1000, "1 second = 1,000 ms");
+    t.equal(parseTime("1ms"), 1, "1 ms = 1 ms");
+    t.equal(parseTime(""), 0, "nothing = 0ms");
+    t.equal(parseTime("500"), 500, "ms is the default unit");
+    t.equal(parseTime(" 2.5 H 10s  "), 3600000 * 2.5 + 10000, "several units in the right order");
+    t.throws(() => { parseTime(" 10s  2H "); }, "several units in the wrong order");
+    t.throws(() => { parseTime("one week"); }, "unexpected format");
 });
 
 test("partition(xs, p)", t => {
