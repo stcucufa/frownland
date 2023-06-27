@@ -11,13 +11,19 @@ img {
     margin: 4px;
 }
 
+div.placeholder {
+    background-color: #999966;
+    display: inline-block;
+    margin: 4px;
+}
+
         </style>
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Event, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
+import { Await, Delay, Event, Effect, Instant, Par, Score, Seq, Try, dump } from "../../lib/score.js";
 import { Tape } from "../../lib/tape.js";
-import { imagePromise, K, range, timeout } from "../../lib/util.js";
+import { html, imagePromise, K, range, timeout } from "../../lib/util.js";
 
 const tape = Tape();
 const deck = Deck({ tape });
@@ -28,10 +34,15 @@ score.add(Seq([
     Event(button, "click").repeat().take(3),
     Effect(() => { button.disabled = true; }),
     Await(async () => await (await fetch("images.json")).json()),
-    Seq.map(url => Await(async () => {
-        document.body.appendChild(await imagePromise(url));
-        return url;
-    }).dur(500)),
+    Seq.map(([w, h]) => Seq([
+        Try(
+            Await(async () => await imagePromise(`https://placekitten.com/${w}/${h}`)).dur(10),
+            Instant(() => html("div", {
+                class: "placeholder", style: `width: 200px; height: ${h * 200 / w}px` 
+            }))
+        ),
+        Effect(element => { document.body.appendChild(element); })
+    ])),
     Effect(() => {
         setTimeout(() => { console.log(dump(score.instance)); });
         return "ok";
@@ -44,7 +55,7 @@ deck.start();
     </head>
     <body>
         <p><a href="../">Back</a></p>
-        <p>Fetch images of increasing size, waiting 500ms after each one.</p>
+        <p>Fetch images of increasing size, waiting a bit after each one.</p>
         <p><button type="button">Begin</button> (press three times!)</p>
     </body>
 </html>

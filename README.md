@@ -98,6 +98,7 @@ of the timing model.
 duration finishes.
 * `Seq(xs)`: evaluate a list of elements _xs_ one by one, beginning an element when the previous one
 finishes, and finishing with the last one.
+* `Try(x, catch)`: 
 
 These elements can be further modified through the use of the following modifiers:
 
@@ -172,19 +173,6 @@ follow the same rules, but also fail if their input is not a list of values. `re
 element that it repeats has no duration and it is not constrained to a finite number of iterations through
 `take()`.
 
-Error handling is an important part of programming and needs to be considered. The `choice` operator above
-can be used for this purpose: given a kind of result type that can be represent either a value or an error,
-the following pattern expresses how the resulf of a function _f_ can be handled by either a function _g_
-expecting a value, or a function _h_ expecting an error:
-
-```
-Seq([Instant(f), choice(Instant(g), Instant(h))])
-```
-
-In the JS implementation of Frownland, we can treat Exception as errors and introduce an `Error(f)` element
-similar to `Instant(f)` but only beginning when its input is an Exception (while `Instant(f)` would fail
-in that case).
-
 ### Asynchronous layer
 
 The pure, synchronous core on its own is rather useless since it does not allow any input, output, or side
@@ -211,6 +199,25 @@ model below:
 
 * `undo(g)` provides an undo function for the effect if it is evaluated again backward;
 * `redo(g)` provides a redo function for the effect is it is evaluated again forward.
+
+### Error handling
+
+In addition to failing, an item may end with an error instead of a value. The functions called by Instant,
+Effect and Await may throw an exception; if it is not caught, then the item ends with an error. Await and
+Event may also end with a timeout error if they do not finish by the duration set explicitly or by the
+parent container. Seq.fold, Seq.map and Par.map may end with an input error if their input value is not an
+array of values.
+
+An error in a Seq causes the Seq to end as well with an error; in a Par, the problem child is discarded
+and the Par *may* recover if enough children end successfully to satisfy a potential take() modifier (but
+if there is no modifier, any error will cause the Par to end in error). In order to recover from an error
+at runtime, the `Try` item can be used in a similar way to the try/catch construct found in many
+programming languages:
+
+* `Try(x, catch)` is a special kind of container (similar to `Par` and `Seq`) that first tries its content
+`x`. If `x` ends with a value, then the `Try` itself ends at the same time with the same value. But if `x`
+fails or ends with an error, then the `catch` item is tried with the error as its input, and the `Try` ends
+as when the `catch` ends.
 
 ### Presentation layer
 
