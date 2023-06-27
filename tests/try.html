@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Try</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Delay, Event, Instant, Par, Seq, Try, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Try(x, catch)", t => {
+    const item = Try(Event(window, "synth").dur(100), Instant(K("ko")));
+    t.equal(item.show(), "Try", "show");
+    t.undefined(item.duration, "unresolved duration");
+    t.equal(!item.failible, true, "not failible (if child is not failible)");
+});
+
+test("Try(x, catch) with zero duration children", t => {
+    const item = Try(Instant(() => { throw("Augh!"); }), Instant(K("ok")));
+    t.equal(item.duration, 0, "zero duration");
+});
+
+test("Try(x, catch) with failible child", t => {
+    const item = Try(Event(window, "synth").dur(0), Instant(K("ko")));
+    t.equal(item.failible, true, "failible");
+});
+
+test("Instantiation (no error, zero duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(Instant(K("ok")), Instant(K("ko"))), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Try-0 @17 <ok>
+  * Instant-1 @17 <ok>`, "dump matches");
+});
+
+test("Instantiation (no error, unresolved duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(
+        Seq([Instant(K([23])), Par.map(Delay)]),
+        Instant(K("ko"))
+    ), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Try-0 [17, 40[ <23>
+  * Seq-1 [17, 40[ <23>
+    * Instant-2 @17 <23>
+    * Par/map-3 [17, 40[ <23>
+      * Delay-4 [17, 40[ <23>`, "dump matches");
+});
+
+test("Instantiation (no error, catch has unresolved duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(Instant(K("ok")), Delay(23)), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Try-0 @17 <ok>
+  * Instant-1 @17 <ok>`, "dump matches");
+});
+
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>
