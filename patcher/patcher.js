@@ -1,4 +1,4 @@
-import { assign, create, extend, svg } from "../lib/util.js";
+import { assign, create, extend, html, svg } from "../lib/util.js";
 
 // Drag event listener for canvas, boxes and cords.
 const DragEventListener = {
@@ -131,11 +131,11 @@ const Port = assign(properties => create(properties).call(Port), {
     r: 10,
 
     init() {
-        const rect = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
+        this.rect = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
         this.target = svg("circle", {
             cx: this.x + this.width / 2, cy: this.y + this.height / 2, r: this.r
         });
-        this.element = svg("g", { class: "port" }, rect, this.target);
+        this.element = svg("g", { class: "port" }, this.rect, this.target);
         this.target.addEventListener("pointerdown", DragEventListener);
         App.elements.set(this.target, this);
         this.cords = new Map();
@@ -161,6 +161,13 @@ const Port = assign(properties => create(properties).call(Port), {
 
     get centerY() {
         return this.box.y + this.y + this.height / 2;
+    },
+
+    updateX(x) {
+        this.x = x;
+        this.rect.setAttribute("x", x);
+        this.target.setAttribute("cx", x + this.width / 2);
+        this.updateCords();
     },
 
     // When the box moves, one end of every cord for this box must move as well.
@@ -245,15 +252,22 @@ const Port = assign(properties => create(properties).call(Port), {
 const Box = assign(properties => create(properties).call(Box), {
     x: 0,
     y: 0,
-    width: 104,
+    width: 52,
     height: 28,
+    label: "",
 
     init() {
         this.inlets = [Port({ box: this }), Port({ box: this, x: this.width - Port.width })];
         this.outlets = [Port({ box: this, y: this.height - Port.height, isOutlet: true })];
         this.rect = svg("rect", { width: this.width, height: this.height });
+        this.input = html("span", { class: "input", spellcheck: false });
         this.element = svg("g", { class: "box" },
             this.rect,
+            svg("foreignObject", {
+                y: Port.height,
+                width: this.width,
+                height: this.height - 2 * Port.height
+            }, this.input),
             [...this.ports()].map(port => port.element)
         );
         this.rect.addEventListener("pointerdown", DragEventListener);
@@ -288,6 +302,17 @@ const Box = assign(properties => create(properties).call(Box), {
         }
     },
 
+    // Update the size of the box based on the size of the input control. Do
+    // not go under the base width for boxes.
+    updateSize(width) {
+        const w = this.rect.width.baseVal.value;
+        if ((width > w) || (width >= Box.width && width < w)) {
+            this.rect.setAttribute("width", width);
+            this.input.parentElement.setAttribute("width", width);
+            this.inlets[1].updateX(width - Port.width);
+        }
+    },
+
     toggleSelected(selected) {
         this.element.classList.toggle("selected", selected);
         if (selected) {
@@ -297,17 +322,51 @@ const Box = assign(properties => create(properties).call(Box), {
                 }
             }
             bringElementFrontward(this.element);
+        } else {
+            deselectText();
+        }
+    },
+
+    toggleEditing(editing) {
+        if (editing) {
+            this.input.contentEditable = "plaintext-only";
+            this.input.addEventListener("keyup", this);
+            window.setTimeout(() => {
+                this.input.focus();
+                const selection = deselectText();
+                const range = document.createRange();
+                range.selectNodeContents(this.input);
+                selection.addRange(range);
+            });
+        } else {
+            this.input.contentEditable = false;
+            this.input.removeEventListener("keyup", this);
+            this.label = this.input.textContent;
+        }
+    },
+
+    handleEvent(event) {
+        switch (event.key) {
+            case "Escape":
+                this.input.textContent = this.label;
+            case "Enter":
+                App.didEdit(this);
         }
     },
 
     // Drag handling
     dragDidBegin() {
+        this.willEdit = App.selection.has(this);
         App.select(this);
         this.x0 = this.x;
         this.y0 = this.y;
     },
 
     dragDidProgress(dx, dy) {
+        if (this.willEdit) {
+            delete this.willEdit;
+            deselectText();
+        }
         this.x = this.x0 + dx;
         this.y = this.y0 + dy;
         this.updatePosition();
@@ -322,6 +381,10 @@ const Box = assign(properties => create(properties).call(Box), {
     dragDidEnd() {
         delete this.x0;
         delete this.y0;
+        if (this.willEdit) {
+            delete this.willEdit;
+            App.willEdit(this);
+        }
     },
 });
 
@@ -332,6 +395,9 @@ export const App = {
         this.canvas.addEventListener("pointerdown", DragEventListener);
         this.canvas.addEventListener("pointermove", this);
         document.addEventListener("keyup", this);
+        this.resizeObserver = new ResizeObserver((entries) => {
+            this.editItem.updateSize(entries[0]?.borderBoxSize[0]?.inlineSize);
+        });
     },
 
     pointerX: 0,
@@ -344,6 +410,7 @@ export const App = {
             const box = Box({ x: this.pointerX, y: Math.max(0, this.pointerY - Box.height) });
             this.canvas.appendChild(box.element);
             this.select(box);
+            this.willEdit(box);
         },
 
         // Delete the selection (box or cord).
@@ -364,8 +431,11 @@ export const App = {
                 this.pointerY = event.clientY;
                 break;
             case "keyup":
-                // Execute the command associated with the key.
-                this.commands[event.key]?.call(this);
+                // Execute the command associated with the key (when not
+                // otherwise editing).
+                if (!this.editItem) {
+                    this.commands[event.key]?.call(this);
+                }
                 break;
         }
     },
@@ -391,8 +461,32 @@ export const App = {
     deselect() {
         for (const selectedItem of this.selection) {
             selectedItem.toggleSelected(false);
+            if (selectedItem === this.editItem) {
+                this.didEdit();
+            }
         }
         this.selection.clear();
+    },
+
+    // Track item being edited
+    willEdit(item) {
+        if (this.editItem !== item) {
+            if (this.editItem) {
+                this.editItem.toggleEditing(false);
+                this.resizeObserver.unobserve(this.editItem.input);
+            }
+            this.editItem = item;
+            this.resizeObserver.observe(this.editItem.input);
+            item.toggleEditing(true);
+        }
+    },
+
+    didEdit() {
+        if (this.editItem) {
+            this.editItem.toggleEditing(false);
+            this.resizeObserver.unobserve(this.editItem.input);
+            delete this.editItem;
+        }
     },
 
     dragDidMove() {
@@ -411,6 +505,12 @@ function bringElementFrontward(element) {
     const parent = element.parentElement;
     element.remove();
     parent.appendChild(element);
+}
+
+function deselectText() {
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    return selection;
 }
 
 App.init();
