@@ -8,6 +8,7 @@ const DragEventListener = {
                 document.addEventListener("pointermove", this);
                 document.addEventListener("pointerup", this);
                 document.addEventListener("pointercancel", this);
+                document.addEventListener("keyup", this);
                 event.preventDefault();
                 event.stopPropagation();
                 this.x0 = event.clientX;
@@ -21,17 +22,32 @@ const DragEventListener = {
                 this.target.dragDidProgress?.(x - this.x0, y - this.y0, x, y);
                 break;
             case "pointercancel":
-                this.target.dragWasCancelled?.();
+                this.dragWasCancelled();
                 // Fallthrough
             case "pointerup":
-                this.target.dragDidEnd?.();
-                delete this.x0;
-                delete this.y0;
-                delete this.target;
-                document.removeEventListener("pointermove", this);
-                document.removeEventListener("pointerup", this);
-                document.removeEventListener("pointercancel", this);
+                this.dragDidEnd();
+                break;
+            case "keyup":
+                if (event.key === "Escape") {
+                    this.dragWasCancelled();
+                    this.dragDidEnd();
+                }
         }
+    },
+
+    dragWasCancelled() {
+        this.target.dragWasCancelled?.();
+    },
+
+    dragDidEnd() {
+        this.target.dragDidEnd?.();
+        delete this.x0;
+        delete this.y0;
+        delete this.target;
+        document.removeEventListener("pointermove", this);
+        document.removeEventListener("pointerup", this);
+        document.removeEventListener("pointercancel", this);
+        document.removeEventListener("keyup", this);
     }
 };
 
@@ -433,7 +449,7 @@ export const App = {
             case "keyup":
                 // Execute the command associated with the key (when not
                 // otherwise editing).
-                if (!this.editItem) {
+                if (!this.editItem && !DragEventListener.target) {
                     this.commands[event.key]?.call(this);
                 }
                 break;
