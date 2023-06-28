@@ -22,20 +22,24 @@ const DragEventListener = {
                 this.target.dragDidProgress?.(x - this.x0, y - this.y0, x, y);
                 break;
             case "pointercancel":
-                this.target.dragWasCancelled?.();
+                this.dragWasCancelled();
                 // Fallthrough
             case "pointerup":
-                this.draggingDidEnd();
+                this.dragDidEnd();
                 break;
             case "keyup":
                 if (event.key === "Escape") {
-                    this.target.dragWasCancelled?.();
-                    this.draggingDidEnd();
+                    this.dragWasCancelled();
+                    this.dragDidEnd();
                 }
         }
     },
 
-    draggingDidEnd() {
+    dragWasCancelled() {
+        this.target.dragWasCancelled?.();
+    },
+
+    dragDidEnd() {
         this.target.dragDidEnd?.();
         delete this.x0;
         delete this.y0;
