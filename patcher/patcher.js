@@ -1,4 +1,6 @@
 import { assign, create, extend, html, svg } from "../lib/util.js";
+import { bringElementFrontward, deselectText } from "./util.js";
+import { Patch } from "./patch.js";
 
 // Drag event listener for canvas, boxes and cords.
 const DragEventListener = {
@@ -13,7 +15,7 @@ const DragEventListener = {
                 event.stopPropagation();
                 this.x0 = event.clientX;
                 this.y0 = event.clientY;
-                this.target = App.elements.get(event.currentTarget);
+                this.target = Patcher.elements.get(event.currentTarget);
                 this.target.dragDidBegin?.(this.x0, this.y0);
                 break;
             case "pointermove":
@@ -54,7 +56,7 @@ const DragEventListener = {
 // A patch cord between an outlet and an inlet.
 const Cord = Object.assign((port, x2, y2) => {
     const properties = {
-        element: App.canvas.appendChild(svg("g", { class: "cord" },
+        element: Patcher.canvas.appendChild(svg("g", { class: "cord" },
             svg("line", { x1: port.centerX, y1: port.centerY, x2, y2 }),
         ))
     };
@@ -72,6 +74,7 @@ const Cord = Object.assign((port, x2, y2) => {
         this.updateEndpoint(this.outlet.centerX, this.outlet.centerY, "x1", "y1");
         this.updateEndpoint(this.inlet.centerX, this.inlet.centerY);
         this.addTarget();
+        Patcher.cordWasAdded(this);
     },
 
     // Set the inlet of the cord that was started from an outlet.
@@ -79,6 +82,7 @@ const Cord = Object.assign((port, x2, y2) => {
         this.inlet = port;
         this.updateEndpoint(this.inlet.centerX, this.inlet.centerY);
         this.addTarget();
+        Patcher.cordWasAdded(this);
     },
 
     // Update one end point of the lines.
@@ -119,7 +123,8 @@ const Cord = Object.assign((port, x2, y2) => {
     },
 
     // Remove a cord from both of its ports when deleting it. 
-    delete() {
+    remove() {
+        Patcher.cordWillBeRemoved(this);
         this.outlet.disconnect(this.inlet, this);
         this.inlet.disconnect(this.outlet, this);
         this.target.removeEventListener("pointerdown", this);
@@ -132,7 +137,7 @@ const Cord = Object.assign((port, x2, y2) => {
             case "pointerdown":
                 event.preventDefault();
                 event.stopPropagation();
-                App.select(this);
+                Patcher.select(this);
         }
     }
 });
@@ -153,15 +158,15 @@ const Port = assign(properties => create(properties).call(Port), {
         });
         this.element = svg("g", { class: "port" }, this.rect, this.target);
         this.target.addEventListener("pointerdown", DragEventListener);
-        App.elements.set(this.target, this);
+        Patcher.elements.set(this.target, this);
         this.cords = new Map();
     },
 
-    // Delete all cords from/to this port when deleting it.
-    delete() {
+    // Remove all cords from/to this port when deleting it.
+    remove() {
         this.target.removeEventListener("pointerdown", DragEventListener);
         for (const cord of this.cords.values()) {
-            cord.delete();
+            cord.remove();
         }
     },
 
@@ -211,13 +216,13 @@ const Port = assign(properties => create(properties).call(Port), {
     // Create a cord from this port.
     dragDidBegin(x, y) {
         this.cord = Cord(this, x, y);
-        App.deselect();
+        Patcher.deselect();
     },
 
     // Update the cord and decide whether it can be connected to a target.
     dragDidProgress(_, __, x, y) {
         const element = document.elementsFromPoint(x, y)[1];
-        const target = App.elements.get(element)?.possibleTargetForCord?.(this);
+        const target = Patcher.elements.get(element)?.possibleTargetForCord?.(this);
         if (target) {
             if (this.dragTarget !== target) {
                 if (this.dragTarget) {
@@ -288,7 +293,7 @@ const Box = assign(properties => create(properties).call(Box), {
         );
         this.rect.addEventListener("pointerdown", DragEventListener);
         this.updatePosition();
-        App.elements.set(this.rect, this);
+        Patcher.elements.set(this.rect, this);
     },
 
     // Get all the ports (both inlets and outlets)
@@ -301,10 +306,11 @@ const Box = assign(properties => create(properties).call(Box), {
         }
     },
 
-    // Delete all ports when deleting the box.
-    delete() {
+    // Remove all ports when deleting the box.
+    remove() {
+        Patcher.boxWillBeRemoved(this);
         for (const port of this.ports()) {
-            port.delete();
+            port.remove();
         }
         this.rect.removeEventListener("pointerdown", DragEventListener);
         this.element.remove();
@@ -366,14 +372,14 @@ const Box = assign(properties => create(properties).call(Box), {
             case "Escape":
                 this.input.textContent = this.label;
             case "Enter":
-                App.didEdit(this);
+                Patcher.didEdit(this);
         }
     },
 
     // Drag handling
     dragDidBegin() {
-        this.willEdit = App.selection.has(this);
-        App.select(this);
+        this.willEdit = Patcher.selection.has(this);
+        Patcher.select(this);
         this.x0 = this.x;
         this.y0 = this.y;
     },
@@ -399,13 +405,13 @@ const Box = assign(properties => create(properties).call(Box), {
         delete this.y0;
         if (this.willEdit) {
             delete this.willEdit;
-            App.willEdit(this);
+            Patcher.willEdit(this);
         }
     },
 });
 
 // The main application (singleton object).
-export const App = {
+const Patcher = {
     init() {
         this.elements.set(this.canvas, this);
         this.canvas.addEventListener("pointerdown", DragEventListener);
@@ -433,7 +439,7 @@ export const App = {
         Backspace() {
             for (const item of this.selection) {
                 this.elements.delete(item);
-                item.delete();
+                item.remove();
             }
             this.deselect();
         },
@@ -454,6 +460,31 @@ export const App = {
                 }
                 break;
         }
+    },
+
+    // The patch for this patcher
+    patch: Patch(),
+
+    boxWillBeRemoved(box) {
+        this.patch.boxWillBeRemoved(box);
+    },
+
+    cordWasAdded(cord) {
+        const outlet = cord.outlet;
+        const inlet = cord.inlet;
+        this.patch.cordWasAdded(
+            outlet.box, outlet.box.outlets.indexOf(outlet),
+            inlet.box, inlet.box.inlets.indexOf(inlet)
+        );
+    },
+
+    cordWillBeRemoved(cord) {
+        const outlet = cord.outlet;
+        const inlet = cord.inlet;
+        this.patch.cordWillBeRemoved(
+            outlet.box, outlet.box.outlets.indexOf(outlet),
+            inlet.box, inlet.box.inlets.indexOf(inlet)
+        );
     },
 
     // The main canvas element
@@ -501,6 +532,7 @@ export const App = {
         if (this.editItem) {
             this.editItem.toggleEditing(false);
             this.resizeObserver.unobserve(this.editItem.input);
+            this.patch.boxWasEdited(this.editItem);
             delete this.editItem;
         }
     },
@@ -517,16 +549,4 @@ export const App = {
     },
 };
 
-function bringElementFrontward(element) {
-    const parent = element.parentElement;
-    element.remove();
-    parent.appendChild(element);
-}
-
-function deselectText() {
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    return selection;
-}
-
-App.init();
+Patcher.init();
