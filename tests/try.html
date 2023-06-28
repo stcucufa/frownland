@@ -132,6 +132,20 @@ test("Recovery in Par", t => {
   * Instant-3 @17 <yeah>`, "dump matches");
 });
 
+test("Catch duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par([
+        Try(Instant(() => { throw window.Error("Augh!"); }), Instant(K("ok")).dur(29))
+    ]).dur(23), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 40[ <Error: Augh!>
+  * Try-1 [17, 40[ <Error: Augh!>
+    * Instant-2 @17 error<Augh!>
+    * Seq-3 [17, 40[ <Error: Augh!>
+      * Delay-4 [17, 40[ <Error: Augh!>`, "dump matches");
+});
+
 test("Cancel (no error)", t => {
     const tape = Tape();
     const deck = Deck({ tape });
