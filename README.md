@@ -98,7 +98,6 @@ of the timing model.
 duration finishes.
 * `Seq(xs)`: evaluate a list of elements _xs_ one by one, beginning an element when the previous one
 finishes, and finishing with the last one.
-* `Try(x, catch)`: 
 
 These elements can be further modified through the use of the following modifiers:
 
@@ -214,10 +213,10 @@ if there is no modifier, any error will cause the Par to end in error). In order
 at runtime, the `Try` item can be used in a similar way to the try/catch construct found in many
 programming languages:
 
-* `Try(x, catch)` is a special kind of container (similar to `Par` and `Seq`) that first tries its content
-`x`. If `x` ends with a value, then the `Try` itself ends at the same time with the same value. But if `x`
-fails or ends with an error, then the `catch` item is tried with the error as its input, and the `Try` ends
-as when the `catch` ends.
+* `Try(child, catch)` is a special kind of container (similar to `Par` and `Seq`) that first tries its
+regular child. If the child ends with a value, then the `Try` itself ends at the same time with the same
+value. But if the child fails, or ends with an error, then the `catch` child is tried with the error as its
+input, and the `Try` ends as when the `catch` ends.
 
 ### Presentation layer
 
