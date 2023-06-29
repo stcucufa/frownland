@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Try</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { K } from "../lib/util.js";
+import { Delay, Event, Instant, Par, Seq, Try, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Try(x, catch)", t => {
+    const item = Try(Event(window, "synth").dur(23), Instant(K("ko")));
+    t.equal(item.show(), "Try", "show");
+    t.undefined(item.duration, "unresolved duration");
+    t.equal(!item.failible, true, "not failible (if child is not failible)");
+});
+
+test("Try(x, catch) failibility", t => {
+    const item = Try(Event(window, "synth").dur(0), Instant(K("ko")));
+    t.equal(!item.failible, true, "failure can be caught");
+    const failibleItem = Try(Event(window, "synth").dur(0), Par().take(1));
+    t.equal(failibleItem.failible, true, "failure cannot be caught");
+});
+
+test("Instantiation (no error, zero duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(Instant(K("ok")), Instant(K("ko"))), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Try-0 @17 <ok>
+  * Instant-1 @17 <ok>`, "dump matches");
+});
+
+test("Instantiation (no error, unresolved duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(
+        Seq([Instant(K([23])), Par.map(Delay)]),
+        Instant(K("ko"))
+    ), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Try-0 [17, 40[ <23>
+  * Seq-1 [17, 40[ <23>
+    * Instant-2 @17 <23>
+    * Par/map-3 [17, 40[ <23>
+      * Delay-4 [17, 40[ <23>`, "dump matches");
+});
+
+test("Instantiation (no error, catch has unresolved duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(Instant(K("ok")), Delay(23)), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Try-0 @17 <ok>
+  * Instant-1 @17 <ok>`, "dump matches");
+});
+
+test("Instantiation (error, catch with zero duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(
+        Instant(() => { throw window.Error("Augh!") }), Instant(K("ok"))
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Try-0 @17 <ok>
+  * Instant-1 @17 error<Augh!>
+  * Instant-2 @17 <ok>`, "dump matches");
+});
+
+test("Instantiation (error with duration)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const instance = tape.instantiate(Try(Event(window, "synth").dur(23), Instant(K("ok"))), 17);
+    deck.now = 41;
+    t.equal(dump(instance),
+`* Try-0 [17, 40[ <ok>
+  * Event-1 [17, 40[ (timeout)
+  * Instant-2 @40 <ok>`, "dump matches");
+});
+
+test("Instantiation (error during child instantiation)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(Event(window, "synth").dur(0), Instant(K("ok"))), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Try-0 @17 <ok>
+  * Instant-2 @17 <ok>`, "dump matches");
+});
+
+test("Instantiation (could no recover from error)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Try(
+        Instant(() => { throw window.Error("Augh!") }),
+        Instant(() => { throw window.Error("Augh!!!") })
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Try-0 @17 error<Augh!!!>
+  * Instant-1 @17 error<Augh!>
+  * Instant-2 @17 error<Augh!!!>`, "dump matches");
+});
+
+test("Recovery in Seq", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq([
+        Try(Instant(() => { throw window.Error("Augh!"); }), Instant(K("ok"))),
+        Instant(x => x + "!")
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Seq-0 @17 <ok!>
+  * Try-1 @17 <ok>
+    * Instant-2 @17 error<Augh!>
+    * Instant-3 @17 <ok>
+  * Instant-4 @17 <ok!>`, "dump matches");
+});
+
+test("Recovery in Par", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par([
+        Try(Instant(() => { throw window.Error("Augh!"); }), Instant(K("ok"))),
+        Instant(K("yeah"))
+    ]), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Par-0 @17 <ok,yeah>
+  * Try-1 @17 <ok>
+    * Instant-2 @17 error<Augh!>
+    * Instant-4 @17 <ok>
+  * Instant-3 @17 <yeah>`, "dump matches");
+});
+
+test("Instantiation (not enough time to recover)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const instance = tape.instantiate(Par([
+        Try(Event(window, "synth").dur(23), Event(window, "synth"))
+    ]).dur(23), 17);
+    deck.now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 40[ (failed)
+  * Try-1 [17, 40[ (failed)
+    * Event-2 [17, 40[ (timeout)`, "dump matches");
+});
+
+test("Catch duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par([
+        Try(Instant(() => { throw window.Error("Augh!"); }), Instant(K("ok")).dur(29))
+    ]).dur(23), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 40[ <Error: Augh!>
+  * Try-1 [17, 40[ <Error: Augh!>
+    * Instant-2 @17 error<Augh!>
+    * Seq-3 [17, 40[ <Error: Augh!>
+      * Delay-4 [17, 40[ <Error: Augh!>`, "dump matches");
+});
+
+test("Cancel (no error)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const instance = tape.instantiate(Par([
+        Delay(23),
+        Try(Event(window, "synth"), Instant(() => { throw window.Error("not cancelled?!"); }))
+    ]).take(1), 17);
+    deck.now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 40[ <>
+  * Delay-1 [17, 40[ <undefined>
+  * Try-2 [17, 40[ (cancelled)
+    * Event-3 [17, 40[ (cancelled)`, "dump matches");
+});
+
+test("Cancel (error)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par([
+        Delay(23),
+        Try(Instant(() => { throw window.Error("Augh!"); }), Delay(37))
+    ]).take(1), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 40[ <>
+  * Delay-1 [17, 40[ <undefined>
+  * Try-2 [17, 40[ (cancelled)
+    * Instant-3 @17 error<Augh!>
+    * Delay-4 [17, 40[ (cancelled)`, "dump matches");
+});
+
+test("Prune (no error)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const choice = tape.instantiate(Par([
+        Seq([Instant(K([19])), Par.map(Delay)]),
+        Seq([Delay(23), Try(Event(window, "synth"), Instant(K("ko")))]),
+    ]).take(1), 17);
+    deck.now = 37;
+    t.equal(dump(choice),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19>
+    * Par/map-3 [17, 36[ <19>
+      * Delay-8 [17, 36[ <19>
+  * Seq-4 [17, 36[ (cancelled)
+    * Delay-5 [17, 36[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>
