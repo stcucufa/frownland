@@ -176,7 +176,7 @@ const TestCase = assign(properties => create(properties).call(TestCase), {
             const message = (context ? `${context}: ` : "") + "expected an exception to be thrown";
             this.expectations.push([message, false]);
             this.failures.push(message);
-        } catch {
+        } catch (_) {
             this.expectations.push([context ?? "", true]);
         }
     },
