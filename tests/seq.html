@@ -18,7 +18,7 @@ test("Seq()", t => {
     t.equal(seq.show(), "Seq/0", "show");
     t.equal(seq.children, [], "no children");
     t.equal(seq.duration, 0, "zero duration");
-    t.equal(!seq.failible, true, "not failible");
+    t.equal(!seq.fallible, true, "not fallible");
 });
 
 test("Seq(xs)", t => {
@@ -30,7 +30,7 @@ test("Seq(xs)", t => {
     t.equal(delay.parent, seq, "parent (1)");
     t.equal(instant.parent, seq, "parent (2)");
     t.equal(seq.duration, 17, "duration");
-    t.equal(!seq.failible, true, "not failible");
+    t.equal(!seq.fallible, true, "not fallible");
 });
 
 test("Seq duration", t => {

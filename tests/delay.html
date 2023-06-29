@@ -16,7 +16,7 @@ test("Delay(duration)", t => {
     const delay = Delay(23);
     t.equal(delay.show(), "Delay<23>", "show");
     t.equal(delay.duration, 23, "duration");
-    t.equal(!delay.failible, true, "not failible");
+    t.equal(!delay.fallible, true, "not fallible");
     t.throws(() => { delay.duration = 19; }, "cannot overwrite dur");
 });
 
@@ -26,11 +26,11 @@ test("Delay.repeat()", t => {
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, delay, "repeat child");
     t.equal(repeat.duration, Infinity, "repeat dur");
-    t.equal(!repeat.failible, true, "unlimited repetitions do not fail");
+    t.equal(!repeat.fallible, true, "unlimited repetitions do not fail");
     const limitedRepeats = repeat.take(3);
     t.equal(limitedRepeats.duration, 69, "repeat dur (limited)");
-    t.equal(!limitedRepeats.failible, true, "limited repetitions do not fail");
-    t.equal(Delay(0).repeat().failible, true, "zero duration delay cannot repeat");
+    t.equal(!limitedRepeats.fallible, true, "limited repetitions do not fail");
+    t.equal(Delay(0).repeat().fallible, true, "zero duration delay cannot repeat");
 });
 
 test("Instantiation", t => {

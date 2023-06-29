@@ -16,7 +16,7 @@ test("Delay.until(t)", t => {
     const delay = Delay.until(23);
     t.equal(delay.show(), "Delay/until<23>", "show");
     t.undefined(delay.duration, "unresolved duration");
-    t.equal(!delay.failible, true, "not failible");
+    t.equal(!delay.fallible, true, "not fallible");
 });
 
 test("Instantiation (delay applies)", t => {

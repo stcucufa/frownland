@@ -163,7 +163,7 @@ Note that an `Instant`, or any element with no duration, cannot be cancelled sin
 as it starts. Cancelling a `Par` means cancelling all of its children, and cancelling a `Seq` means
 cancelling the child being currently evaluated.
 
-It is also possible for an element to be _failible_, meaning that it cannot begin. An `Instant` fails to
+It is also possible for an element to be _fallible, meaning that it cannot begin. An `Instant` fails to
 begin if the input value is not valid for its function _f_. `Par` and `Seq` fail if their children fail;
 by default, any child failing causes the container to fail, but if the `take(n)` modifier is applied, then
 failure can be tolerated as long as enough children can begin (the corollary to this is that a `Par` or
