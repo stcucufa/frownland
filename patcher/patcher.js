@@ -1,95 +1,55 @@
-import { assign, create, extend, html, svg } from "../lib/util.js";
+import { create } from "../lib/util.js";
+import { DragEventListener } from "./drag-event-listener.js";
 import { Box } from "./box.js";
 import { Patch } from "./patch.js";
 
-// The main application (singleton object).
-const Patcher = {
+// Keyboard commands for different key. `this` is set to the patcher that calls
+// the command.
+const Commands = {
+    // Add a new box.
+    n() {
+        const box = Box({
+            patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Box.height)
+        });
+        this.canvas.appendChild(box.element);
+        this.select(box);
+        this.willEdit(box);
+    },
+
+    // Delete the selection (box or cord).
+    Backspace() {
+        for (const item of this.selection) {
+            this.elements.delete(item);
+            item.remove();
+        }
+        this.deselect();
+    },
+};
+
+// A patcher is used to edit a patch in a canvas.
+const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
     init() {
-        this.elements.set(this.canvas, this);
         this.canvas.addEventListener("pointerdown", this.dragEventListener);
         this.canvas.addEventListener("pointermove", this);
         document.addEventListener("keyup", this);
+
+        this.elements = new Map();
+        this.elements.set(this.canvas, this);
+        this.dragEventListener = DragEventListener(this.elements);
+
+        // Track the pointer to know where to add new boxes.
+        this.pointerX = 0;
+        this.pointerY = 0;
+
+        this.selection = new Set();
         this.resizeObserver = new ResizeObserver((entries) => {
             this.editItem.updateSize(entries[0]?.borderBoxSize[0]?.inlineSize);
         });
+
+        this.patch = Patch();
     },
 
-    // Drag event listener for canvas, boxes and cords.
-    dragEventListener: {
-        handleEvent(event) {
-            switch (event.type) {
-                case "pointerdown":
-                    document.addEventListener("pointermove", this);
-                    document.addEventListener("pointerup", this);
-                    document.addEventListener("pointercancel", this);
-                    document.addEventListener("keyup", this);
-                    event.preventDefault();
-                    event.stopPropagation();
-                    this.x0 = event.clientX;
-                    this.y0 = event.clientY;
-                    this.target = Patcher.elements.get(event.currentTarget);
-                    this.target.dragDidBegin?.(this.x0, this.y0);
-                    break;
-                case "pointermove":
-                    const x = event.clientX;
-                    const y = event.clientY;
-                    this.target.dragDidProgress?.(x - this.x0, y - this.y0, x, y);
-                    break;
-                case "pointercancel":
-                    this.dragWasCancelled();
-                    // Fallthrough
-                case "pointerup":
-                    this.dragDidEnd();
-                    break;
-                case "keyup":
-                    if (event.key === "Escape") {
-                        this.dragWasCancelled();
-                        this.dragDidEnd();
-                    }
-            }
-        },
-
-        dragWasCancelled() {
-            this.target.dragWasCancelled?.();
-        },
-
-        dragDidEnd() {
-            this.target.dragDidEnd?.();
-            delete this.x0;
-            delete this.y0;
-            delete this.target;
-            document.removeEventListener("pointermove", this);
-            document.removeEventListener("pointerup", this);
-            document.removeEventListener("pointercancel", this);
-            document.removeEventListener("keyup", this);
-        }
-    },
-
-    pointerX: 0,
-    pointerY: 0,
-
-    // Keyboard commands
-    commands: {
-        // Add a new box.
-        n() {
-            const box = Box({
-                patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Box.height)
-            });
-            this.canvas.appendChild(box.element);
-            this.select(box);
-            this.willEdit(box);
-        },
-
-        // Delete the selection (box or cord).
-        Backspace() {
-            for (const item of this.selection) {
-                this.elements.delete(item);
-                item.remove();
-            }
-            this.deselect();
-        },
-    },
-
+    // Keep track of the pointer position and listen to keyboard commands.
     handleEvent(event) {
         switch (event.type) {
             case "pointermove":
@@ -101,14 +61,11 @@ const Patcher = {
                 // Execute the command associated with the key (when not
                 // otherwise editing).
                 if (!this.editItem && !this.dragEventListener.target) {
-                    this.commands[event.key]?.call(this);
+                    Commands[event.key]?.call(this);
                 }
                 break;
         }
     },
-
-    // The patch for this patcher
-    patch: Patch(),
 
     boxWillBeRemoved(box) {
         this.patch.boxWillBeRemoved(box);
@@ -131,14 +88,6 @@ const Patcher = {
             inlet.box, inlet.box.inlets.indexOf(inlet)
         );
     },
-
-    // The main canvas element
-    canvas: document.querySelector("svg.canvas"),
-
-    // Map between DOM elements and the objects that they represent on the canvas.
-    elements: new Map(),
-
-    selection: new Set(),
 
     // Select an item, deselecting everything else.
     select(item) {
@@ -192,6 +141,6 @@ const Patcher = {
         }
         delete this.selectionMoved;
     },
-};
+});
 
-Patcher.init();
+const patcher = Patcher(document.querySelector("svg.canvas"));
