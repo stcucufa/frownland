@@ -16,7 +16,7 @@ test("Event(target, event)", t => {
     const item = Event(window, "synth");
     t.match(item.show(), /Event<[^,]+, synth>/, `show (${item.show()})`);
     t.undefined(item.duration, "unresolved duration");
-    t.equal(!item.failible, true, "infailible (at instantiation)");
+    t.equal(!item.fallible, true, "infallible (at instantiation)");
 });
 
 test("Instantiation", t => {

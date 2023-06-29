@@ -17,7 +17,7 @@ test("Instant()", t => {
     t.equal(instant.show(), "Instant", "show");
     t.equal(instant.valueForInstance(17), 17, "valueForInstance defaults to I");
     t.equal(instant.duration, 0, "zero duration");
-    t.equal(!instant.failible, true, "infailible (at instantiation)");
+    t.equal(!instant.fallible, true, "infallible (at instantiation)");
     t.equal(!instant.hasEffect, true, "has no effect");
 });
 
@@ -32,10 +32,10 @@ test("Instant.repeat(); must be limited by take()", t => {
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, instant, "repeat child");
     t.equal(repeat.duration, Infinity, "repeat dur");
-    t.equal(repeat.failible, true, "unlimited repetitions fail");
+    t.equal(repeat.fallible, true, "unlimited repetitions fail");
     const limitedRepeats = repeat.take(3);
     t.equal(limitedRepeats.duration, 0, "repeat dur (limited)");
-    t.equal(!limitedRepeats.failible, true, "limited repetitions do not fail");
+    t.equal(!limitedRepeats.fallible, true, "limited repetitions do not fail");
 });
 
 test("Instantiatiation", t => {
@@ -113,7 +113,7 @@ test("Effect(f)", t => {
     });
     t.equal(effect.show(), "Effect", "show");
     t.equal(effect.duration, 0, "zero duration");
-    t.equal(!effect.failible, true, "infailible (at instantiation)");
+    t.equal(!effect.fallible, true, "infallible (at instantiation)");
     t.equal(effect.hasEffect, true, "has effect");
 
     const tape = Tape();

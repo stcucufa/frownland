@@ -16,14 +16,14 @@ test("Try(x, catch)", t => {
     const item = Try(Event(window, "synth").dur(23), Instant(K("ko")));
     t.equal(item.show(), "Try", "show");
     t.undefined(item.duration, "unresolved duration");
-    t.equal(!item.failible, true, "not failible (if child is not failible)");
+    t.equal(!item.fallible, true, "not fallible (if child is not fallible)");
 });
 
 test("Try(x, catch) failibility", t => {
     const item = Try(Event(window, "synth").dur(0), Instant(K("ko")));
-    t.equal(!item.failible, true, "failure can be caught");
-    const failibleItem = Try(Event(window, "synth").dur(0), Par().take(1));
-    t.equal(failibleItem.failible, true, "failure cannot be caught");
+    t.equal(!item.fallible, true, "failure can be caught");
+    const fallibleChild = Try(Event(window, "synth").dur(0), Par().take(1));
+    t.equal(fallibleChild.fallible, true, "failure cannot be caught");
 });
 
 test("Instantiation (no error, zero duration)", t => {
