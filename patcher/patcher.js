@@ -29,13 +29,12 @@ const Commands = {
 // A patcher is used to edit a patch in a canvas.
 const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
     init() {
-        this.canvas.addEventListener("pointerdown", this.dragEventListener);
-        this.canvas.addEventListener("pointermove", this);
-        document.addEventListener("keyup", this);
-
         this.elements = new Map();
         this.elements.set(this.canvas, this);
         this.dragEventListener = DragEventListener(this.elements);
+        this.canvas.addEventListener("pointerdown", this.dragEventListener);
+        this.canvas.addEventListener("pointermove", this);
+        document.addEventListener("keyup", this);
 
         // Track the pointer to know where to add new boxes.
         this.pointerX = 0;
