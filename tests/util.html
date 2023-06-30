@@ -263,8 +263,7 @@ test("parseTime(string)", t => {
     t.equal(parseTime("1 hr"), 3600000, "1 hr = 3,600,000 ms");
     t.equal(parseTime("1 hour"), 3600000, "1 hour = 3,600,000 ms");
     t.equal(parseTime("2 hours"), 7200000, "2 hours = 7,200,000 ms");
-    t.equal(parseTime("1m"), 60000, "1m = 60,000 ms");
-    t.equal(parseTime("1 mn"), 60000, "1 mn = 60,000 ms");
+    t.equal(parseTime("1mn"), 60000, "1 mn = 60,000 ms");
     t.equal(parseTime("1 min"), 60000, "1 min = 60,000 ms");
     t.equal(parseTime("1 minute"), 60000, "1 minute = 60,000 ms");
     t.equal(parseTime("2 minutes"), 120000, "2 minutes = 120,000 ms");
@@ -274,7 +273,9 @@ test("parseTime(string)", t => {
     t.equal(parseTime("1ms"), 1, "1 ms = 1 ms");
     t.equal(parseTime(""), 0, "nothing = 0ms");
     t.equal(parseTime("500"), 500, "ms is the default unit");
-    t.equal(parseTime(" 2 hr 30 mn 10 S  "), 3600000 * 2.5 + 10000, "several units in the right order");
+    t.equal(parseTime(" 2 hr 30 mn 10 S  "), 9010000, "several units in the right order");
+    t.equal(parseTime("2hr30mn10s"), 9010000, "no spaces");
+    t.throws(() => { parseTime("2hr:30mn:10s"); }, "extra separators");
     t.throws(() => { parseTime(" 10 min  2H "); }, "several units in the wrong order");
     t.throws(() => { parseTime("one week"); }, "unexpected format");
 });
