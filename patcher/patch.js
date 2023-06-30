@@ -29,11 +29,41 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 });
 
+// Parse a box label.
+function parse(label) {
+    const match = label.match(/^\s*(\w+)\b/);
+    if (!match || !(match[1] in Items)) {
+        // Unknown item
+        return;
+    }
+    return Items[match[1]](label.substr(match[0].length));
+}
+
+// Wrap a function that throws in a try/catch and just ignore errors.
+const safe = f => (...args) => {
+    try {
+        return f(...args);
+    } catch (_) {
+    }
+}
+
+// Parse time or not (for Delay or dur).
+const safeParseTime = safe(parseTime);
+
+// Parse a function (using eval?.()) or not (for Await, Effect, Instant).
+const safeParseFunction = Constructor => safe(input => {
+    const f = eval?.(input);
+    if (typeof f === "function") {
+        return Constructor(f);
+    }
+});
+
+// Parse different kinds of items.
 const Items = {
-    Await,
+    Await: safeParseFunction(Await),
 
     Delay: input => {
-        const match = input.match(/^\/until\s*/);
+        const match = input.match(/^\/until\b/);
         if (match) {
             const t = safeParseTime(input.substr(match[0].length));
             if (t > 0) {
@@ -47,35 +77,11 @@ const Items = {
         }
     },
 
-    Effect,
-    Event,
+    Effect: safeParseFunction(Effect),
 
-    Instant: input => safe(() => {
-        const f = eval?.(input);
-        if (typeof f === "function") {
-            return Instant(f);
-        }
-    })(),
+    Instant: safeParseFunction(Instant),
 
     Par,
     Seq,
     Try
 };
-
-function parse(label) {
-    const match = label.match(/^\s*(\w+)\b/);
-    if (!match || !(match[1] in Items)) {
-        // Unknown item
-        return;
-    }
-    return Items[match[1]](label.substr(match[0].length));
-}
-
-const safe = f => (...args) => {
-    try {
-        return f(...args);
-    } catch (_) {
-    }
-}
-
-const safeParseTime = safe(parseTime);
