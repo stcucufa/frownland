@@ -1,5 +1,5 @@
-import { Score, Par } from "../lib/score.js";
-import { create } from "../lib/util.js";
+import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try } from "../lib/score.js";
+import { create, parseTime } from "../lib/util.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -29,9 +29,53 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 });
 
+const Items = {
+    Await,
+
+    Delay: input => {
+        const match = input.match(/^\/until\s*/);
+        if (match) {
+            const t = safeParseTime(input.substr(match[0].length));
+            if (t > 0) {
+                return Delay.until(t);
+            }
+        } else {
+            const d = safeParseTime(input);
+            if (d > 0) {
+                return Delay(d);
+            }
+        }
+    },
+
+    Effect,
+    Event,
+
+    Instant: input => safe(() => {
+        const f = eval?.(input);
+        if (typeof f === "function") {
+            return Instant(f);
+        }
+    })(),
+
+    Par,
+    Seq,
+    Try
+};
+
 function parse(label) {
-    let m;
-    if (m = label.match(/^\s*Par\s*$/)) {
-        return Par();
+    const match = label.match(/^\s*(\w+)\b/);
+    if (!match || !(match[1] in Items)) {
+        // Unknown item
+        return;
+    }
+    return Items[match[1]](label.substr(match[0].length));
+}
+
+const safe = f => (...args) => {
+    try {
+        return f(...args);
+    } catch (_) {
     }
 }
+
+const safeParseTime = safe(parseTime);
