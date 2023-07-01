@@ -1,5 +1,5 @@
 import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try } from "../lib/score.js";
-import { create, parseTime } from "../lib/util.js";
+import { create, parseTime, safe } from "../lib/util.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -37,14 +37,6 @@ function parse(label) {
         return;
     }
     return Items[match[1]](label.substr(match[0].length));
-}
-
-// Wrap a function that throws in a try/catch and just ignore errors.
-const safe = f => (...args) => {
-    try {
-        return f(...args);
-    } catch (_) {
-    }
 }
 
 // Parse time or not (for Delay or dur).
