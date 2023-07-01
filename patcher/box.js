@@ -84,7 +84,12 @@ export const Box = assign(properties => create(properties).call(Box), {
 
     toggleEditing(editing) {
         if (editing) {
-            this.input.contentEditable = "plaintext-only";
+            try {
+                this.input.contentEditable = "plaintext-only";
+            } catch (_) {
+                // Firefox (for instance) does not support "plaintext-only"
+                this.input.contentEditable = true;
+            }
             this.input.addEventListener("keyup", this);
             window.setTimeout(() => {
                 this.input.focus();
