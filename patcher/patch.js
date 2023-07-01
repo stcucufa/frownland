@@ -58,6 +58,13 @@ const safeParseFunction = Constructor => safe(input => {
     }
 });
 
+// Check that only the constructor is called, without extra parameters.
+const only = Constructor => input => {
+    if (!/\S/.test(input)) {
+        return Constructor();
+    }
+};
+
 // Parse different kinds of items.
 const Items = {
     Await: safeParseFunction(Await),
@@ -81,7 +88,7 @@ const Items = {
 
     Instant: safeParseFunction(Instant),
 
-    Par,
-    Seq,
-    Try
+    Par: only(Par),
+    Seq: only(Seq),
+    Try: only(Try)
 };
