@@ -10,8 +10,8 @@ import { test } from "./test.js";
 import {
     add, addBy, assign, assoc, clamp, create, cycle, escapeMarkup, extend, flip,
     fold1, get, I, imagePromise, isAsync, isEmpty, isIterable, isNumber,
-    isObject, K, mod, nop, parseTime, partition, push, range, remove, safe,
-    shuffle, sign, single, snd, timeout, todo, typeOf
+    isObject, K, mod, nop, normalizeWhitespace, parseTime, partition, push,
+    range, remove, safe, shuffle, sign, single, snd, timeout, todo, typeOf
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -249,6 +249,11 @@ test("mod(x, m)", t => {
 
 test("nop()", t => {
     t.undefined(nop());
+});
+
+test("normalizeWhitespace(string)", t => {
+    t.equal(normalizeWhitespace(" foo\t\n  bar\n \n\vbaz\n "), "foo bar baz",
+        "trim and collapse whitespace");
 });
 
 test("parseTime(string)", t => {
