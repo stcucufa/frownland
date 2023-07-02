@@ -1,5 +1,5 @@
 import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try } from "../lib/score.js";
-import { create, parseTime, safe } from "../lib/util.js";
+import { create, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -9,10 +9,10 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     boxWasEdited(box) {
         const isNew = this.boxes.has(box);
-        const item = parse(box.label);
-        this.boxes.set(box, item);
-        box.toggleUnknown(!item);
-        console.log(`Box was ${isNew ? "edited" : "added"}: ${box.label} (${item?.show()})`);
+        const node = parse(box.label);
+        this.boxes.set(box, node);
+        box.toggleUnknown(!node);
+        console.log(`Box was ${isNew ? "edited" : "added"}: ${node?.label ?? box.label}`);
     },
 
     boxWillBeRemoved(box) {
@@ -32,55 +32,98 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 // Parse a box label.
 function parse(label) {
     const match = label.match(/^\s*(\w+)\b/);
-    if (!match || !(match[1] in Items)) {
+    if (!match || !(match[1] in Parse)) {
         // Unknown item
         return;
     }
-    return Items[match[1]](label.substr(match[0].length));
+    return Parse[match[1]](label.substr(match[0].length));
 }
 
 // Parse time or not (for Delay or dur).
 const safeParseTime = safe(parseTime);
 
 // Parse a function (using eval?.()) or not (for Await, Effect, Instant).
-const safeParseFunction = Constructor => safe(input => {
+const evalNode = Constructor => safe(input => {
     const f = eval?.(input);
     if (typeof f === "function") {
-        return Constructor(f);
+        return {
+            label: `${Constructor.tag} ${normalizeWhitespace(input)}`,
+            source: input,
+            build: () => Constructor(f)
+        };
     }
 });
 
 // Check that only the constructor is called, without extra parameters.
 const only = Constructor => input => {
     if (!/\S/.test(input)) {
-        return Constructor();
+        return {
+            label: Constructor.tag,
+            build: Constructor
+        }
     }
 };
 
-// Parse different kinds of items.
-const Items = {
-    Await: safeParseFunction(Await),
+// Parse different kinds of items and modifiers.
+const Parse = {
+    Await: evalNode(Await),
 
     Delay: input => {
         const match = input.match(/^\/until\b/);
         if (match) {
-            const t = safeParseTime(input.substr(match[0].length));
+            const normalized = normalizeWhitespace(input.substr(match[0].length));
+            const t = safeParseTime(normalized);
             if (t > 0) {
+                return {
+                    label: `Delay/until ${normalized}`,
+                    build: () => Delay.until(t)
+                }
                 return Delay.until(t);
             }
         } else {
+            input = normalizeWhitespace(input);
             const d = safeParseTime(input);
             if (d > 0) {
-                return Delay(d);
+                return {
+                    label: `Delay ${input}`,
+                    build: () => Delay(d)
+                }
             }
         }
     },
 
-    Effect: safeParseFunction(Effect),
+    Effect: evalNode(Effect),
 
-    Instant: safeParseFunction(Instant),
+    Instant: evalNode(Instant),
 
     Par: only(Par),
     Seq: only(Seq),
-    Try: only(Try)
+    Try: only(Try),
+
+    dur: input => {
+        input = normalizeWhitespace(input);
+        const d = safeParseTime(input);
+        if (d > 0) {
+            return {
+                label: `dur ${input}`,
+                build: item => item.dur?.(d)
+            }
+        }
+    },
+
+    repeat: only(() => ({
+        label: "repeat",
+        build: item => item.repeat?.()
+    })),
+
+    take: input => {
+        const match = input.match(/^\s+\d+\s*$/);
+        if (match) {
+            const n = parseInt(match[0], 10);
+            return {
+                label: `take(${n})`,
+                build: item => item.take?.()
+            }
+        }
+    }
 };
