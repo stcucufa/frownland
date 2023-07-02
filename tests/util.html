@@ -10,8 +10,8 @@ import { test } from "./test.js";
 import {
     add, addBy, assign, assoc, clamp, create, cycle, escapeMarkup, extend, flip,
     fold1, get, I, imagePromise, isAsync, isEmpty, isIterable, isNumber,
-    isObject, K, mod, nop, parseTime, partition, push, range, remove, shuffle,
-    sign, single, snd, timeout, todo, typeOf
+    isObject, K, mod, nop, parseTime, partition, push, range, remove, safe,
+    shuffle, sign, single, snd, timeout, todo, typeOf
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -317,6 +317,11 @@ test("remove(xs, x)", t => {
     const xs = [1, 2, 3, 4];
     t.equal(remove(xs, 3), 3, "return removed item");
     t.equal(xs, [1, 2, 4], "item was removed");
+});
+
+test("safe(f)", t => {
+    t.equal(safe(parseTime)("1mn30s"), 90000, "wraps a function that throws");
+    t.undefined(safe(parseTime)("30s1mn"), "and ignores exceptions");
 });
 
 test("shuffle(xs)", t => {
