@@ -50,7 +50,7 @@ choice(
         choice(
             Seq(Delay(10000), Send(skip)),
             Event(playButton, "click")
-        )
+        ),
         Video(src)
     )
 );
