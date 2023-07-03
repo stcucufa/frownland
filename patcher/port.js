@@ -67,6 +67,16 @@ export const Port = assign(properties => create(properties).call(Port), {
         this.element.classList.toggle("target", value);
     },
 
+    // Enable or disable the port.
+    enable(value) {
+        this.element.classList.toggle("disabled", !value);
+        if (!value) {
+            for (const cord of this.cords.values()) {
+                cord.remove();
+            }
+        }
+    },
+
     // Check whether a this is a possible target from another port. One must be
     // an inlet and the other an outlet, there can be only one cord per port
     // (this was already checked for this, but not for the potential target),

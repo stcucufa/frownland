@@ -56,6 +56,10 @@ g.port.target circle {
     fill: rgba(64, 255, 64, 0.25);
 }
 
+g.port.disabled {
+    display: none;
+}
+
 g.cord line {
     stroke: #102040;
 }

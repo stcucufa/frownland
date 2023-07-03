@@ -12,6 +12,10 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         const node = parse(box.label);
         this.boxes.set(box, node);
         box.toggleUnknown(!node);
+        const n = node?.inlets ?? 0;
+        box.inlets.forEach((port, i) => { port.enable(i < n); });
+        const m = node?.outlets ?? 1;
+        box.outlets.forEach((port, i) => { port.enable(i < m); });
         console.log(`Box was ${isNew ? "edited" : "added"}: ${node?.label ?? box.label}`, node);
     },
 
@@ -61,6 +65,7 @@ const only = (Constructor, params = {}) => input => {
             label: Constructor.tag,
             build: Constructor,
             acceptFrom: K(true),
+            inlets: 2,
         }, params);
     }
 };
@@ -108,7 +113,8 @@ const Parse = {
             return {
                 label: `dur ${input}`,
                 build: item => item.dur?.(d),
-                acceptFrom: node => !node.isTry
+                acceptFrom: node => !node.isTry,
+                inlets: 1,
             }
         }
     },
@@ -117,7 +123,8 @@ const Parse = {
         label: "repeat",
         build: item => item.repeat?.(),
         isContainer: true,
-        acceptFrom: node => !node.isTry
+        acceptFrom: node => !node.isTry,
+        inlets: 1,
     }),
 
     take: input => {
@@ -127,7 +134,8 @@ const Parse = {
             return {
                 label: `take(${n})`,
                 build: item => item.take?.(),
-                acceptFrom: node => node.isContainer
+                acceptFrom: node => node.isContainer,
+                inlets: 1,
             }
         }
     }
