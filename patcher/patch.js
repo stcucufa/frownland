@@ -12,7 +12,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         const node = parse(box.label);
         this.boxes.set(box, node);
         box.toggleUnknown(!node);
-        console.log(`Box was ${isNew ? "edited" : "added"}: ${node?.label ?? box.label}`);
+        console.log(`Box was ${isNew ? "edited" : "added"}: ${node?.label ?? box.label}`, node);
     },
 
     boxWillBeRemoved(box) {
@@ -21,7 +21,11 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 
     inletAcceptsConnection(inlet, outlet) {
-        return true;
+        return this.boxes.get(inlet.box).acceptFrom?.(
+            this.boxes.get(outlet.box),
+            outlet.box.inlets.indexOf(inlet),
+            outlet.box.outlets.indexOf(outlet)
+        );
     }
 });
 
@@ -51,12 +55,13 @@ const evalNode = Constructor => safe(input => {
 });
 
 // Check that only the constructor is called, without extra parameters.
-const only = Constructor => input => {
+const only = (Constructor, params = {}) => input => {
     if (!/\S/.test(input)) {
-        return {
+        return Object.assign({
             label: Constructor.tag,
             build: Constructor,
-        }
+            acceptFrom: K(true),
+        }, params);
     }
 };
 
@@ -92,9 +97,9 @@ const Parse = {
 
     Instant: evalNode(Instant),
 
-    Par: only(Par),
-    Seq: only(Seq),
-    Try: only(Try),
+    Par: only(Par, { isContainer: true }),
+    Seq: only(Seq, { isContainer: true }),
+    Try: only(Try, { isTry: true }),
 
     dur: input => {
         input = normalizeWhitespace(input);
@@ -102,15 +107,18 @@ const Parse = {
         if (d > 0) {
             return {
                 label: `dur ${input}`,
-                build: item => item.dur?.(d)
+                build: item => item.dur?.(d),
+                acceptFrom: node => !node.isTry
             }
         }
     },
 
-    repeat: only(() => ({
+    repeat: only(item => item.repeat(), {
         label: "repeat",
-        build: item => item.repeat?.()
-    })),
+        build: item => item.repeat?.(),
+        isContainer: true,
+        acceptFrom: node => !node.isTry
+    }),
 
     take: input => {
         const match = input.match(/^\s+\d+\s*$/);
@@ -118,7 +126,8 @@ const Parse = {
             const n = parseInt(match[0], 10);
             return {
                 label: `take(${n})`,
-                build: item => item.take?.()
+                build: item => item.take?.(),
+                acceptFrom: node => node.isContainer
             }
         }
     }
