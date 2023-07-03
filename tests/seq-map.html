@@ -33,7 +33,7 @@ test("Seq.map(g).repeat()", t => {
 
 test("Instantiation", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23])), Seq.map(Delay)), 17);
     Deck({ tape }).now = 91;
     t.equal(dump(seq),
 `* Seq-0 [17, 90[ <31,19,23>
@@ -46,14 +46,14 @@ test("Instantiation", t => {
 
 test("Instantiation; empty input array", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([])), Seq.map(Delay)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([])), Seq.map(Delay)), 17);
     Deck({ tape }).now = 91;
     t.equal(seq.value, [], "empty list");
 });
 
 test("Seq.map(g).take(n = ∞)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take()]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take()), 17);
     Deck({ tape }).now = 169;
     t.equal(dump(seq),
 `* Seq-0 [17, 168[ <31,19,23,41,37>
@@ -68,14 +68,14 @@ test("Seq.map(g).take(n = ∞)", t => {
 
 test("Seq.map(g).take(n); fails at runtime when n > input length", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take(7)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take(7)), 17);
     Deck({ tape }).now = 18;
     t.equal(seq.error.message, "failed", "failed to instantiate map");
 });
 
 test("Seq.map(g).take(n); n < input length", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take(3)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take(3)), 17);
     Deck({ tape }).now = 91;
     t.equal(dump(seq),
 `* Seq-0 [17, 90[ <31,19,23>
@@ -88,7 +88,7 @@ test("Seq.map(g).take(n); n < input length", t => {
 
 test("Seq.map(g).take(0)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take(0)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23, 41, 37])), Seq.map(Delay).take(0)), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(seq),
 `* Seq-0 @17 <>
@@ -99,7 +99,7 @@ test("Seq.map(g).take(0)", t => {
 
 test("Seq.map(g) failure; input is not an array", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K("oops")), Seq.map(Delay)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K("oops")), Seq.map(Delay)), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(seq),
 `* Seq-0 @17 (failed)
@@ -109,10 +109,10 @@ test("Seq.map(g) failure; input is not an array", t => {
 
 test("Seq.map(g) failure; could not instantiate input", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K([1, 2, 3])),
         Seq.map(() => { throw window.Error("Augh!"); })
-    ]), 17);
+    ), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(seq),
 `* Seq-0 @17 (failed)
@@ -123,7 +123,7 @@ test("Seq.map(g) failure; could not instantiate input", t => {
 test("Seq.map(g) failure; could not instantiate input (after an unresolved duration)", t => {
     const tape = Tape();
     const deck = Deck({ tape });
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K([1, 2, 3])),
         Seq.map((_, i) => {
             if (i > 0) {
@@ -131,7 +131,7 @@ test("Seq.map(g) failure; could not instantiate input (after an unresolved durat
             }
             return Event(window, "synth");
         })
-    ]), 17);
+    ), 17);
     deck.now = 51;
     window.dispatchEvent(new window.Event("synth"));
     deck.now = 52;
@@ -140,7 +140,7 @@ test("Seq.map(g) failure; could not instantiate input (after an unresolved durat
 
 test("Seq.map(g).repeat(); instantiation", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay).repeat()]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([19, 23])), Seq.map(Delay).repeat()), 17);
     Deck({ tape }).now = 111;
     t.equal(dump(seq),
 `* Seq-0 [17, ∞[
@@ -159,7 +159,7 @@ test("Seq.map(g).repeat(); instantiation", t => {
 
 test("Seq.map(g).repeat().take(n)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay).repeat().take(3)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([19, 23])), Seq.map(Delay).repeat().take(3)), 17);
     Deck({ tape }).now = 144;
     t.equal(dump(seq),
 `* Seq-0 [17, 143[ <19,23>
@@ -178,7 +178,7 @@ test("Seq.map(g).repeat().take(n)", t => {
 
 test("Seq.map(g).dur(d), extending duration", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay).dur(83)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23])), Seq.map(Delay).dur(83)), 17);
     Deck({ tape }).now = 101;
     t.equal(dump(seq),
 `* Seq-0 [17, 100[ <31,19,23>
@@ -191,7 +191,7 @@ test("Seq.map(g).dur(d), extending duration", t => {
 
 test("Seq.map(g).dur(d), cutting off duration", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay).dur(43)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23])), Seq.map(Delay).dur(43)), 17);
     Deck({ tape }).now = 61;
     t.equal(dump(seq),
 `* Seq-0 [17, 60[ <31,19>
@@ -203,7 +203,7 @@ test("Seq.map(g).dur(d), cutting off duration", t => {
 
 test("Seq.map(g).dur(0), cutting off duration (???)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay).dur(0)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23])), Seq.map(Delay).dur(0)), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(seq),
 `* Seq-0 @17 <31>
@@ -214,7 +214,7 @@ test("Seq.map(g).dur(0), cutting off duration (???)", t => {
 
 test("Seq.map(g).dur(d), cutting off duration during instantiation", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([31, 19, 23])), Seq.map(Delay)]), 17, 43);
+    const seq = tape.instantiate(Seq(Instant(K([31, 19, 23])), Seq.map(Delay)), 17, 43);
     Deck({ tape }).now = 61;
     t.equal(dump(seq),
 `* Seq-0 [17, 60[ <31,19>
@@ -226,10 +226,10 @@ test("Seq.map(g).dur(d), cutting off duration during instantiation", t => {
 
 test("Children with unresolved duration", t => {
     const tape = Tape();
-    const instance = tape.instantiate(Seq([
+    const instance = tape.instantiate(Seq(
         Instant(K([23, 19, 31])),
-        Seq.fold(x => Seq([Instant(K([x])), Par.map(Delay)]))
-    ]), 17);
+        Seq.fold(x => Seq(Instant(K([x])), Par.map(Delay)))
+    ), 17);
     Deck({ tape }).now = 91;
     t.equal(dump(instance),
 `* Seq-0 [17, 90[ <31>
@@ -251,10 +251,10 @@ test("Children with unresolved duration", t => {
 
 test("Cancel Seq.map", t => {
     const tape = Tape();
-    const choice = tape.instantiate(Par([
-        Seq([Instant(K([19])), Par.map(Delay)]),
-        Seq([Instant(K([23, 31])), Seq.map(Delay)]),
-    ]).take(1), 17);
+    const choice = tape.instantiate(Par(
+        Seq(Instant(K([19])), Par.map(Delay)),
+        Seq(Instant(K([23, 31])), Seq.map(Delay)),
+    ).take(1), 17);
     Deck({ tape }).now = 37;
     t.equal(dump(choice),
 `* Par-0 [17, 36[ <19>
@@ -271,10 +271,10 @@ test("Cancel Seq.map", t => {
 
 test("Prune Seq.map", t => {
     const tape = Tape();
-    const choice = tape.instantiate(Par([
-        Seq([Instant(K([19])), Par.map(Delay)]),
-        Seq([Delay(23), Seq.map(Delay)])
-    ]).take(1), 17);
+    const choice = tape.instantiate(Par(
+        Seq(Instant(K([19])), Par.map(Delay)),
+        Seq(Delay(23), Seq.map(Delay))
+    ).take(1), 17);
     Deck({ tape }).now = 37;
     t.equal(dump(choice),
 `* Par-0 [17, 36[ <19>

@@ -15,25 +15,25 @@ import { Deck } from "../lib/deck.js";
 test("Seq(xs).dur(d) duration", t => {
     t.equal(Seq().dur(29).duration, 29, "empty seq");
     t.equal(
-        Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(179).duration, 179,
+        Seq(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).dur(179).duration, 179,
         "more than natural duration"
     );
     t.equal(
-        Seq([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(79).duration, 79,
+        Seq(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).dur(79).duration, 79,
         "less than natural duration"
     );
     t.equal(
-        Seq([Delay(51), Delay(23).repeat()]).dur(179).duration, 179,
+        Seq(Delay(51), Delay(23).repeat()).dur(179).duration, 179,
         "indefinite natural duration"
     );
     t.equal(
-        Seq([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).dur(179).duration, 179,
+        Seq(Delay(51), Delay(23), Delay(31), Par.map(), Par.map()).dur(179).duration, 179,
         "unresolved natural duration"
     );
 });
 
 test("Extending duration", t => {
-    const seq = Tape().instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(51), 17);
+    const seq = Tape().instantiate(Seq(Instant(), Delay(23), Delay(19)).dur(51), 17);
     t.equal(dump(seq),
 `* Seq-0 [17, 68[
   * Instant-1 @17
@@ -42,7 +42,7 @@ test("Extending duration", t => {
 });
 
 test("Extending duration (indefinite duration)", t => {
-    const seq = Tape().instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(Infinity), 17);
+    const seq = Tape().instantiate(Seq(Instant(), Delay(23), Delay(19)).dur(Infinity), 17);
     t.equal(dump(seq),
 `* Seq-0 [17, ∞[
   * Instant-1 @17
@@ -53,14 +53,14 @@ test("Extending duration (indefinite duration)", t => {
 test("Extending duration (no children)", t => {
     const tape = Tape();
     const noChildren = tape.instantiate(Seq().dur(23), 17);
-    const emptyList = tape.instantiate(Seq([]).dur(23), 17);
+    const emptyList = tape.instantiate(Seq().dur(23), 17);
     Deck({ tape }).now = 41;
     t.equal(dump(noChildren), "* Seq-0 [17, 40[ <undefined>", "no children");
     t.equal(dump(emptyList), "* Seq-1 [17, 40[ <undefined>", "empty list");
 });
 
 test("Extending duration (but constrained by parent)", t => {
-    const seq = Tape().instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(71), 17, 51);
+    const seq = Tape().instantiate(Seq(Instant(), Delay(23), Delay(19)).dur(71), 17, 51);
     t.equal(dump(seq),
 `* Seq-0 [17, 68[
   * Instant-1 @17
@@ -69,7 +69,7 @@ test("Extending duration (but constrained by parent)", t => {
 });
 
 test("Cutting off duration (dur)", t => {
-    const seq = Tape().instantiate(Seq([Instant(), Delay(23), Delay(19)]).dur(31), 17);
+    const seq = Tape().instantiate(Seq(Instant(), Delay(23), Delay(19)).dur(31), 17);
     t.equal(dump(seq),
 `* Seq-0 [17, 48[
   * Instant-1 @17
@@ -78,7 +78,7 @@ test("Cutting off duration (dur)", t => {
 });
 
 test("Cutting off duration (parent duration)", t => {
-    const seq = Tape().instantiate(Seq([Instant(), Delay(23), Delay(19)]), 17, 31);
+    const seq = Tape().instantiate(Seq(Instant(), Delay(23), Delay(19)), 17, 31);
     t.equal(dump(seq),
 `* Seq-0 [17, 48[
   * Instant-1 @17
@@ -87,7 +87,7 @@ test("Cutting off duration (parent duration)", t => {
 });
 
 test("dur(0)", t => {
-    const seq = Tape().instantiate(Seq([Instant(), Delay(0), Par(), Delay(23), Instant()]).dur(0), 17);
+    const seq = Tape().instantiate(Seq(Instant(), Delay(0), Par(), Delay(23), Instant()).dur(0), 17);
     t.equal(dump(seq),
 `* Seq-0 @17
   * Instant-1 @17
@@ -97,7 +97,7 @@ test("dur(0)", t => {
 });
 
 test("dur(0) with only zero-duration children", t => {
-    const seq = Tape().instantiate(Seq([Instant(), Delay(0), Par()]).dur(0), 17);
+    const seq = Tape().instantiate(Seq(Instant(), Delay(0), Par()).dur(0), 17);
     t.equal(dump(seq),
 `* Seq-0 @17
   * Instant-1 @17
@@ -107,9 +107,9 @@ test("dur(0) with only zero-duration children", t => {
 
 test("Seq.take(n).dur(d), cutting off the duration", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K("A")), Delay(23), Instant(x => x + "*"), Delay(31), Instant(x => x + "*")
-    ]).take(3).dur(19), 17);
+    ).take(3).dur(19), 17);
     Deck({ tape }).now = 37;
     t.equal(dump(seq),
 `* Seq-0 [17, 36[ <A>
@@ -119,9 +119,9 @@ test("Seq.take(n).dur(d), cutting off the duration", t => {
 
 test("Seq.take(n).dur(d), extending the duration", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K("A")), Delay(23), Instant(x => x + "A"), Delay(31), Instant(x => x + "*")
-    ]).take(3).dur(39), 17);
+    ).take(3).dur(39), 17);
     Deck({ tape }).now = 57;
     t.equal(dump(seq),
 `* Seq-0 [17, 56[ <AA>
@@ -133,7 +133,7 @@ test("Seq.take(n).dur(d), extending the duration", t => {
 test("Cutoff child; resolved duration", t => {
     const tape = Tape();
     const seq = tape.instantiate(
-        Seq([Par([23, 19, 31].map(Delay)), Instant(K("ko"))]).dur(31), 17
+        Seq(Par(...[23, 19, 31].map(Delay)), Instant(K("ko"))).dur(31), 17
     );
     Deck({ tape }).now = 49;
     t.equal(dump(seq),
@@ -147,7 +147,7 @@ test("Cutoff child; resolved duration", t => {
 test("Cutoff child; unresolved duration", t => {
     const tape = Tape();
     const seq = tape.instantiate(
-        Seq([Instant(K([23, 19, 41])), Par.map(Delay), Instant(K("ko"))]).dur(31), 17
+        Seq(Instant(K([23, 19, 41])), Par.map(Delay), Instant(K("ko"))).dur(31), 17
     );
     Deck({ tape }).now = 49;
     t.equal(dump(seq),
@@ -162,7 +162,7 @@ test("Cutoff child; unresolved duration", t => {
 test("Cutoff child; after child with unresolved duration", t => {
     const tape = Tape();
     const seq = tape.instantiate(
-        Seq([Instant(K([23, 19, 41])), Par.map(Delay), Delay(31), (K("ko"))]).dur(51), 17
+        Seq(Instant(K([23, 19, 41])), Par.map(Delay), Delay(31), (K("ko"))).dur(51), 17
     );
     Deck({ tape }).now = 69;
     t.equal(dump(seq),
@@ -178,7 +178,7 @@ test("Cutoff child; after child with unresolved duration", t => {
 test("Extending duration; child with unresolved duration", t => {
     const tape = Tape();
     const seq = tape.instantiate(
-        Seq([Instant(K([23, 19, 41])), Par.map(Delay), Instant(K("ok"))]).dur(71), 17
+        Seq(Instant(K([23, 19, 41])), Par.map(Delay), Instant(K("ok"))).dur(71), 17
     );
     Deck({ tape }).now = 89;
     t.equal(dump(seq),

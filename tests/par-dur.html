@@ -15,26 +15,26 @@ import { Deck } from "../lib/deck.js";
 test("Par(xs).dur(d) duration", t => {
     t.equal(Par().dur(29).duration, 29, "empty par");
     t.equal(
-        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(79).duration, 79,
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).dur(79).duration, 79,
         "dur (more than natural duration)"
     );
     t.equal(
-        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur(29).duration, 29,
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).dur(29).duration, 29,
         "dur (less than natural duration)"
     );
     t.equal(
-        Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).dur(29).duration, 29,
+        Par(Delay(51), Delay(23), Delay(31), Par.map(), Par.map()).dur(29).duration, 29,
         "dur (indefinite natural durations)"
     );
     t.equal(
-        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).dur("79s").duration, 51,
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).dur("79s").duration, 51,
         "dur (illegal value is not applied)"
     );
 });
 
 test("Extending the duration", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(31), 17);
+    const par = tape.instantiate(Par(Instant(), Delay(23), Delay(19)).dur(31), 17);
     t.equal(dump(par),
 `* Par-0 [17, 48[
   * Instant-1 @17
@@ -44,7 +44,7 @@ test("Extending the duration", t => {
 
 test("Extending duration (indefinite duration)", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(Infinity), 17);
+    const par = tape.instantiate(Par(Instant(), Delay(23), Delay(19)).dur(Infinity), 17);
     t.equal(dump(par),
 `* Par-0 [17, ∞[
   * Instant-1 @17
@@ -55,14 +55,14 @@ test("Extending duration (indefinite duration)", t => {
 test("Extending duration (no children)", t => {
     const tape = Tape();
     const noChildren = tape.instantiate(Par().dur(23), 17);
-    const emptyList = tape.instantiate(Par([]).dur(23), 17);
+    const emptyList = tape.instantiate(Par().dur(23), 17);
     Deck({ tape }).now = 41;
     t.equal(dump(noChildren), "* Par-0 [17, 40[ <>", "no children");
     t.equal(dump(emptyList), "* Par-1 [17, 40[ <>", "empty list");
 });
 
 test("Extending duration (but constrained by parent)", t => {
-    const par = Tape().instantiate(Par([Instant(), Delay(23), Delay(19)]).dur(51), 17, 31);
+    const par = Tape().instantiate(Par(Instant(), Delay(23), Delay(19)).dur(51), 17, 31);
     t.equal(dump(par),
 `* Par-0 [17, 48[
   * Instant-1 @17
@@ -72,12 +72,12 @@ test("Extending duration (but constrained by parent)", t => {
 
 test("Par.dur(d), cutting off the duration", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
-        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+    const par = tape.instantiate(Par(
+        Seq(Instant(K("A")), Delay(23), Instant(x => x + "*")),
         Instant(K("B")),
-        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
-        Seq([Instant(K("D")), Delay(19)]),
-    ]).dur(21), 17);
+        Seq(Instant(K("C")), Delay(23), Instant(x => x + "*")),
+        Seq(Instant(K("D")), Delay(19)),
+    ).dur(21), 17);
     Deck({ tape }).now = 47;
     t.equal(dump(par),
 `* Par-0 [17, 38[ <A,B,C,D>
@@ -95,12 +95,12 @@ test("Par.dur(d), cutting off the duration", t => {
 
 test("Par, cutting off the duration (parent duration)", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
-        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+    const par = tape.instantiate(Par(
+        Seq(Instant(K("A")), Delay(23), Instant(x => x + "*")),
         Instant(K("B")),
-        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
-        Seq([Instant(K("D")), Delay(19)]),
-    ]), 17, 21);
+        Seq(Instant(K("C")), Delay(23), Instant(x => x + "*")),
+        Seq(Instant(K("D")), Delay(19)),
+    ), 17, 21);
     Deck({ tape }).now = 47;
     t.equal(dump(par),
 `* Par-0 [17, 38[ <A,B,C,D>
@@ -118,7 +118,7 @@ test("Par, cutting off the duration (parent duration)", t => {
 
 test("Cutting off duration (parent duration)", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([Instant(), Delay(31), Delay(19)]), 17, 23);
+    const par = tape.instantiate(Par(Instant(), Delay(31), Delay(19)), 17, 23);
     t.equal(dump(par),
 `* Par-0 [17, 40[
   * Instant-1 @17
@@ -127,7 +127,7 @@ test("Cutting off duration (parent duration)", t => {
 });
 
 test("dur(0)", t => {
-    const par = Tape().instantiate(Par([Instant(), Delay(0), Par(), Delay(23)]).dur(0), 17);
+    const par = Tape().instantiate(Par(Instant(), Delay(0), Par(), Delay(23)).dur(0), 17);
     t.equal(dump(par),
 `* Par-0 @17
   * Instant-1 @17
@@ -137,7 +137,7 @@ test("dur(0)", t => {
 });
 
 test("dur(0) with only zero-duration children", t => {
-    const par = Tape().instantiate(Par([Instant(), Delay(0), Par()]).dur(0), 17);
+    const par = Tape().instantiate(Par(Instant(), Delay(0), Par()).dur(0), 17);
     t.equal(dump(par),
 `* Par-0 @17
   * Instant-1 @17
@@ -147,12 +147,12 @@ test("dur(0) with only zero-duration children", t => {
 
 test("Par.take(n).dur(d), cutting off the duration", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
-        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+    const par = tape.instantiate(Par(
+        Seq(Instant(K("A")), Delay(23), Instant(x => x + "*")),
         Instant(K("B")),
-        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
-        Seq([Instant(K("D")), Delay(19)]),
-    ]).take(3).dur(20), 17);
+        Seq(Instant(K("C")), Delay(23), Instant(x => x + "*")),
+        Seq(Instant(K("D")), Delay(19)),
+    ).take(3).dur(20), 17);
     Deck({ tape }).now = 38;
     t.equal(dump(par),
 `* Par-0 [17, 37[ <B,D,A>
@@ -167,12 +167,12 @@ test("Par.take(n).dur(d), cutting off the duration", t => {
 
 test("Par.take(n).dur(d), extending the duration", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
-        Seq([Instant(K("A")), Delay(23)]),
+    const par = tape.instantiate(Par(
+        Seq(Instant(K("A")), Delay(23)),
         Instant(K("B")),
-        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
-        Seq([Instant(K("D")), Delay(19)]),
-    ]).take(3).dur(31), 17);
+        Seq(Instant(K("C")), Delay(23), Instant(x => x + "*")),
+        Seq(Instant(K("D")), Delay(19)),
+    ).take(3).dur(31), 17);
     Deck({ tape }).now = 49;
     t.equal(dump(par),
 `* Par-0 [17, 48[ <B,D,A>

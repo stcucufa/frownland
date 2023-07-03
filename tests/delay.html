@@ -91,7 +91,7 @@ test("Delay(d).repeat().take(n)", t => {
 
 test("Delay value", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K("ok")), Delay(23)), 17);
     Deck({ tape }).now = 41;
     t.equal(dump(seq),
 `* Seq-0 [17, 40[ <ok>
@@ -101,10 +101,10 @@ test("Delay value", t => {
 
 test("Cancel delay", t => {
     const tape = Tape();
-    const choice = tape.instantiate(Par([
-        Seq([Instant(K([19])), Par.map(Delay)]),
-        Seq([Delay(23), Instant(K("ko"))]),
-    ]).take(1), 17);
+    const choice = tape.instantiate(Par(
+        Seq(Instant(K([19])), Par.map(Delay)),
+        Seq(Delay(23), Instant(K("ko"))),
+    ).take(1), 17);
     Deck({ tape }).now = 37;
     t.equal(dump(choice),
 `* Par-0 [17, 36[ <19>
@@ -119,10 +119,10 @@ test("Cancel delay", t => {
 
 test("Prune delay", t => {
     const tape = Tape();
-    t.undefined(tape.instantiate(Seq([
+    t.undefined(tape.instantiate(Seq(
         Delay(1),
         Par().take(1)
-    ]), 17), "instantiation failed");
+    ), 17), "instantiation failed");
     Deck({ tape }).now = 18;
     t.equal(tape.occurrences, [], "no occurrence on tape");
 });
