@@ -11,7 +11,7 @@ import { Deck } from "../lib/deck.js";
 import { notification } from "../lib/events.js";
 import { Score, Instant, Delay, Await, Seq, Par, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
-import { K, timeout } from "../lib/util.js";
+import { imagePromise, K, timeout } from "../lib/util.js";
 
 async function ok() {
     await timeout(10);
@@ -284,6 +284,18 @@ test("Runtime error", async t => {
   * Await-1 [17, 18[ error<Augh!>`, "dump matches");
 });
 
+test("Runtime error (async)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(() => imagePromise("missing.png")), 17);
+    deck.now = 31;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Await-1 [17, 31[ error<Could not load image with URL "missing.png">`, "dump matches");
+});
+
 test("Runtime error (with dur)", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
@@ -295,6 +307,18 @@ test("Runtime error (with dur)", async t => {
 `* Score-0 [0, ∞[
   * Await-1 [17, 18[ error<Augh!>`, "dump matches");
     t.equal(tape.show(), "Tape<>", "occurrences were removed from the tape");
+});
+
+test("Runtime error after timeout", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Await(() => imagePromise("missing.png")).dur(1), 17);
+    deck.now = 31;
+    await notification(deck, "await");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Await-1 [17, 18[ (timeout)`, "dump matches");
 });
 
         </script>

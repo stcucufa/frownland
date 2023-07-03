@@ -7,8 +7,9 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { K } from "../lib/util.js";
-import { Delay, Event, Instant, Par, Seq, Try, dump } from "../lib/score.js";
+import { imagePromise, K } from "../lib/util.js";
+import { notification } from "../lib/events.js";
+import { Await, Delay, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -102,6 +103,21 @@ test("Instantiation (could no recover from error)", t => {
 `* Try-0 @17 error<Augh!!!>
   * Instant-1 @17 error<Augh!>
   * Instant-2 @17 error<Augh!!!>`, "dump matches");
+});
+
+test("Instantiation (async error)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    score.add(Try(Await(() => imagePromise("missing.png")), Instant(K("ok"))), 17);
+    deck.now = 31;
+    await notification(deck, "await");
+    deck.now = 32;
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Try-1 [17, 31[ <ok>
+    * Await-2 [17, 31[ error<Could not load image with URL "missing.png">
+    * Instant-3 @31 <ok>`, "dump matches");
 });
 
 test("Recovery in Seq", t => {

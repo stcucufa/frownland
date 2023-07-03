@@ -7,11 +7,12 @@
         <style>
 
 img {
-    width: 200px;
+    height: 200px;
     margin: 4px;
 }
 
 div.placeholder {
+    width: 200px;
     background-color: #999966;
     display: inline-block;
     margin: 4px;
@@ -36,9 +37,9 @@ score.add(Seq([
     Await(async () => await (await fetch("images.json")).json()),
     Seq.map(([w, h]) => Seq([
         Try(
-            Await(async () => await imagePromise(`https://placekitten.com/${w}/${h}`)).dur(10),
+            Await(async () => await imagePromise(`https://placekitten.com/${w}/${h}`)).dur(500),
             Instant(() => html("div", {
-                class: "placeholder", style: `width: 200px; height: ${h * 200 / w}px` 
+                class: "placeholder", style: `width: ${w * 200 / h}px; height: 200px`
             }))
         ),
         Effect(element => { document.body.appendChild(element); })
@@ -55,7 +56,7 @@ deck.start();
     </head>
     <body>
         <p><a href="../">Back</a></p>
-        <p>Fetch images of increasing size, waiting a bit after each one.</p>
+        <p>Fetch images of increasing size, waiting a bit after each one. One image has a wrong URL though!</p>
         <p><button type="button">Begin</button> (press three times!)</p>
     </body>
 </html>
