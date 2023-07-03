@@ -1,5 +1,5 @@
 import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try } from "../lib/score.js";
-import { create, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
+import { create, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -20,13 +20,9 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         this.boxes.delete(box);
     },
 
-    cordWasAdded(from, outletIndex, to, inletIndex) {
-        console.log(`Cord was added: ${from.label}#${outletIndex} -> ${to.label}#${inletIndex}`);
-    },
-
-    cordWillBeRemoved(from, outletIndex, to, inletIndex) {
-        console.log(`Cord will be removed: ${from.label}#${outletIndex} -> ${to.label}#${inletIndex}`);
-    },
+    inletAcceptsConnection(inlet, outlet) {
+        return true;
+    }
 });
 
 // Parse a box label.
@@ -59,7 +55,7 @@ const only = Constructor => input => {
     if (!/\S/.test(input)) {
         return {
             label: Constructor.tag,
-            build: Constructor
+            build: Constructor,
         }
     }
 };

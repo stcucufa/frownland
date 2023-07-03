@@ -26,7 +26,6 @@ export const Cord = Object.assign((port, x2, y2) => {
         this.updateEndpoint(this.outlet.centerX, this.outlet.centerY, "x1", "y1");
         this.updateEndpoint(this.inlet.centerX, this.inlet.centerY);
         this.addTarget();
-        this.patcher.cordWasAdded(this);
     },
 
     // Set the inlet of the cord that was started from an outlet.
@@ -34,7 +33,6 @@ export const Cord = Object.assign((port, x2, y2) => {
         this.inlet = port;
         this.updateEndpoint(this.inlet.centerX, this.inlet.centerY);
         this.addTarget();
-        this.patcher.cordWasAdded(this);
     },
 
     // Update one end point of the lines.
@@ -76,7 +74,6 @@ export const Cord = Object.assign((port, x2, y2) => {
 
     // Remove a cord from both of its ports when deleting it. 
     remove() {
-        this.patcher.cordWillBeRemoved(this);
         this.outlet.disconnect(this.inlet, this);
         this.inlet.disconnect(this.outlet, this);
         this.target.removeEventListener("pointerdown", this);
