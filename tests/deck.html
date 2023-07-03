@@ -106,7 +106,7 @@ test("running updates (end with success)", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    const seq = score.add(Seq([Delay(100), Instant(K("ok"))]));
+    const seq = score.add(Seq(Delay(100), Instant(K("ok"))));
     const phi = performance.now();
     deck.start();
     const event = await notification(tape, "end");
@@ -122,7 +122,7 @@ test("running updates (failure)", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    const seq = score.add(Seq([Delay(100), Instant(), Par.map(Delay)]));
+    const seq = score.add(Seq(Delay(100), Instant(), Par.map(Delay)));
     const phi = performance.now();
     deck.start();
     const { item, error } = await notification(tape, "end");
@@ -137,7 +137,7 @@ test("running updates (after the tape has started)", async t => {
     const deck = Deck({ tape });
     const score = Score({ tape });
     const phi = performance.now();
-    const seq = Seq([Delay(100), Instant(K("ok"))]);
+    const seq = Seq(Delay(100), Instant(K("ok")));
     deck.start();
     tape.addOccurrence({
         t: 50,

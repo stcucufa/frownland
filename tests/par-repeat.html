@@ -13,7 +13,7 @@ import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
 test("Par(xs).repeat()", t => {
-    const par = Par([Delay(23)]);
+    const par = Par(Delay(23));
     const repeat = par.repeat();
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, par, "repeat child");
@@ -24,7 +24,7 @@ test("Par(xs).repeat()", t => {
 
 test("Instantiation", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([Instant(K("A")), Delay(23)]).repeat(), 17);
+    const par = tape.instantiate(Par(Instant(K("A")), Delay(23)).repeat(), 17);
 
     Deck({ tape }).now = 71;
     t.equal(dump(par),
@@ -43,12 +43,12 @@ test("Instantiation", t => {
 test("Instantiation fails for zero duration", t => {
     const tape = Tape();
     t.undefined(tape.instantiate(Par().repeat(), 17), "empty par");
-    t.undefined(tape.instantiate(Par([Instant(), Instant()]).repeat(), 17), "zero duration par");
+    t.undefined(tape.instantiate(Par(Instant(), Instant()).repeat(), 17), "zero duration par");
 });
 
 test("Par(xs).repeat().take(n)", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([Delay(23), Delay(19)]).repeat().take(3), 17);
+    const par = tape.instantiate(Par(Delay(23), Delay(19)).repeat().take(3), 17);
     Deck({ tape }).now = 87;
     t.equal(dump(par),
 `* Seq/repeat-0 [17, 86[ <,>
@@ -76,7 +76,7 @@ test("Par(xs).repeat().take(n); empty par", t => {
 
 test("Par(xs).repeat().take(n); zero-duration par", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([Instant(K("A")), Instant(K(1))]).repeat().take(3), 17);
+    const par = tape.instantiate(Par(Instant(K("A")), Instant(K(1))).repeat().take(3), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(par),
 `* Seq/repeat-0 @17 <A,1>

@@ -21,7 +21,7 @@ test("Delay.until(t)", t => {
 
 test("Instantiation (delay applies)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23), Delay.until(31), Delay(19)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K("ok")), Delay(23), Delay.until(31), Delay(19)), 17);
     Deck({ tape }).now = 68;
     t.equal(dump(seq),
 `* Seq-0 [17, 67[ <ok>
@@ -34,7 +34,7 @@ test("Instantiation (delay applies)", t => {
 test("Instantiation (delay applies but is cutoff)", t => {
     const tape = Tape();
     const seq = tape.instantiate(
-        Seq([Instant(K("ok")), Delay(23), Delay.until(31), Delay(19)]).dur(29), 17
+        Seq(Instant(K("ok")), Delay(23), Delay.until(31), Delay(19)).dur(29), 17
     );
     Deck({ tape }).now = 47;
     t.equal(dump(seq),
@@ -46,7 +46,7 @@ test("Instantiation (delay applies but is cutoff)", t => {
 
 test("Instantiation (delay does not apply)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K("ok")), Delay(23), Delay.until(19), Delay(19)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K("ok")), Delay(23), Delay.until(19), Delay(19)), 17);
     Deck({ tape }).now = 60;
     t.equal(dump(seq),
 `* Seq-0 [17, 59[ <ok>
@@ -58,7 +58,7 @@ test("Instantiation (delay does not apply)", t => {
 
 test("Instantiation after an unresolved duration", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([23])), Par.map(Delay), Delay.until(31), Delay(19)]), 17);
+    const seq = tape.instantiate(Seq(Instant(K([23])), Par.map(Delay), Delay.until(31), Delay(19)), 17);
     Deck({ tape }).now = 68;
     t.equal(dump(seq),
 `* Seq-0 [17, 67[ <23>
@@ -71,7 +71,7 @@ test("Instantiation after an unresolved duration", t => {
 
 test("Instantiation inside Par (same as regular delay)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K("ok")), Par([Delay(23), Delay.until(31)])]), 17);
+    const seq = tape.instantiate(Seq(Instant(K("ok")), Par(Delay(23), Delay.until(31))), 17);
     Deck({ tape }).now = 49;
     t.equal(dump(seq),
 `* Seq-0 [17, 48[ <ok,ok>
@@ -83,9 +83,9 @@ test("Instantiation inside Par (same as regular delay)", t => {
 
 test("Cancel delay", t => {
     const tape = Tape();
-    const choice = tape.instantiate(Par([
+    const choice = tape.instantiate(Par(
         Instant(K("ok")), Delay.until(23)
-    ]).take(1), 17);
+    ).take(1), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(choice),
 `* Par-0 @17 <ok>
@@ -96,10 +96,10 @@ test("Cancel delay", t => {
 
 test("Prune delay", t => {
     const tape = Tape();
-    t.undefined(tape.instantiate(Seq([
+    t.undefined(tape.instantiate(Seq(
         Delay.until(1),
         Par().take(1)
-    ]), 17), "instantiation failed");
+    ), 17), "instantiation failed");
     Deck({ tape }).now = 18;
     t.equal(tape.occurrences, [], "no occurrence on tape");
 });

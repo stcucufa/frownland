@@ -89,19 +89,19 @@ test("Instant(f).repeat().take(n); n finite", t => {
 
 test("Cancel instant", t => {
     const tape = Tape();
-    const choice = tape.instantiate(Par([
+    const choice = tape.instantiate(Par(
         Instant(K("ok")), Instant(() => { throw Error("not cancelled?!"); })
-    ]).take(1), 17);
+    ).take(1), 17);
     Deck({ tape }).now = 18;
     t.equal(choice.value, ["ok"], "expected value");
 });
 
 test("Prune instant", t => {
     const tape = Tape();
-    t.undefined(tape.instantiate(Seq([
+    t.undefined(tape.instantiate(Seq(
         Instant(() => { throw Error("not pruned?!"); }),
         Par().take(1)
-    ]), 17), "instantiation failed");
+    ), 17), "instantiation failed");
     Deck({ tape }).now = 18;
     t.equal(tape.occurrences, [], "no occurrence on tape");
 });

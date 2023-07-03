@@ -22,10 +22,10 @@ This plays the video when the user clicks on a play button. The Video element is
 (sequence) container, and follows an Event element that waits for a click event from an HTML button.
 
 ```
-Seq([
+Seq(
     Event(playButton, "click"),
     Video(src)
-]);
+);
 ```
 
 A more complex example adds a 10s (or 10,000ms) timeout so that the video is skipped if the user does
@@ -44,16 +44,16 @@ built. This example should then be expressible more succinctly; `choice` itself 
 as will be shown below.
 
 ```
-choice([
+choice(
     Receive(skip),
-    Seq([
-        choice([
-            Seq([Delay(10000), Send(skip)]),
+    Seq(
+        choice(
+            Seq(Delay(10000), Send(skip)),
             Event(playButton, "click")
-        ]),
+        ),
         Video(src)
-    ])
-]);
+    )
+);
 ```
 
 Another example is [ABRO](http://www1.cs.columbia.edu/~sedwards/classes/2002/w4995-02/esterel.pdf), the
@@ -65,10 +65,10 @@ Esterel, the solution only grows linearly:
 
 ```
 choice(
-    Seq([
-        Par([Receive(A), Receive(B)]),
+    Seq(
+        Par(Receive(A), Receive(B)),
         Send(O),
-    ]).dur(Infinity),
+    ).dur(Infinity),
     Receive(R)
 ).repeat()
 ```
@@ -79,7 +79,7 @@ ensures that further A and B events are ignored until R is received. And requiri
 sending O is simply a matter of modifying the Par element, so this can turn into ABCRO with:
 
 ```
-Par([Receive(A), Receive(B), Receive(C)])
+Par(Receive(A), Receive(B), Receive(C))
 ```
 
 ## Timing and synchronization model
@@ -102,7 +102,7 @@ finishes, and finishing with the last one.
 These elements can be further modified through the use of the following modifiers:
 
 * `repeat()`: repeats an element indefinitely, producing an inifinite sequence. `x.repeat()` is the same
-as `Seq([x, x, ...])`.
+as `Seq(x, x, ...)`.
 * `take(n)` applies to Par, Seq or repeat and finishes when _n_ ≥ 0 child elements have finished, or all
 elements by default.
     * `Par(xs).take(n)` selects the _n_ elements from _xs_ that finish first and cancels the rest of the
@@ -113,7 +113,7 @@ elements by default.
     * `Seq(xs).take(n)` cuts the sequence short by taking only the first n steps. `Seq(xs).take()` is the
     same as just `Seq(xs)`.
     * It is possible to limit the number of occurrences of `repeat()` with `take(n)`:
-    `x.repeate().take(3)` is the same as `Seq([x, x, x])`.
+    `x.repeate().take(3)` is the same as `Seq(x, x, x)`.
 * `dur(d)` applies to any item (except Delay), and sets the duration to exactly _d_ ≥ 0. If the natural
 duration of the element is less than _d_, then it is padded as if a Delay was added to it. If the natural
 duration of the element is more than _d_, then it is cut off earlier and the children that have not
@@ -145,14 +145,14 @@ can be used to sum all elements of an input list one by one. Given the input `[1
 equivalent to
 
 ```
-Seq([Instant(() => 0), Instant(y => 1 + y), Instant(y => 2 + y), Instant(y => 3 + y)])
+Seq(Instant(() => 0), Instant(y => 1 + y), Instant(y => 2 + y), Instant(y => 3 + y))
 ```
 
 The custom `choice` combinator used in the introduction can be defined as a the following combination
 of elements and modifiers:
 
 ```
-const choice = (x, y) => Seq([Par([x, y]).take(1), Instant(([x]) => x));
+const choice = (x, y) => Seq(Par(x, y).take(1), Instant(([x]) => x));
 ```
 
 Note that because `Par().take(1)` creates a list of a single value, `Instant(([x] => x))` is used to

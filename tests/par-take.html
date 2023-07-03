@@ -14,61 +14,61 @@ import { Deck } from "../lib/deck.js";
 
 test("Par(xs).take(n = ∞) duration", t => {
     t.equal(
-        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take().duration, 51,
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).take().duration, 51,
         "dur with n = ∞"
     );
     t.undefined(
-        Par([Delay(51), Delay(23), Delay(31), Par.map(), Par.map()]).take().duration,
+        Par(Delay(51), Delay(23), Delay(31), Par.map(), Par.map()).take().duration,
         "dur with n = ∞ (indefinite durations)"
     );
     t.equal(
-        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(7).duration, 0,
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).take(7).duration, 0,
         "zero dur with n > child count (failure)"
     );
     t.equal(
-        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(3).duration, 23,
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).take(3).duration, 23,
         "dur with n < child count"
     );
     t.undefined(
-        Par([Delay(51), Delay(23), Delay(31), Par.map(), Delay(19)]).take(3).duration,
+        Par(Delay(51), Delay(23), Delay(31), Par.map(), Delay(19)).take(3).duration,
         "dur with n < child count, but unresolved duration"
     );
     t.equal(
-        Par([Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)]).take(0).duration, 0,
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).take(0).duration, 0,
         "dur with n = 0"
     );
 });
 
 test("Instantiation; n = ∞", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
-        Seq([Instant(K("A")), Delay(23)]),
+    const par = tape.instantiate(Par(
+        Seq(Instant(K("A")), Delay(23)),
         Instant(K("B")),
-        Seq([Instant(K("C")), Delay(23)]),
-        Seq([Instant(K("D")), Delay(19)]),
-    ]).take(), 17);
+        Seq(Instant(K("C")), Delay(23)),
+        Seq(Instant(K("D")), Delay(19)),
+    ).take(), 17);
     Deck({ tape }).now = 49;
     t.equal(par.value, ["B", "D", "A", "C"], "dynamic value");
 });
 
 test("Instantiation fails when n > xs.length", t => {
     const tape = Tape();
-    t.undefined(tape.instantiate(Par([
-        Seq([Instant(K("A")), Delay(23)]),
+    t.undefined(tape.instantiate(Par(
+        Seq(Instant(K("A")), Delay(23)),
         Instant(K("B")),
-        Seq([Instant(K("C")), Delay(23)]),
-        Seq([Instant(K("D")), Delay(19)]),
-    ]).take(7), 17), "not enough children");
+        Seq(Instant(K("C")), Delay(23)),
+        Seq(Instant(K("D")), Delay(19)),
+    ).take(7), 17), "not enough children");
 });
 
 test("Instantiation; n < xs.length", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
-        Seq([Instant(K("A")), Delay(23), Instant(x => x + "*")]),
+    const par = tape.instantiate(Par(
+        Seq(Instant(K("A")), Delay(23), Instant(x => x + "*")),
         Instant(K("B")),
-        Seq([Instant(K("C")), Delay(23), Instant(x => x + "*")]),
-        Seq([Instant(K("D")), Delay(19), Instant(x => x + "*")]),
-    ]).take(1), 17);
+        Seq(Instant(K("C")), Delay(23), Instant(x => x + "*")),
+        Seq(Instant(K("D")), Delay(19), Instant(x => x + "*")),
+    ).take(1), 17);
     Deck({ tape }).now = 49;
     t.equal(par.value, ["B"], "dynamic value");
     t.equal(dump(par),
@@ -77,13 +77,13 @@ test("Instantiation; n < xs.length", t => {
 });
 
 test("Instantiation; unresolved durations result in more than n children", t => {
-    const par = Tape().instantiate(Par([
+    const par = Tape().instantiate(Par(
         Delay(23),
         Delay(31),
         Par.map(Delay),
         Delay(19),
         Delay(51) // this delay will not be instantiated
-    ]).take(3), 17);
+    ).take(3), 17);
     t.equal(dump(par),
 `* Par-0 [17, ∞[
   * Delay-1 [17, 40[
@@ -94,10 +94,10 @@ test("Instantiation; unresolved durations result in more than n children", t => 
 
 test("Instantiation failure in child after nth", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
-        Seq([Delay(23), Par().take(1)]),
+    const par = tape.instantiate(Par(
+        Seq(Delay(23), Par().take(1)),
         Instant(K("B")),
-    ]).take(1), 17);
+    ).take(1), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(par),
 `* Par-0 @17 <B>
@@ -106,12 +106,12 @@ test("Instantiation failure in child after nth", t => {
 
 test("Instantiation; n = 0", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
-        Seq([Instant(K("A")), Delay(23)]),
+    const par = tape.instantiate(Par(
+        Seq(Instant(K("A")), Delay(23)),
         Instant(K("B*")),
-        Seq([Instant(K("C")), Delay(23)]),
-        Seq([Instant(K("D")), Delay(19)]),
-    ]).take(0), 17);
+        Seq(Instant(K("C")), Delay(23)),
+        Seq(Instant(K("D")), Delay(19)),
+    ).take(0), 17);
     Deck({ tape }).now = 18;
     t.equal(par.value, [], "dynamic value");
     t.equal(dump(par), "* Par-0 @17 <>", "dump matches");
@@ -119,13 +119,13 @@ test("Instantiation; n = 0", t => {
 
 test("Allowing failure during instantiation", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
+    const par = tape.instantiate(Par(
         Delay(23),
         Delay(31),
         Par().take(1), // fails
         Delay(19),
         Instant().repeat(), // fails
-    ]).take(3), 17);
+    ).take(3), 17);
     t.equal(dump(par),
 `* Par-0 [17, 48[
   * Delay-1 [17, 40[
@@ -135,13 +135,13 @@ test("Allowing failure during instantiation", t => {
 
 test("Effects", t => {
     const tape = Tape();
-    const par = tape.instantiate(Par([
+    const par = tape.instantiate(Par(
         Instant(K("ok")),
         Effect(() => {
             console.warn("Some effect");
             return "ko";
         })
-    ]).take(1), 17);
+    ).take(1), 17);
     t.warns(() => { Deck({ tape }).now = 18; }, "effect occurred");
     t.equal(dump(par),
 `* Par-0 @17 <ok>

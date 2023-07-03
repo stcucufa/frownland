@@ -82,7 +82,7 @@ test("Await in sequence", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Seq([Await(ok), Delay(23), Await(ok)]), 17)
+    score.add(Seq(Await(ok), Delay(23), Await(ok)), 17)
     deck.now = 41;
     // Await first timeout
     await notification(deck, "await");
@@ -101,7 +101,7 @@ test("Await in parallel", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Par([Await(ok), Delay(23), Await(ok)]), 17)
+    score.add(Par(Await(ok), Delay(23), Await(ok)), 17)
     deck.now = 41;
     // Await two timeouts
     await notification(deck, "await");
@@ -118,7 +118,7 @@ test("Await(f) constrained by parent; call ends early", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Par([Await(ok)]).dur(19), 17);
+    score.add(Par(Await(ok)).dur(19), 17);
     deck.now = 18;
     await notification(deck, "await");
     deck.now = 37;
@@ -132,7 +132,7 @@ test("Await(f) constrained by parent; call ends late", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Par([Await(ok)]).dur(19), 17);
+    score.add(Par(Await(ok)).dur(19), 17);
     deck.now = 39;
     await notification(deck, "await");
     t.equal(dump(score.instance),
@@ -164,7 +164,7 @@ test("Await(f).dur(d); followed by instant", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Seq([Await(ok).dur(23), Instant(x => x + "!")]), 17);
+    score.add(Seq(Await(ok).dur(23), Instant(x => x + "!")), 17);
     deck.now = 18;
     await notification(deck, "await");
     deck.now = 41;
@@ -191,7 +191,7 @@ test("Await(f).dur(d) constrained by parent; call ends early", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Par([Await(ok).dur(23)]).dur(19), 17);
+    score.add(Par(Await(ok).dur(23)).dur(19), 17);
     deck.now = 18;
     await notification(deck, "await");
     deck.now = 37;
@@ -205,7 +205,7 @@ test("Await(f).dur(d) constrained by parent; call ends late", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Par([Await(ok).dur(23)]).dur(19), 17);
+    score.add(Par(Await(ok).dur(23)).dur(19), 17);
     deck.now = 39;
     await notification(deck, "await");
     t.equal(dump(score.instance),
@@ -218,10 +218,10 @@ test("Cancel", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Par([
-        Seq([Instant(K([19])), Par.map(Delay)]),
+    score.add(Par(
+        Seq(Instant(K([19])), Par.map(Delay)),
         Await(() => timeout(100))
-    ]).take(1), 17);
+    ).take(1), 17);
     deck.now = 37;
     await notification(deck, "await");
     t.equal(dump(score.instance),
@@ -238,10 +238,10 @@ test("Cancel Await(f).dur(d)", async t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const score = Score({ tape });
-    score.add(Par([
-        Seq([Instant(K([19])), Par.map(Delay)]),
+    score.add(Par(
+        Seq(Instant(K([19])), Par.map(Delay)),
         Await(ok).dur(23)
-    ]).take(1), 17);
+    ).take(1), 17);
     deck.now = 39;
     await notification(deck, "await");
     t.equal(dump(score.instance),
@@ -256,10 +256,10 @@ test("Cancel Await(f).dur(d)", async t => {
 
 test("Prune", t => {
     const tape = Tape();
-    const choice = tape.instantiate(Par([
-        Seq([Instant(K([19])), Par.map(Delay)]),
-        Seq([Delay(23), Await(() => timeout(7777))])
-    ]).take(1), 17);
+    const choice = tape.instantiate(Par(
+        Seq(Instant(K([19])), Par.map(Delay)),
+        Seq(Delay(23), Await(() => timeout(7777)))
+    ).take(1), 17);
     Deck({ tape }).now = 37;
     t.equal(dump(choice),
 `* Par-0 [17, 36[ <19>

@@ -13,7 +13,7 @@ import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
 test("Seq(xs).repeat()", t => {
-    const seq = Seq([Delay(23)]);
+    const seq = Seq(Delay(23));
     const repeat = seq.repeat();
     t.equal(repeat.show(), "Seq/repeat", "show");
     t.equal(repeat.child, seq, "repeat child");
@@ -25,10 +25,10 @@ test("Seq(xs).repeat()", t => {
 
 test("Instantiation", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K(1)),
-        Seq([Instant(x => x * 2), Delay(23)]).repeat()
-    ]), 17);
+        Seq(Instant(x => x * 2), Delay(23)).repeat()
+    ), 17);
     Deck({ tape }).now = 110;
     t.equal(dump(seq),
 `* Seq-0 [17, ∞[
@@ -54,16 +54,16 @@ test("Instantiation", t => {
 test("Instantiation fails for zero duration", t => {
     const tape = Tape();
     t.undefined(tape.instantiate(Seq().repeat(), 17), "empty seq");
-    t.undefined(tape.instantiate(Seq([Instant(), Instant()]).repeat(), 17), "zero duration seq");
+    t.undefined(tape.instantiate(Seq(Instant(), Instant()).repeat(), 17), "zero duration seq");
     t.undefined(tape.instantiate(Seq().repeat().dur(23), 17), "also fails with dur()");
 });
 
 test("Seq(xs).repeat().take(n)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K(1)),
-        Seq([Instant(x => x * 2), Delay(23)]).repeat().take(4)
-    ]), 17);
+        Seq(Instant(x => x * 2), Delay(23)).repeat().take(4)
+    ), 17);
     Deck({ tape }).now = 110;
     t.equal(seq.value, 16, "return value");
 });
@@ -81,7 +81,7 @@ test("Seq(xs).repeat().take(n); empty seq", t => {
 
 test("Seq(xs).repeat().take(n); zero-duration seq", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K("A")), Instant(x => x + "*")]).repeat().take(3), 17);
+    const seq = tape.instantiate(Seq(Instant(K("A")), Instant(x => x + "*")).repeat().take(3), 17);
     Deck({ tape }).now = 18;
     t.equal(dump(seq),
 `* Seq/repeat-0 @17 <A*>
@@ -98,7 +98,7 @@ test("Seq(xs).repeat().take(n); zero-duration seq", t => {
 
 test("Repeat with unresolved duration", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([Instant(K([19, 23])), Seq.map(Delay)]).repeat(), 17);
+    const seq = tape.instantiate(Seq(Instant(K([19, 23])), Seq.map(Delay)).repeat(), 17);
     Deck({ tape }).now = 111;
     t.equal(dump(seq),
 `* Seq/repeat-0 [17, ∞[
@@ -121,10 +121,10 @@ test("Repeat with unresolved duration", t => {
 
 test("Repeat with dur", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K("A")),
-        Seq([Delay(7), Instant(x => x + "+")]).repeat().dur(23)
-    ]), 17);
+        Seq(Delay(7), Instant(x => x + "+")).repeat().dur(23)
+    ), 17);
     Deck({ tape }).now = 41;
     t.equal(dump(seq),
 `* Seq-0 [17, 40[ <A+++>
@@ -145,10 +145,10 @@ test("Repeat with dur", t => {
 
 test("Repeat with dur and take (extend duration)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K("A")),
-        Seq([Delay(7), Instant(x => x + "+")]).repeat().take(3).dur(23)
-    ]), 17);
+        Seq(Delay(7), Instant(x => x + "+")).repeat().take(3).dur(23)
+    ), 17);
     Deck({ tape }).now = 41;
     t.equal(dump(seq),
 `* Seq-0 [17, 40[ <A+++>
@@ -167,10 +167,10 @@ test("Repeat with dur and take (extend duration)", t => {
 
 test("Repeat with dur and take (not enough iterations)", t => {
     const tape = Tape();
-    const seq = tape.instantiate(Seq([
+    const seq = tape.instantiate(Seq(
         Instant(K("A")),
-        Seq([Delay(7), Instant(x => x + "+")]).repeat().take(4).dur(23)
-    ]), 17);
+        Seq(Delay(7), Instant(x => x + "+")).repeat().take(4).dur(23)
+    ), 17);
     Deck({ tape }).now = 41;
     t.equal(dump(seq),
 `* Seq-0 [17, 40[ (failed)
