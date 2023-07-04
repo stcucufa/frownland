@@ -3,11 +3,26 @@ import { create, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js"
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
-        this.score = Score();
         this.boxes = new Map();
     },
 
+    getScoreForTape(tape) {
+        if (this.score) {
+            // The score has not changed and neither should the tape.
+            console.assert(this.score.tape === tape);
+        } else {
+            this.score = Score({ tape });
+            for (const [box, node] of this.boxes.entries()) {
+                if (box.outlets[0].cords.size === 0) {
+                    console.log("Add box to score", box, node);
+                }
+            }
+        }
+        return this.score;
+    },
+
     boxWasEdited(box) {
+        delete this.score;
         const isNew = this.boxes.has(box);
         const node = parse(box.label);
         this.boxes.set(box, node);
@@ -16,11 +31,10 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         box.inlets.forEach((port, i) => { port.enable(i < n); });
         const m = node?.outlets ?? 1;
         box.outlets.forEach((port, i) => { port.enable(i < m); });
-        console.log(`Box was ${isNew ? "edited" : "added"}: ${node?.label ?? box.label}`, node);
     },
 
     boxWillBeRemoved(box) {
-        console.log(`Box will be removed: ${box.label}`);
+        delete this.score;
         this.boxes.delete(box);
     },
 
@@ -84,7 +98,6 @@ const Parse = {
                     label: `Delay/until ${normalized}`,
                     build: () => Delay.until(t)
                 }
-                return Delay.until(t);
             }
         } else {
             input = normalizeWhitespace(input);
