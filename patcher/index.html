@@ -16,8 +16,63 @@
                         <line x2="100%"/>
                     </g>
                 </pattern>
+                <symbol id="stop" viewBox="0 0 100 100">
+                    <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                        d="M20,20v60h60v-60z"/>
+                </symbol>
+                <symbol id="play" viewBox="0 0 100 100">
+                    <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                        d="M15.359,10v80L69.282,50z"/>
+                </symbol>
+                <symbol id="pause" viewBox="0 0 100 100">
+                    <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                        d="M20,20v60h20v-60z M60,20v60h20v-60z"/>
+                </symbol>
+                <symbol id="step" viewBox="0 0 100 100">
+                    <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                        d="M0,20v60L50,50z M52,20v60h10v-60z M92,20v60h-10v-60z"/>
+                </symbol>
+                <symbol id="rewind" viewBox="0 0 100 100">
+                    <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                        d="M100,20v60L50,50z M50,20v60L0,50z"/>
+                </symbol>
+                <symbol id="fastForward" viewBox="0 0 100 100">
+                    <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                        d="M0,20v60L50,50z M50,20v60L100,50z"/>
+                </symbol>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)"/>
         </svg>
+
+        <ul class="transport-bar">
+            <li>
+                <button type="button" name="stop">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#stop"/>
+                    </svg>
+                    Stop
+                </button>
+            </li>
+            <li>
+                <button type="button" name="play">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#play"/>
+                    </svg>
+                    Play
+                </button>
+            </li>
+            <li>
+                <button type="button" name="pause">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#pause"/>
+                    </svg>
+                    Pause
+                </button>
+            </li>
+            <li>
+                <span class="display">--:--</span>
+            </li>
+        </ul>
+
     </body>
 </html>

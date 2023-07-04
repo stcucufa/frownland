@@ -10,9 +10,10 @@ svg.canvas {
     height: 100%;
 }
 
-body, text {
+body, text, button {
     font-family: ui-sans-serif, sans-serif;
     font-size: 16px;
+    color: #102040;
 }
 
 span.input {
@@ -25,6 +26,35 @@ span.input {
 
 span.input:focus {
     outline: none;
+}
+
+button {
+    font-size: 1rem;
+}
+
+ul.transport-bar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    list-style-type: none;
+    display: inline-block;
+    text-align: center;
+    padding: 0;
+}
+
+ul.transport-bar li {
+    display: inline;
+}
+
+ul.transport-bar .display {
+    font-family: ui-monospace, monospace;
+}
+
+svg.icon {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: -.125em;
 }
 
 g.box rect {
