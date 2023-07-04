@@ -105,6 +105,10 @@ export const Box = assign(properties => create(properties).call(Box), {
         }
     },
 
+    toggleUnknown(unknown) {
+        this.element.classList.toggle("unknown", unknown);
+    },
+
     handleEvent(event) {
         switch (event.key) {
             case "Escape":

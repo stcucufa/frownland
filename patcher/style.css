@@ -40,6 +40,10 @@ g.box.selected > rect {
     outline: solid 3px #83ebf5;
 }
 
+g.box.unknown > rect {
+    fill: #ffd0d0;
+}
+
 g.box g.port rect {
     fill: #102040;
 }
@@ -50,6 +54,10 @@ g.port circle {
 
 g.port.target circle {
     fill: rgba(64, 255, 64, 0.25);
+}
+
+g.port.disabled {
+    display: none;
 }
 
 g.cord line {

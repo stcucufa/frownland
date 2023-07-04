@@ -5,6 +5,12 @@ export const DragEventListener = Object.assign(elements => create({ elements }).
     handleEvent(event) {
         switch (event.type) {
             case "pointerdown":
+                const target = this.elements.get(event.currentTarget);
+                if (target.dragDidBegin?.(event.clientX, event.clientY) === false) {
+                    // Not returning from dragDidBegin does *not* cancel the
+                    // drag, so explicitly check for false.
+                    return;
+                }
                 document.addEventListener("pointermove", this);
                 document.addEventListener("pointerup", this);
                 document.addEventListener("pointercancel", this);
@@ -13,8 +19,7 @@ export const DragEventListener = Object.assign(elements => create({ elements }).
                 event.stopPropagation();
                 this.x0 = event.clientX;
                 this.y0 = event.clientY;
-                this.target = this.elements.get(event.currentTarget);
-                this.target.dragDidBegin?.(this.x0, this.y0);
+                this.target = target;
                 break;
             case "pointermove":
                 const x = event.clientX;

@@ -70,22 +70,9 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
         this.patch.boxWillBeRemoved(box);
     },
 
-    cordWasAdded(cord) {
-        const outlet = cord.outlet;
-        const inlet = cord.inlet;
-        this.patch.cordWasAdded(
-            outlet.box, outlet.box.outlets.indexOf(outlet),
-            inlet.box, inlet.box.inlets.indexOf(inlet)
-        );
-    },
-
-    cordWillBeRemoved(cord) {
-        const outlet = cord.outlet;
-        const inlet = cord.inlet;
-        this.patch.cordWillBeRemoved(
-            outlet.box, outlet.box.outlets.indexOf(outlet),
-            inlet.box, inlet.box.inlets.indexOf(inlet)
-        );
+    // Decide whether a connection between an inlet and an outlet is valid.
+    inletAcceptsConnection(inlet, outlet) {
+        return this.patch.inletAcceptsConnection(inlet, outlet);
     },
 
     // Select an item, deselecting everything else.

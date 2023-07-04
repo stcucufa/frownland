@@ -67,14 +67,36 @@ export const Port = assign(properties => create(properties).call(Port), {
         this.element.classList.toggle("target", value);
     },
 
-    possibleTargetForCord(port) {
-        if (port.box !== this.box && port.isOutlet !== this.isOutlet && !this.cords.has(port)) {
-            return this;
+    // Enable or disable the port.
+    enable(value) {
+        this.element.classList.toggle("disabled", !value);
+        if (!value) {
+            for (const cord of this.cords.values()) {
+                cord.remove();
+            }
         }
     },
 
-    // Create a cord from this port.
+    // Check whether a this is a possible target from another port. One must be
+    // an inlet and the other an outlet, there can be only one cord per port
+    // (this was already checked for this, but not for the potential target),
+    // and the inlet must accept a connection from the outlet.
+    possibleTargetForCord(port) {
+        if (port.box !== this.box && port.isOutlet !== this.isOutlet && this.cords.size === 0) {
+            const inlet = this.isOutlet ? port : this;
+            const outlet = this.isOutlet ? this : port;
+            if (this.patcher.inletAcceptsConnection(inlet, outlet)) {
+                return this;
+            }
+        }
+    },
+
+    // Create a cord from this port. Currently, only a single outgoing or
+    // incoming cord is allowed (to maintain a tree structure).
     dragDidBegin(x, y) {
+        if (this.cords.size > 0) {
+            return false;
+        }
         this.cord = Cord(this, x, y);
         this.patcher.canvas.appendChild(this.cord.element);
         this.patcher.deselect();
