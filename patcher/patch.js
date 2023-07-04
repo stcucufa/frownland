@@ -1,4 +1,4 @@
-import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try } from "../lib/score.js";
+import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
 import { create, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
@@ -6,6 +6,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         this.boxes = new Map();
     },
 
+    // Dump the score (for debugging)
+    dumpScore() {
+        if (this.score) {
+            console.log(dump(this.score.instance));
+        }
+    },
+
+    // Create a new score from the current items; or 
     getScoreForTape(tape) {
         if (this.score) {
             // The score has not changed and neither should the tape.
@@ -14,11 +22,25 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             this.score = Score({ tape });
             for (const [box, node] of this.boxes.entries()) {
                 if (box.outlets[0].cords.size === 0) {
-                    console.log("Add box to score", box, node);
+                    this.score.add(this.createItemFor(box, node));
                 }
             }
         }
         return this.score;
+    },
+
+    // Create an item from a box/node pair, getting the inputs from the inlets
+    // as necessary.
+    createItemFor(box, node) {
+        const inputs = box.inlets.flatMap(
+            inlet => [...inlet.cords.keys()].map(outlet => outlet.box)
+        ).map(box => {
+            if (box) {
+                const node = this.boxes.get(box);
+                return this.createItemFor(box, node);
+            }
+        });
+        return node.create(...inputs);
     },
 
     boxWasEdited(box) {
@@ -67,7 +89,7 @@ const evalNode = Constructor => safe(input => {
         return {
             label: `${Constructor.tag} ${normalizeWhitespace(input)}`,
             source: input,
-            build: () => Constructor(f)
+            create: () => Constructor(f)
         };
     }
 });
@@ -77,7 +99,7 @@ const only = (Constructor, params = {}) => input => {
     if (!/\S/.test(input)) {
         return Object.assign({
             label: Constructor.tag,
-            build: Constructor,
+            create: Constructor,
             acceptFrom: K(true),
             inlets: 2,
         }, params);
@@ -96,7 +118,7 @@ const Parse = {
             if (t > 0) {
                 return {
                     label: `Delay/until ${normalized}`,
-                    build: () => Delay.until(t)
+                    create: () => Delay.until(t)
                 }
             }
         } else {
@@ -105,7 +127,7 @@ const Parse = {
             if (d > 0) {
                 return {
                     label: `Delay ${input}`,
-                    build: () => Delay(d)
+                    create: () => Delay(d)
                 }
             }
         }
@@ -125,7 +147,7 @@ const Parse = {
         if (d > 0) {
             return {
                 label: `dur ${input}`,
-                build: item => item.dur?.(d),
+                create: item => item.dur?.(d),
                 acceptFrom: node => !node.isTry,
                 inlets: 1,
             }
@@ -134,7 +156,7 @@ const Parse = {
 
     repeat: only(item => item.repeat(), {
         label: "repeat",
-        build: item => item.repeat?.(),
+        create: item => item.repeat?.(),
         isContainer: true,
         acceptFrom: node => !node.isTry,
         inlets: 1,
@@ -146,7 +168,7 @@ const Parse = {
             const n = parseInt(match[0], 10);
             return {
                 label: `take(${n})`,
-                build: item => item.take?.(),
+                create: item => item.take?.(n),
                 acceptFrom: node => node.isContainer,
                 inlets: 1,
             }

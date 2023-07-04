@@ -8,6 +8,11 @@ import { TransportBar } from "./transport-bar.js";
 // Keyboard commands for different key. `this` is set to the patcher that calls
 // the command.
 const Commands = {
+    // Dump the score (for debugging)
+    d() {
+        this.patch.dumpScore();
+    },
+
     // Add a new box.
     n() {
         const box = Box({

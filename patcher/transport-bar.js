@@ -17,7 +17,7 @@ const States = {
         play: ["forward", function() {
             this.deck.now = 0;
             this.deck.start();
-            notify(this, "play", { tape: this.tape });
+            notify(this, "play", { tape: this.deck.tape });
         }],
     },
 
