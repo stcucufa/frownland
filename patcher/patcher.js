@@ -1,3 +1,4 @@
+import { on } from "../lib/events.js";
 import { create } from "../lib/util.js";
 import { DragEventListener } from "./drag-event-listener.js";
 import { Box } from "./box.js";
@@ -47,7 +48,10 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
         });
 
         this.patch = Patch();
-        this.transportBar = TransportBar();
+        this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
+        on(this.transportBar, "play", () => {
+            console.log("!!! Generate score");
+        });
     },
 
     // Keep track of the pointer position and listen to keyboard commands.
