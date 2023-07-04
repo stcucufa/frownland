@@ -45,6 +45,10 @@ ul.transport-bar li {
     display: inline;
 }
 
+ul.transport-bar .display {
+    font-family: ui-monospace, monospace;
+}
+
 svg.icon {
     width: 1em;
     height: 1em;

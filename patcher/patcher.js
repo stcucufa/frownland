@@ -50,7 +50,7 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
         this.patch = Patch();
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
         on(this.transportBar, "play", () => {
-            console.log("!!! Generate score");
+            // FIXME 1P01 Create items from boxes
         });
     },
 
