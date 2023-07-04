@@ -39,6 +39,7 @@ ul.transport-bar {
     list-style-type: none;
     display: inline-block;
     text-align: center;
+    padding: 0;
 }
 
 ul.transport-bar li {
