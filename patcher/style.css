@@ -13,6 +13,7 @@ svg.canvas {
 body, text, button {
     font-family: ui-sans-serif, sans-serif;
     font-size: 16px;
+    color: #102040;
 }
 
 span.input {
@@ -33,14 +34,16 @@ button {
 
 ul.transport-bar {
     position: absolute;
-    bottom: 8px;
+    bottom: 0;
+    width: 100%;
     list-style-type: none;
+    display: inline-block;
+    text-align: center;
 }
 
 ul.transport-bar li {
     display: inline;
 }
-
 
 svg.icon {
     width: 1em;

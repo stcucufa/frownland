@@ -2,6 +2,7 @@ import { create } from "../lib/util.js";
 import { DragEventListener } from "./drag-event-listener.js";
 import { Box } from "./box.js";
 import { Patch } from "./patch.js";
+import { TransportBar } from "./transport-bar.js";
 
 // Keyboard commands for different key. `this` is set to the patcher that calls
 // the command.
@@ -46,6 +47,7 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
         });
 
         this.patch = Patch();
+        this.transportBar = TransportBar();
     },
 
     // Keep track of the pointer position and listen to keyboard commands.
