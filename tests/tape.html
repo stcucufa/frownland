@@ -7,8 +7,10 @@
         <script type="module">
 
 import { test } from "./test.js";
+import { nop } from "../lib/util.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
+import { Instant, dump } from "../lib/score.js";
 
 test("Tape()", t => {
     const tape = Tape();
@@ -17,7 +19,7 @@ test("Tape()", t => {
 
 test("addOccurrence({ t, forward })", t => {
     const tape = Tape();
-    let occurrences = [];
+    const occurrences = [];
     const forward = (t, interval) => { occurrences.push([t, interval.from, interval.to]); };
     tape.addOccurrence({ t: 23, forward });
     tape.addOccurrence({ t: 37, forward });
@@ -34,7 +36,7 @@ test("addOccurrence({ t, forward })", t => {
 
 test("removeOccurrence(occurrence)", t => {
     const tape = Tape();
-    let occurrences = [];
+    const occurrences = [];
     const forward = (t, interval) => { occurrences.push([t, interval.from, interval.to]); };
     tape.addOccurrence({ t: 23, forward });
     const toRemove = tape.addOccurrence({ t: 31, forward });
@@ -46,6 +48,20 @@ test("removeOccurrence(occurrence)", t => {
     t.equal(tape.removeOccurrence(toRemove), toRemove, "removed occurrence is removed");
     deck.now = 41;
     t.equal(occurrences, [[23, 0, 31], [37, 31, 41]], "occurrence was removed");
+});
+
+test("erase()", t => {
+    const tape = Tape();
+    tape.instantiate(Instant(), 23);
+    tape.instantiate(Instant(), 37);
+    const instant2 = tape.instantiate(Instant(), 31);
+    t.equal(tape.show(), "Tape<23,31,37>", "tape was written to");
+    t.equal(dump(instant2), "* Instant-2 @31", "id counter was incremented");
+    tape.erase();
+    t.equal(tape.show(), "Tape<>", "tape was erased");
+    const instant0 = tape.instantiate(Instant(), 17);
+    t.equal(tape.show(), "Tape<17>", "new occurrence on erased tape");
+    t.equal(dump(instant0), "* Instant-0 @17", "id counter is reset");
 });
 
         </script>
