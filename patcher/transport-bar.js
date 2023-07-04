@@ -2,6 +2,39 @@ import { notify, on } from "../lib/events.js";
 import { assoc, create, nop } from "../lib/util.js";
 import { Deck } from "../lib/deck.js";
 
+const stop = ["stopped", function() {
+    this.deck.stop();
+    this.updateDisplay();
+}];
+
+const States = {
+    stopped: {
+        stop: ["stopped", function() {
+            this.deck.now = 0;
+            this.updateDisplay();
+        }],
+        play: ["forward", function() {
+            this.deck.now = 0;
+            this.deck.start();
+            notify(this, "play");
+        }],
+    },
+
+    forward: {
+        stop,
+        pause: ["paused", function() {
+            this.deck.pause();
+        }]
+    },
+
+    paused: {
+        stop,
+        play: ["forward", function() {
+            this.deck.resume();
+        }]
+    },
+};
+
 // Transport bar controlling a Deck.
 export const TransportBar = Object.assign(element => create({ element }).call(TransportBar), {
     init() {
@@ -39,39 +72,6 @@ export const TransportBar = Object.assign(element => create({ element }).call(Tr
 
     States
 });
-
-const stop = ["stopped", function() {
-    this.deck.stop();
-    this.updateDisplay();
-}];
-
-const States = {
-    stopped: {
-        stop: ["stopped", function() {
-            this.deck.now = 0;
-            this.updateDisplay();
-        }],
-        play: ["forward", function() {
-            this.deck.now = 0;
-            this.deck.start();
-            notify(this, "play");
-        }],
-    },
-
-    forward: {
-        stop,
-        pause: ["paused", function() {
-            this.deck.pause();
-        }]
-    },
-
-    paused: {
-        stop,
-        play: ["forward", function() {
-            this.deck.resume();
-        }]
-    },
-};
 
 const pad = n => n.toString().padStart(2, "0");
 const mmss = t => `${pad(Math.floor(t / 60000))}:${pad(Math.floor(t / 1000) % 60)}`
