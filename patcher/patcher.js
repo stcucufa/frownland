@@ -57,6 +57,9 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
         on(this.transportBar, "play", ({ tape }) => {
             this.patch.updateScoreForTape(tape);
         });
+        on(this.transportBar, "stop", () => {
+            this.patch.clearScore();
+        });
     },
 
     // Keep track of the pointer position and listen to keyboard commands.

@@ -6,6 +6,7 @@ import { Deck } from "../lib/deck.js";
 const stop = ["stopped", function() {
     this.deck.stop();
     this.updateDisplay();
+    notify(this, "stop");
 }];
 
 const States = {
@@ -13,6 +14,7 @@ const States = {
         stop: ["stopped", function() {
             this.deck.now = 0;
             this.updateDisplay();
+            notify(this, "stop");
         }],
         play: ["forward", function() {
             this.deck.now = 0;

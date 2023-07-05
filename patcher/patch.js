@@ -33,6 +33,10 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         }
     },
 
+    clearScore() {
+        delete this.score;
+    },
+
     // Create an item from a box/node pair, getting the inputs from the inlets
     // as necessary.
     createItemFor(box, node) {
