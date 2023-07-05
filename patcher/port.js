@@ -24,7 +24,7 @@ export const Port = assign(properties => create(properties).call(Port), {
 
     // Remove all cords from/to this port when deleting it.
     remove() {
-        this.target.removeEventListener("pointerdown", DragEventListener);
+        this.target.removeEventListener("pointerdown", this.patcher.dragEventListener);
         for (const cord of this.cords.values()) {
             cord.remove();
         }
