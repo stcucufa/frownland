@@ -6,10 +6,11 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         this.boxes = new Map();
     },
 
-    // Dump the score (for debugging)
-    dumpScore() {
+    // Dump the score and tape (for debugging)
+    dump() {
         if (this.score) {
             console.log(dump(this.score.instance));
+            console.log(this.score.tape.show());
         } else {
             console.warn("No score");
         }
@@ -61,6 +62,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     boxWillBeRemoved(box) {
         delete this.score;
         this.boxes.delete(box);
+    },
+
+    cordWasAdded(cord) {
+        delete this.score;
+    },
+
+    cordWillBeRemoved(cord) {
+        delete this.score;
     },
 
     inletAcceptsConnection(inlet, outlet) {

@@ -10,7 +10,7 @@ import { TransportBar } from "./transport-bar.js";
 const Commands = {
     // Dump the score (for debugging)
     d() {
-        this.patch.dumpScore();
+        this.patch.dump();
     },
 
     // Add a new box.
@@ -79,6 +79,14 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
 
     boxWillBeRemoved(box) {
         this.patch.boxWillBeRemoved(box);
+    },
+
+    cordWasAdded(cord) {
+        this.patch.cordWasAdded(cord);
+    },
+
+    cordWillBeRemoved(cord) {
+        this.patch.cordWillBeRemoved(cord);
     },
 
     // Decide whether a connection between an inlet and an outlet is valid.
