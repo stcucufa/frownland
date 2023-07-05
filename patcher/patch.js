@@ -10,15 +10,19 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     dumpScore() {
         if (this.score) {
             console.log(dump(this.score.instance));
+        } else {
+            console.warn("No score");
         }
     },
 
     // Create a new score from the current items; or 
-    getScoreForTape(tape) {
+    updateScoreForTape(tape) {
         if (this.score) {
             // The score has not changed and neither should the tape.
             console.assert(this.score.tape === tape);
         } else {
+            // Create a new score.
+            tape.erase();
             this.score = Score({ tape });
             for (const [box, node] of this.boxes.entries()) {
                 if (box.outlets[0].cords.size === 0) {
@@ -26,7 +30,6 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 }
             }
         }
-        return this.score;
     },
 
     // Create an item from a box/node pair, getting the inputs from the inlets
