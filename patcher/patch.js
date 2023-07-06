@@ -1,5 +1,5 @@
 import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
-import { create, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
+import { create, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -26,7 +26,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             tape.erase();
             this.score = Score({ tape });
             for (const [box, node] of this.boxes.entries()) {
-                if (box.outlets[0].cords.size === 0) {
+                if (!box.outlets[0].enabled) {
                     this.score.add(this.createItemFor(box, node));
                 }
             }
@@ -58,9 +58,9 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         this.boxes.set(box, node);
         box.toggleUnknown(!node);
         const n = node?.inlets ?? 0;
-        box.inlets.forEach((port, i) => { port.enable(i < n); });
+        box.inlets.forEach((port, i) => { port.enabled = i < n; });
         const m = node?.outlets ?? 1;
-        box.outlets.forEach((port, i) => { port.enable(i < m); });
+        box.outlets.forEach((port, i) => { port.enabled = i < m; });
     },
 
     boxWillBeRemoved(box) {
@@ -87,7 +87,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
 // Parse a box label.
 function parse(label) {
-    const match = label.match(/^\s*(\w+)\b/);
+    const match = label.match(/^\s*([^\s\/]+)/);
     if (!match || !(match[1] in Parse)) {
         // Unknown item
         return;
@@ -120,6 +120,12 @@ const only = (Constructor, params = {}) => input => {
             inlets: 2,
         }, params);
     }
+};
+
+const score = {
+    inlets: 1,
+    outlets: 0,
+    create: I
 };
 
 // Parse different kinds of items and modifiers.
@@ -156,6 +162,10 @@ const Parse = {
     Par: only(Par, { isContainer: true }),
     Seq: only(Seq, { isContainer: true }),
     Try: only(Try, { isTry: true }),
+
+    Score: only({ tag: "Score" }, score),
+    "dac~": only({ tag: "dac~" }, score),
+    "ezdac~": only({ tag: "ezdac~" }, score),
 
     dur: input => {
         input = normalizeWhitespace(input);
