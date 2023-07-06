@@ -8,9 +8,18 @@
 
 import { test } from "./test.js";
 import { K } from "../lib/util.js";
-import { Instant, Effect, Delay, Par, Seq, dump } from "../lib/score.js";
+import { Delay, Effect, Event, Instant, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
+
+test("Instantiation; indefinite duration child", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const instance = tape.instantiate(Par(Delay(Infinity), Event(window, "synth")).take(1), 17);
+    deck.now = 27;
+    window.dispatchEvent(new window.Event("synth"));
+    t.match(dump(instance), /^\* Par-0 \[17, 27\[ <[^>]+>\n  \* Delay-1 \[17, 27\[ \(cancelled\)\n  \* Event-2 \[17, 27\[ <[^>]+>$/, "dump matches");
+});
 
 test("Par(xs).take(n = ∞) duration", t => {
     t.equal(

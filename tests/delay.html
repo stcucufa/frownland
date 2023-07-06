@@ -58,6 +58,12 @@ test("Instantiation (zero duration)", t => {
     t.equal(dump(delay), "* Instant-0 @17 <undefined>", "dump matches");
 });
 
+test("Instantiation (indefinite duration)", t => {
+    const tape = Tape();
+    const delay = tape.instantiate(Delay(Infinity), 17);
+    t.equal(dump(delay), "* Delay-0 [17, ∞[", "dump matches");
+});
+
 test("Instantiation (illegal duration)", t => {
     const tape = Tape();
     t.equal(dump(tape.instantiate(Delay(-23), 17)), "* Instant-0 @17", "negative duration");
