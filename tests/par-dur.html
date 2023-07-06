@@ -14,6 +14,7 @@ import { Deck } from "../lib/deck.js";
 
 test("Par(xs).dur(d) duration", t => {
     t.equal(Par().dur(29).duration, 29, "empty par");
+    t.equal(Par().dur("1mn30s").duration, 90000, "empty par (string duration)");
     t.equal(
         Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).dur(79).duration, 79,
         "dur (more than natural duration)"
@@ -27,7 +28,7 @@ test("Par(xs).dur(d) duration", t => {
         "dur (indefinite natural durations)"
     );
     t.equal(
-        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).dur("79s").duration, 51,
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).dur(-79).duration, 51,
         "dur (illegal value is not applied)"
     );
 });
