@@ -33,7 +33,7 @@ test("Instantiation (non-zero duration)", t => {
     t.match(dump(instance), /^\* Element-0 \[17, 40\[ <[^>]+>$/, "dump matches");
 });
 
-test("Seq", t => {
+test("Element().dur()", t => {
     const tape = Tape();
     const instance = tape.instantiate(Seq(
         Element(html("p", "ok")).dur(23),
@@ -41,6 +41,14 @@ test("Seq", t => {
     ), 17);
     Deck({ tape }).now = 41;
     t.match(dump(instance), /^\* Seq-0 \[17, 40\[ <ok>\n  \* Element-1 \[17, 40\[ <[^>]+>\n  \* Instant-2 @40 <ok>$/, "dump matches");
+});
+
+test("Cancel", t => {
+    t.skip();
+});
+
+test("Prune", t => {
+    t.skip();
 });
 
         </script>

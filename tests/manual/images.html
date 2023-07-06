@@ -7,6 +7,14 @@
         <style>
 
 img {
+    height: 200px;
+    margin: 4px;
+}
+
+div.placeholder {
+    width: 200px;
+    background-color: #999966;
+    display: inline-block;
     margin: 4px;
 }
 
@@ -14,33 +22,45 @@ img {
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Element, Event, Effect, Instant, Par, Score, Seq, Try, dump } from "../../lib/score.js";
+import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../../lib/score.js";
 import { Tape } from "../../lib/tape.js";
 import { html, imagePromise, K, range, timeout } from "../../lib/util.js";
 
 const tape = Tape();
 const deck = Deck({ tape });
 const score = Score({ tape });
-const button = document.querySelector("button");
+const button = html("button", { type: "button" }, "Begin");
 
 score.add(Seq(
-    Event(button, "click").repeat().take(3),
-    Effect(() => { button.disabled = true; }),
-    Await(async () => await (await fetch("images.json")).json()),
-    Seq.map(([w, h]) => Element(html("img", { src: `https://placekitten.com/${w}/${h}` })).dur(500)),
+    //Await(async () => await (await fetch("images.json")).json()),
+    Par(
+        Element(button, document.querySelector("span")).dur("10s"),
+        Event(button, "click"),
+    ).take(1),
+    /*Seq.map(([w, h]) => Seq(
+        Try(
+            Await(async () => await imagePromise(`https://placekitten.com/${w}/${h}`)).dur(500),
+            Instant(() => html("div", {
+                class: "placeholder", style: `width: ${w * 200 / h}px; height: 200px`
+            }))
+        ),
+        Effect(element => { document.body.appendChild(element); })
+    )),*/
     Effect(() => {
         setTimeout(() => { console.log(dump(score.instance)); });
         return "ok";
-    }).dur(100)
+    })
 ));
 
 deck.start();
+
+window.$ = () => { console.log(dump(score.instance)); };
 
         </script>
     </head>
     <body>
         <p><a href="../">Back</a></p>
         <p>Fetch images of increasing size, waiting a bit after each one. One image has a wrong URL though!</p>
-        <p><button type="button">Begin</button> (press three times!)</p>
+        <p>Press three times: <span></span></p>
     </body>
 </html>
