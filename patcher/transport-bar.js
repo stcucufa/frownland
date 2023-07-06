@@ -1,10 +1,12 @@
 import { notify, on } from "../lib/events.js";
 import { assoc, create, nop } from "../lib/util.js";
+import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
 const stop = ["stopped", function() {
     this.deck.stop();
     this.updateDisplay();
+    notify(this, "stop");
 }];
 
 const States = {
@@ -12,11 +14,12 @@ const States = {
         stop: ["stopped", function() {
             this.deck.now = 0;
             this.updateDisplay();
+            notify(this, "stop");
         }],
         play: ["forward", function() {
             this.deck.now = 0;
             this.deck.start();
-            notify(this, "play");
+            notify(this, "play", { tape: this.deck.tape });
         }],
     },
 
@@ -46,7 +49,7 @@ export const TransportBar = Object.assign(element => create({ element }).call(Tr
             }
         );
         this.display = this.element.querySelector("span.display");
-        this.deck = Deck();
+        this.deck = Deck({ tape: Tape() });
         on(this.deck, "update", () => {
             this.updateDisplay();
         });

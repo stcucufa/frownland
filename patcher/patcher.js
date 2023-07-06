@@ -8,6 +8,11 @@ import { TransportBar } from "./transport-bar.js";
 // Keyboard commands for different key. `this` is set to the patcher that calls
 // the command.
 const Commands = {
+    // Dump the score (for debugging)
+    d() {
+        this.patch.dump();
+    },
+
     // Add a new box.
     n() {
         const box = Box({
@@ -49,8 +54,11 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
 
         this.patch = Patch();
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
-        on(this.transportBar, "play", () => {
-            // FIXME 1P01 Create items from boxes
+        on(this.transportBar, "play", ({ tape }) => {
+            this.patch.updateScoreForTape(tape);
+        });
+        on(this.transportBar, "stop", () => {
+            this.patch.clearScore();
         });
     },
 
@@ -74,6 +82,14 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
 
     boxWillBeRemoved(box) {
         this.patch.boxWillBeRemoved(box);
+    },
+
+    cordWasAdded(cord) {
+        this.patch.cordWasAdded(cord);
+    },
+
+    cordWillBeRemoved(cord) {
+        this.patch.cordWillBeRemoved(cord);
     },
 
     // Decide whether a connection between an inlet and an outlet is valid.

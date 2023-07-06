@@ -1,13 +1,58 @@
-import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try } from "../lib/score.js";
+import { Await, Delay, Effect, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
 import { create, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
-        this.score = Score();
         this.boxes = new Map();
     },
 
+    // Dump the score and tape (for debugging)
+    dump() {
+        if (this.score) {
+            console.log(dump(this.score.instance));
+            console.log(this.score.tape.show());
+        } else {
+            console.warn("No score");
+        }
+    },
+
+    // Create a new score from the current items; or 
+    updateScoreForTape(tape) {
+        if (this.score) {
+            // The score has not changed and neither should the tape.
+            console.assert(this.score.tape === tape);
+        } else {
+            // Create a new score.
+            tape.erase();
+            this.score = Score({ tape });
+            for (const [box, node] of this.boxes.entries()) {
+                if (box.outlets[0].cords.size === 0) {
+                    this.score.add(this.createItemFor(box, node));
+                }
+            }
+        }
+    },
+
+    clearScore() {
+        delete this.score;
+    },
+
+    // Create an item from a box/node pair, getting the inputs from the inlets
+    // as necessary.
+    createItemFor(box, node) {
+        const inputs = box.inlets.flatMap(
+            inlet => [...inlet.cords.keys()].map(outlet => outlet.box)
+        ).map(box => {
+            if (box) {
+                const node = this.boxes.get(box);
+                return this.createItemFor(box, node);
+            }
+        });
+        return node.create(...inputs);
+    },
+
     boxWasEdited(box) {
+        delete this.score;
         const isNew = this.boxes.has(box);
         const node = parse(box.label);
         this.boxes.set(box, node);
@@ -16,12 +61,19 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         box.inlets.forEach((port, i) => { port.enable(i < n); });
         const m = node?.outlets ?? 1;
         box.outlets.forEach((port, i) => { port.enable(i < m); });
-        console.log(`Box was ${isNew ? "edited" : "added"}: ${node?.label ?? box.label}`, node);
     },
 
     boxWillBeRemoved(box) {
-        console.log(`Box will be removed: ${box.label}`);
+        delete this.score;
         this.boxes.delete(box);
+    },
+
+    cordWasAdded(cord) {
+        delete this.score;
+    },
+
+    cordWillBeRemoved(cord) {
+        delete this.score;
     },
 
     inletAcceptsConnection(inlet, outlet) {
@@ -53,7 +105,7 @@ const evalNode = Constructor => safe(input => {
         return {
             label: `${Constructor.tag} ${normalizeWhitespace(input)}`,
             source: input,
-            build: () => Constructor(f)
+            create: () => Constructor(f)
         };
     }
 });
@@ -63,7 +115,7 @@ const only = (Constructor, params = {}) => input => {
     if (!/\S/.test(input)) {
         return Object.assign({
             label: Constructor.tag,
-            build: Constructor,
+            create: Constructor,
             acceptFrom: K(true),
             inlets: 2,
         }, params);
@@ -82,9 +134,8 @@ const Parse = {
             if (t > 0) {
                 return {
                     label: `Delay/until ${normalized}`,
-                    build: () => Delay.until(t)
+                    create: () => Delay.until(t)
                 }
-                return Delay.until(t);
             }
         } else {
             input = normalizeWhitespace(input);
@@ -92,7 +143,7 @@ const Parse = {
             if (d > 0) {
                 return {
                     label: `Delay ${input}`,
-                    build: () => Delay(d)
+                    create: () => Delay(d)
                 }
             }
         }
@@ -112,7 +163,7 @@ const Parse = {
         if (d > 0) {
             return {
                 label: `dur ${input}`,
-                build: item => item.dur?.(d),
+                create: item => item.dur?.(d),
                 acceptFrom: node => !node.isTry,
                 inlets: 1,
             }
@@ -121,7 +172,7 @@ const Parse = {
 
     repeat: only(item => item.repeat(), {
         label: "repeat",
-        build: item => item.repeat?.(),
+        create: item => item.repeat?.(),
         isContainer: true,
         acceptFrom: node => !node.isTry,
         inlets: 1,
@@ -133,7 +184,7 @@ const Parse = {
             const n = parseInt(match[0], 10);
             return {
                 label: `take(${n})`,
-                build: item => item.take?.(),
+                create: item => item.take?.(n),
                 acceptFrom: node => node.isContainer,
                 inlets: 1,
             }
