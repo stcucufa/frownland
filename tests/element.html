@@ -8,7 +8,7 @@
 
 import { test } from "./test.js";
 import { html } from "../lib/util.js";
-import { Element, dump } from "../lib/score.js";
+import { Element, Instant, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -31,6 +31,16 @@ test("Instantiation (non-zero duration)", t => {
     const instance = tape.instantiate(Element(html("p", "Hello")).dur(23), 17);
     Deck({ tape }).now = 41;
     t.match(dump(instance), /^\* Element-0 \[17, 40\[ <[^>]+>$/, "dump matches");
+});
+
+test("Seq", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Element(html("p", "ok")).dur(23),
+        Instant(element => element.textContent)
+    ), 17);
+    Deck({ tape }).now = 41;
+    t.match(dump(instance), /^\* Seq-0 \[17, 40\[ <ok>\n  \* Element-1 \[17, 40\[ <[^>]+>\n  \* Instant-2 @40 <ok>$/, "dump matches");
 });
 
         </script>

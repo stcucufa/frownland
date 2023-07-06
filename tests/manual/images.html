@@ -7,14 +7,6 @@
         <style>
 
 img {
-    height: 200px;
-    margin: 4px;
-}
-
-div.placeholder {
-    width: 200px;
-    background-color: #999966;
-    display: inline-block;
     margin: 4px;
 }
 
@@ -22,7 +14,7 @@ div.placeholder {
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Event, Effect, Instant, Par, Score, Seq, Try, dump } from "../../lib/score.js";
+import { Await, Delay, Element, Event, Effect, Instant, Par, Score, Seq, Try, dump } from "../../lib/score.js";
 import { Tape } from "../../lib/tape.js";
 import { html, imagePromise, K, range, timeout } from "../../lib/util.js";
 
@@ -35,19 +27,11 @@ score.add(Seq(
     Event(button, "click").repeat().take(3),
     Effect(() => { button.disabled = true; }),
     Await(async () => await (await fetch("images.json")).json()),
-    Seq.map(([w, h]) => Seq(
-        Try(
-            Await(async () => await imagePromise(`https://placekitten.com/${w}/${h}`)).dur(500),
-            Instant(() => html("div", {
-                class: "placeholder", style: `width: ${w * 200 / h}px; height: 200px`
-            }))
-        ),
-        Effect(element => { document.body.appendChild(element); })
-    )),
+    Seq.map(([w, h]) => Element(html("img", { src: `https://placekitten.com/${w}/${h}` })).dur(500)),
     Effect(() => {
         setTimeout(() => { console.log(dump(score.instance)); });
         return "ok";
-    })
+    }).dur(100)
 ));
 
 deck.start();
