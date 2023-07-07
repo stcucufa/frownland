@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Instant</title>
+        <title>Instant &amp; Effect</title>
         <meta charset="utf8">
         <link rel="stylesheet" href="test.css">
         <script type="module">
@@ -49,9 +49,19 @@ test("Instantiatiation", t => {
     t.equal(instance.value, "ok", "instance value");
 });
 
-test("Instant(f).dur(d)", t => {
+test("Instant(f).dur(d), number", t => {
     const tape = Tape();
     const instance = tape.instantiate(Instant(K("ok")).dur(23), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <ok>
+  * Delay-1 [17, 40[ <undefined>
+  * Instant-2 @40 <ok>`, "dump matches");
+});
+
+test("Instant(f).dur(d), string", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Instant(K("ok")).dur("0.023s"), 17);
     Deck({ tape }).now = 41;
     t.equal(dump(instance),
 `* Seq-0 [17, 40[ <ok>
@@ -122,12 +132,25 @@ test("Effect(f)", t => {
     t.equal(dump(instance), "* Effect-0 @17 <ok>", "dump matches");
 });
 
-test("Effect(f).dur(d)", t => {
+test("Effect(f).dur(d), number", t => {
     const tape = Tape();
     const instance = tape.instantiate(Effect(() => {
         console.warn("Some effect");
         return "ok";
     }).dur(23), 17);
+    t.warns(() => { Deck({ tape }).now = 41; }, "has effect when running");
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <ok>
+  * Delay-1 [17, 40[ <undefined>
+  * Effect-2 @40 <ok>`, "dump matches");
+});
+
+test("Effect(f).dur(d), string", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Effect(() => {
+        console.warn("Some effect");
+        return "ok";
+    }).dur("0.023s"), 17);
     t.warns(() => { Deck({ tape }).now = 41; }, "has effect when running");
     t.equal(dump(instance),
 `* Seq-0 [17, 40[ <ok>
