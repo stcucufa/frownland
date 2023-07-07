@@ -68,7 +68,11 @@ export const Port = assign(properties => create(properties).call(Port), {
     },
 
     // Enable or disable the port.
-    enable(value) {
+    get enabled() {
+        return !this.element.classList.contains("disabled");
+    },
+
+    set enabled(value) {
         this.element.classList.toggle("disabled", !value);
         if (!value) {
             for (const cord of this.cords.values()) {
