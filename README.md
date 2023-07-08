@@ -223,6 +223,13 @@ input, and the `Try` ends as when the `catch` ends.
 The presentation layer adds elements for handling views and media in a document, as well as animation
 features. The `Video` element of the introduction is a feature of the presentation layer.
 
+Currently, the presentation layer consists of:
+
+* `Element(element, parent, context)`, which adds the DOM element `element` to the `parent` element (or
+`document.body` by default) before the `context` element (which defaults to `null`) using the DOM
+`insertBefore()` method when the element begins, and removes it when the element ends. By default, the
+duration is zero, so nothing happens; `.dur()` can be set to set a duration for the element.
+
 ### Synchronous events layer
 
 Synchronous events can be used to extend the timing model, allowing alternate means to begin and end

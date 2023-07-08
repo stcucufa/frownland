@@ -32,12 +32,12 @@ const score = Score({ tape });
 const button = html("button", { type: "button" }, "Begin");
 
 score.add(Seq(
-    //Await(async () => await (await fetch("images.json")).json()),
     Par(
         Element(button, document.querySelector("span")).dur("10s"),
-        Event(button, "click"),
+        Event(button, "click").repeat().take(3)
     ).take(1),
-    /*Seq.map(([w, h]) => Seq(
+    Await(async () => await (await fetch("images.json")).json()),
+    Seq.map(([w, h]) => Seq(
         Try(
             Await(async () => await imagePromise(`https://placekitten.com/${w}/${h}`)).dur(500),
             Instant(() => html("div", {
@@ -45,7 +45,7 @@ score.add(Seq(
             }))
         ),
         Effect(element => { document.body.appendChild(element); })
-    )),*/
+    )),
     Effect(() => {
         setTimeout(() => { console.log(dump(score.instance)); });
         return "ok";
