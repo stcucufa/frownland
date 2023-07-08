@@ -145,7 +145,7 @@ test("Seq.fold(g, z).repeat(); instantiation failure", t => {
     );
     Deck({ tape }).now = 18;
     t.equal(dump(seq),
-`* Seq-0 @17 (failed)
+`* Seq-0 [17, ∞[ (failed)
   * Instant-1 @17 <1,2,3>
   * Seq/repeat-2 @17 (failed)
     * Seq/fold-3 @17 <6>
