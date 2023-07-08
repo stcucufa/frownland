@@ -14,7 +14,7 @@ export const DragEventListener = Object.assign(elements => create({ elements }).
                 document.addEventListener("pointermove", this);
                 document.addEventListener("pointerup", this);
                 document.addEventListener("pointercancel", this);
-                document.addEventListener("keyup", this);
+                document.addEventListener("keydown", this);
                 event.preventDefault();
                 event.stopPropagation();
                 this.x0 = event.clientX;
@@ -32,7 +32,7 @@ export const DragEventListener = Object.assign(elements => create({ elements }).
             case "pointerup":
                 this.dragDidEnd();
                 break;
-            case "keyup":
+            case "keydown":
                 if (event.key === "Escape") {
                     this.dragWasCancelled();
                     this.dragDidEnd();

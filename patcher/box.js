@@ -90,7 +90,7 @@ export const Box = assign(properties => create(properties).call(Box), {
                 // Firefox (for instance) does not support "plaintext-only"
                 this.input.contentEditable = true;
             }
-            this.input.addEventListener("keyup", this);
+            this.input.addEventListener("keydown", this);
             window.setTimeout(() => {
                 this.input.focus();
                 const selection = deselectText();
@@ -100,7 +100,7 @@ export const Box = assign(properties => create(properties).call(Box), {
             });
         } else {
             this.input.contentEditable = false;
-            this.input.removeEventListener("keyup", this);
+            this.input.removeEventListener("keydown", this);
             this.label = this.input.textContent;
         }
     },
@@ -114,6 +114,7 @@ export const Box = assign(properties => create(properties).call(Box), {
             case "Escape":
                 this.input.textContent = this.label;
             case "Enter":
+                event.preventDefault();
                 this.patcher.didEdit(this);
         }
     },
