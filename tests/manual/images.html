@@ -33,7 +33,7 @@ const button = html("button", { type: "button" }, "Begin");
 
 score.add(Seq(
     Par(
-        Element(button, document.querySelector("span")).dur("10s"),
+        Element(button, document.querySelector("span")).dur(Infinity),
         Event(button, "click").repeat().take(3)
     ).take(1),
     Await(async () => await (await fetch("images.json")).json()),
