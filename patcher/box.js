@@ -60,12 +60,18 @@ export const Box = assign(properties => create(properties).call(Box), {
 
     // Update the size of the box based on the size of the input control. Do
     // not go under the base width for boxes.
-    updateSize(width) {
+    updateSize(width, height) {
         const w = this.rect.width.baseVal.value;
         if ((width > w) || (width >= Box.width && width < w)) {
             this.rect.setAttribute("width", width);
-            this.input.parentElement.setAttribute("width", width);
+            this.foreignObject.setAttribute("width", width);
             this.inlets[1].updateX(width - Port.width);
+        }
+        const h = this.rect.height.baseVal.value;
+        if ((height > h) || (height >= Box.height && height < h)) {
+            this.rect.setAttribute("height", height);
+            this.foreignObject.setAttribute("height", height);
+            this.outlets[0].updateY(height - Port.height);
         }
     },
 

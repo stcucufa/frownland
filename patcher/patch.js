@@ -1,5 +1,6 @@
 import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
 import { create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
+import { notify } from "../lib/events.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -188,7 +189,11 @@ const Parse = {
             return {
                 label: `Element ${tagName} ${normalizeWhitespace(input)}`,
                 isElement: true,
-                create: (_, box) => Element(html(tagName, attrs), box.foreignObject)
+                create: function(_, box) {
+                    const element = html(tagName, attrs);
+                    notify(this, "element", { element, box });
+                    return Element(element, box.foreignObject);
+                }
             };
         }
     },

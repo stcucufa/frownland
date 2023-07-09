@@ -51,6 +51,13 @@ export const Port = assign(properties => create(properties).call(Port), {
         this.updateCords();
     },
 
+    updateY(y) {
+        this.y = y;
+        this.rect.setAttribute("y", x);
+        this.target.setAttribute("cy", y + this.height / 2);
+        this.updateCords();
+    },
+
     // When the box moves, one end of every cord for this box must move as well.
     updateCords() {
         for (const cord of this.cords.values()) {
