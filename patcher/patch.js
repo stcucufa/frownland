@@ -1,5 +1,5 @@
 import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
-import { create, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
+import { create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -171,13 +171,36 @@ const Parse = {
         }
     },
 
+    Element: input => {
+        let params = input;
+        let match = params.match(/^\s+(\w+)/);
+        if (!match) {
+            return;
+        }
+        const tagName = match[1];
+        params = params.substr(match[0].length);
+        const attrs = {};
+        while (match = params.match(/^\s+(\w+)\s*="([^"]+)"/)) {
+            attrs[match[1]] = match[2];
+            params = params.substr(match[0].length);
+        }
+        if (!/\S/.test(params)) {
+            return {
+                label: `Element ${tagName} ${normalizeWhitespace(input)}`,
+                isElement: true,
+                create: (_, box) => Element(html(tagName, attrs), box.foreignObject)
+            };
+        }
+    },
+
     Text: input => {
-        const text = normalizeWhitespace(input);
-        return {
-            label: `Text ${text}`,
-            isElement: true,
-            create: (_, box) => Element(document.createTextNode(input), box.foreignObject)
-        };
+        if (/^\s+/.test(input)) {
+            return {
+                label: `Text ${normalizeWhitespace(input)}`,
+                isElement: true,
+                create: (_, box) => Element(document.createTextNode(input), box.foreignObject)
+            };
+        }
     },
 
     Par: only(Par, { isContainer: true }),
