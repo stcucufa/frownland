@@ -15,13 +15,14 @@ export const Box = assign(properties => create(properties).call(Box), {
         this.outlets = [Port({ box: this, y: this.height - Port.height, isOutlet: true })];
         this.rect = svg("rect", { width: this.width, height: this.height });
         this.input = html("span", { class: "input", spellcheck: false });
+        this.foreignObject = svg("foreignObject", {
+            y: Port.height,
+            width: this.width,
+            height: this.height - 2 * Port.height
+        }, this.input);
         this.element = svg("g", { class: "box" },
             this.rect,
-            svg("foreignObject", {
-                y: Port.height,
-                width: this.width,
-                height: this.height - 2 * Port.height
-            }, this.input),
+            this.foreignObject,
             [...this.ports()].map(port => port.element)
         );
         this.rect.addEventListener("pointerdown", this.patcher.dragEventListener);
