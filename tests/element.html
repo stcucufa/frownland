@@ -7,8 +7,8 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { html } from "../lib/util.js";
-import { Element, Instant, Seq, dump } from "../lib/score.js";
+import { html, K } from "../lib/util.js";
+import { Delay, Element, Event, Instant, Par, Seq, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
@@ -44,11 +44,37 @@ test("Element().dur()", t => {
 });
 
 test("Cancel", t => {
-    t.skip();
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const instance = tape.instantiate(Seq(
+        Par(
+            Element(html("p", "ok")).dur(Infinity),
+            Event(window, "synth")
+        ).take(1),
+        Instant(K("ok"))
+    ), 17);
+    deck.now = 27;
+    window.dispatchEvent(new window.Event("synth"));
+    deck.now = 28;
+    t.match(dump(instance), /^\* Seq-0 \[17, 27\[ <ok>\n  \* Par-1 \[17, 27\[ <[^>]+>\n    \* Element-2 \[17, 27\[ \(cancelled\)\n    \* Event-3 \[17, 27\[ <[^>]+>\n  \* Instant-4 @27 <ok>$/, "dump matches");
 });
 
 test("Prune", t => {
-    t.skip();
+    const tape = Tape();
+    const instance = tape.instantiate(Par(
+        Seq(Instant(K([23])), Par.map(Delay)),
+        Seq(Delay(31), Element(html("p", "ok")).dur(Infinity))
+    ).take(1), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 40[ <23>
+  * Seq-1 [17, 40[ <23>
+    * Instant-2 @17 <23>
+    * Par/map-3 [17, 40[ <23>
+      * Delay-7 [17, 40[ <23>
+  * Seq-4 [17, 40[ (cancelled)
+    * Delay-5 [17, 40[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,40>", "occurrences were removed from the tape");
 });
 
         </script>
