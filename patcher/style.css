@@ -61,10 +61,6 @@ g.box rect {
     fill: #f8f9f0;
 }
 
-g.box foreignObject {
-    pointer-events: none;
-}
-
 g.box.selected > rect {
     outline: solid 3px #83ebf5;
 }
@@ -101,4 +97,13 @@ g.cord.selected line {
 
 g.cord.reference line:first-child {
     stroke-dasharray: 4, 4;
+}
+
+svg.canvas.locked rect.grid {
+    fill: #f8f9f0;
+}
+
+svg.canvas:not(.locked) g.box foreignObject,
+svg.canvas.locked g.box > rect {
+    pointer-events: none;
 }
