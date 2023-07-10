@@ -218,6 +218,16 @@ const Parse = {
         }
     },
 
+    Button: input => {
+        if (/^\s+/.test(input)) {
+            return {
+                label: `Button ${normalizeWhitespace(input)}`,
+                isElement: true,
+                create: (_, box) => Element(html("button", { type: "button" }, input), box.foreignObject)
+            };
+        }
+    },
+
     Text: input => {
         if (/^\s+/.test(input)) {
             return {
