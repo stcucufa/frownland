@@ -58,8 +58,8 @@ export const Box = assign(properties => create(properties).call(Box), {
         }
     },
 
-    // Update the size of the box based on the size of the input control. Do
-    // not go under the base width for boxes.
+    // Update the size of the box based on the size of the content of the
+    // foreign object.Do not go under the base size.
     updateSize(width, height) {
         const w = this.rect.width.baseVal.value;
         if ((width > w) || (width >= Box.width && width < w)) {
@@ -67,12 +67,10 @@ export const Box = assign(properties => create(properties).call(Box), {
             this.foreignObject.setAttribute("width", width);
             this.inlets[1].updateX(width - Port.width);
         }
-        const h = this.rect.height.baseVal.value;
-        if ((height > h) || (height >= Box.height && height < h)) {
-            this.rect.setAttribute("height", height);
-            this.foreignObject.setAttribute("height", height);
-            this.outlets[0].updateY(height - Port.height);
-        }
+        const h = Math.max(Box.height, height);
+        this.rect.setAttribute("height", h);
+        this.foreignObject.setAttribute("height", h - 2 * Port.height);
+        this.outlets[0].updateY(h - Port.height);
     },
 
     toggleSelected(selected) {

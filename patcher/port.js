@@ -53,7 +53,7 @@ export const Port = assign(properties => create(properties).call(Port), {
 
     updateY(y) {
         this.y = y;
-        this.rect.setAttribute("y", x);
+        this.rect.setAttribute("y", y);
         this.target.setAttribute("cy", y + this.height / 2);
         this.updateCords();
     },
