@@ -37,6 +37,14 @@ test("Par(xs).take(n = ∞) duration", t => {
         Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).take(0).duration, 0,
         "dur with n = 0"
     );
+    t.equal(
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).take(-3).duration, 0,
+        "dur with n < 0"
+    );
+    t.equal(
+        Par(Delay(51), Delay(23), Delay(31), Delay(17), Delay(19)).take([3]).duration, 0,
+        "dur with invalid n"
+    );
 });
 
 test("Instantiation; n = ∞", t => {
