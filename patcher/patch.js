@@ -288,7 +288,7 @@ const Parse = {
             const n = parseInt(match[0], 10);
             return {
                 label: `take(${n})`,
-                create: item => item.take?.(n),
+                create: ([item]) => item.take?.(n),
                 acceptFrom: node => node.isContainer,
                 inlets: 1,
             }
