@@ -26,11 +26,16 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         } else {
             // Create a new score.
             tape.erase();
-            this.score = Score({ tape });
-            for (const [box, node] of this.boxes.entries()) {
-                if (!box.outlets[0].enabled) {
-                    this.score.add(this.createItemFor(box, node));
+            try {
+                this.score = Score({ tape });
+                for (const [box, node] of this.boxes.entries()) {
+                    if (!box.outlets[0].enabled) {
+                        this.score.add(this.createItemFor(box, node));
+                    }
                 }
+            } catch (error) {
+                this.clearScore();
+                notify(this, "score-error", { error });
             }
         }
     },

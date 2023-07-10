@@ -74,6 +74,10 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         on(this.patch, "element", ({ element, box }) => {
             this.observeElementInBox(element, box);
         });
+        on(this.patch, "score-error", ({ error }) => {
+            console.error("Score error", error);
+            this.transportBar.stop();
+        });
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
         on(this.transportBar, "play", ({ tape }) => {
