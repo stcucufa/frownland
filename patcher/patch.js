@@ -172,6 +172,19 @@ const Parse = {
         }
     },
 
+    Event: input => {
+        const match = input.match(/^\s+(\w+)\s*$/);
+        if (match) {
+            const event = match[1];
+            return {
+                label: `Event ${event}`,
+                inlets: 1,
+                acceptFrom: box => box.isElement,
+                create: ([target]) => Event(target.element, event)
+            };
+        }
+    },
+
     Element: input => {
         let params = input;
         let match = params.match(/^\s+(\w+)/);
