@@ -15,13 +15,14 @@ export const Box = assign(properties => create(properties).call(Box), {
         this.outlets = [Port({ box: this, y: this.height - Port.height, isOutlet: true })];
         this.rect = svg("rect", { width: this.width, height: this.height });
         this.input = html("span", { class: "input", spellcheck: false });
+        this.foreignObject = svg("foreignObject", {
+            y: Port.height,
+            width: this.width,
+            height: this.height - 2 * Port.height
+        }, this.input);
         this.element = svg("g", { class: "box" },
             this.rect,
-            svg("foreignObject", {
-                y: Port.height,
-                width: this.width,
-                height: this.height - 2 * Port.height
-            }, this.input),
+            this.foreignObject,
             [...this.ports()].map(port => port.element)
         );
         this.rect.addEventListener("pointerdown", this.patcher.dragEventListener);
@@ -57,15 +58,19 @@ export const Box = assign(properties => create(properties).call(Box), {
         }
     },
 
-    // Update the size of the box based on the size of the input control. Do
-    // not go under the base width for boxes.
-    updateSize(width) {
+    // Update the size of the box based on the size of the content of the
+    // foreign object.Do not go under the base size.
+    updateSize(width, height) {
         const w = this.rect.width.baseVal.value;
         if ((width > w) || (width >= Box.width && width < w)) {
             this.rect.setAttribute("width", width);
-            this.input.parentElement.setAttribute("width", width);
+            this.foreignObject.setAttribute("width", width);
             this.inlets[1].updateX(width - Port.width);
         }
+        const h = Math.max(Box.height, height);
+        this.rect.setAttribute("height", h);
+        this.foreignObject.setAttribute("height", h - 2 * Port.height);
+        this.outlets[0].updateY(h - Port.height);
     },
 
     toggleSelected(selected) {

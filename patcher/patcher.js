@@ -19,8 +19,7 @@ const Commands = {
             patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Box.height)
         });
         this.canvas.appendChild(box.element);
-        this.select(box);
-        this.willEdit(box);
+        this.boxWasAdded(box);
     },
 
     // Delete the selection (box or cord).
@@ -53,17 +52,32 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
         this.pointerY = 0;
 
         this.selection = new Set();
+        this.resizeObserverTargets = new Map();
         this.resizeObserver = new ResizeObserver((entries) => {
-            this.editItem.updateSize(entries[0]?.borderBoxSize[0]?.inlineSize);
+            for (const entry of entries) {
+                this.resizeObserverTargets.get(entry.target).updateSize(
+                    entry.borderBoxSize[0]?.inlineSize,
+                    entry.borderBoxSize[0]?.blockSize
+                );
+            }
         });
 
         this.patch = Patch();
+        on(this.patch, "element", ({ element, box }) => {
+            this.observeElementInBox(element, box);
+        });
+
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
         on(this.transportBar, "play", ({ tape }) => {
             this.patch.updateScoreForTape(tape);
         });
         on(this.transportBar, "stop", () => {
             this.patch.clearScore();
+            for (const [element, box] of this.resizeObserverTargets) {
+                if (element !== box.input) {
+                    this.resizeObserver.unobserve(element);
+                }
+            }
         });
     },
 
@@ -85,7 +99,20 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
         }
     },
 
+    observeElementInBox(element, box) {
+        this.resizeObserverTargets.set(element, box);
+        this.resizeObserver.observe(element);
+    },
+
+    boxWasAdded(box) {
+        this.select(box);
+        this.observeElementInBox(box.input, box);
+        this.willEdit(box);
+    },
+
     boxWillBeRemoved(box) {
+        this.resizeObserverTargets.delete(box.input);
+        this.resizeObserver.unobserve(box.input);
         this.patch.boxWillBeRemoved(box);
     },
 
@@ -127,10 +154,8 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
         if (this.editItem !== item) {
             if (this.editItem) {
                 this.editItem.toggleEditing(false);
-                this.resizeObserver.unobserve(this.editItem.input);
             }
             this.editItem = item;
-            this.resizeObserver.observe(this.editItem.input);
             item.toggleEditing(true);
         }
     },
@@ -138,7 +163,6 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
     didEdit() {
         if (this.editItem) {
             this.editItem.toggleEditing(false);
-            this.resizeObserver.unobserve(this.editItem.input);
             this.patch.boxWasEdited(this.editItem);
             delete this.editItem;
         }
