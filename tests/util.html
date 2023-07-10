@@ -283,6 +283,9 @@ test("parseTime(string)", t => {
     t.throws(() => { parseTime("2hr:30mn:10s"); }, "extra separators");
     t.throws(() => { parseTime(" 10 min  2H "); }, "several units in the wrong order");
     t.throws(() => { parseTime("one week"); }, "unexpected format");
+    t.equal(parseTime("Infinity"), Infinity, "Infinity");
+    t.equal(parseTime("indefinite"), Infinity, "indefinite");
+    t.equal(parseTime("   ∞    "), Infinity, "∞");
 });
 
 test("partition(xs, p)", t => {
