@@ -50,20 +50,24 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     // Create an item from a box/node pair, getting the inputs from the inlets
     // as necessary.
-    createItemFor(box, node) {
+    createItemFor(box, node, cord) {
         if (node.isElement) {
             this.elementBoxes.set(box, box.input);
             box.input.remove();
         }
         const inputs = box.inlets.flatMap(
-            inlet => [...inlet.cords.keys()].map(outlet => outlet.box)
-        ).map(box => {
+            inlet => [...inlet.cords.entries()].map(([outlet, cord]) => [outlet.box, cord])
+        ).map(([box, cord]) => {
             if (box) {
                 const node = this.boxes.get(box);
-                return this.createItemFor(box, node);
+                return this.createItemFor(box, node, cord);
             }
         });
-        return node.create.call(this, inputs, box);
+        const item = node.create.call(this, inputs, box);
+        if (cord?.isReference && node.isElement) {
+            box.foreignObject.appendChild(item.element);
+        }
+        return item;
     },
 
     boxWasEdited(box) {
@@ -84,6 +88,8 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 
     cordWasAdded(cord) {
+        const source = this.boxes.get(cord.outlet.box);
+        cord.isReference = (source.isElement || source.isWindow) && this.boxes.get(cord.inlet.box).isEvent;
         delete this.score;
     },
 
@@ -172,6 +178,20 @@ const Parse = {
         }
     },
 
+    Event: input => {
+        const match = input.match(/^\s+(\w+)\s*$/);
+        if (match) {
+            const event = match[1];
+            return {
+                label: `Event ${event}`,
+                inlets: 1,
+                isEvent: true,
+                acceptFrom: box => box.isElement || box.isWindow,
+                create: ([target]) => Event(target.element, event)
+            };
+        }
+    },
+
     Element: input => {
         let params = input;
         let match = params.match(/^\s+(\w+)/);
@@ -205,6 +225,16 @@ const Parse = {
                 isElement: true,
                 create: (_, box) => Element(document.createTextNode(input), box.foreignObject)
             };
+        }
+    },
+
+    Window: input => {
+        if (!/\S/.test(input)) {
+            return {
+                label: "Window",
+                create: K({ element: window }),
+                isWindow: true
+            }
         }
     },
 
