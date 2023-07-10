@@ -73,6 +73,11 @@ export const TransportBar = Object.assign(element => create({ element }).call(Tr
         f.call(this);
     },
 
+    // Toggle between play and paused.
+    togglePlayback() {
+        this.setState(this.state.play ?? this.state.pause);
+    },
+
     States
 });
 

@@ -31,6 +31,11 @@ const Commands = {
         }
         this.deselect();
     },
+
+    // Play/pause/resume.
+    " ": function() {
+        this.transportBar.togglePlayback();
+    },
 };
 
 // A patcher is used to edit a patch in a canvas.
