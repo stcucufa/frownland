@@ -179,7 +179,7 @@ const Parse = {
             return {
                 label: `Event ${event}`,
                 inlets: 1,
-                acceptFrom: box => box.isElement,
+                acceptFrom: box => box.isElement || box.isWindow,
                 create: ([target]) => Event(target.element, event)
             };
         }
@@ -218,6 +218,16 @@ const Parse = {
                 isElement: true,
                 create: (_, box) => Element(document.createTextNode(input), box.foreignObject)
             };
+        }
+    },
+
+    Window: input => {
+        if (!/\S/.test(input)) {
+            return {
+                label: "Window",
+                create: K({ element: window }),
+                isWindow: true
+            }
         }
     },
 
