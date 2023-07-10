@@ -280,9 +280,13 @@ test("parseTime(string)", t => {
     t.equal(parseTime("500"), 500, "ms is the default unit");
     t.equal(parseTime(" 2 hr 30 mn 10 S  "), 9010000, "several units in the right order");
     t.equal(parseTime("2hr30mn10s"), 9010000, "no spaces");
+    t.equal(parseTime("Infinity"), Infinity, "Infinity");
+    t.equal(parseTime("indefinite"), Infinity, "indefinite");
+    t.equal(parseTime("   ∞    "), Infinity, "∞");
     t.throws(() => { parseTime("2hr:30mn:10s"); }, "extra separators");
     t.throws(() => { parseTime(" 10 min  2H "); }, "several units in the wrong order");
     t.throws(() => { parseTime("one week"); }, "unexpected format");
+    t.throws(() => { parseTime("Infinity 1s"); }, "only infinity");
 });
 
 test("partition(xs, p)", t => {
