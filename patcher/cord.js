@@ -19,6 +19,7 @@ export const Cord = assign((port, x2, y2) => {
         this.patcher = (this.inlet ?? this.outlet).box.patcher;
     },
 
+    // The cord may be a reference cord rather than a value cord.
     get isReference() {
         return this.element.classList.contains("reference");
     },

@@ -100,5 +100,5 @@ g.cord.selected line {
 }
 
 g.cord.reference line:first-child {
-    stroke-dasharray: 3, 3;
+    stroke-dasharray: 4, 4;
 }

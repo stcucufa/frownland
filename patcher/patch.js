@@ -50,20 +50,24 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     // Create an item from a box/node pair, getting the inputs from the inlets
     // as necessary.
-    createItemFor(box, node) {
+    createItemFor(box, node, cord) {
         if (node.isElement) {
             this.elementBoxes.set(box, box.input);
             box.input.remove();
         }
         const inputs = box.inlets.flatMap(
-            inlet => [...inlet.cords.keys()].map(outlet => outlet.box)
-        ).map(box => {
+            inlet => [...inlet.cords.entries()].map(([outlet, cord]) => [outlet.box, cord])
+        ).map(([box, cord]) => {
             if (box) {
                 const node = this.boxes.get(box);
-                return this.createItemFor(box, node);
+                return this.createItemFor(box, node, cord);
             }
         });
-        return node.create.call(this, inputs, box);
+        const item = node.create.call(this, inputs, box);
+        if (cord?.isReference && node.isElement) {
+            box.foreignObject.appendChild(item.element);
+        }
+        return item;
     },
 
     boxWasEdited(box) {
