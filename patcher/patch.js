@@ -276,7 +276,7 @@ const Parse = {
 
     repeat: only(item => item.repeat(), {
         label: "repeat",
-        create: item => item.repeat?.(),
+        create: ([item]) => item.repeat?.(),
         isContainer: true,
         acceptFrom: node => !node.isTry,
         inlets: 1,
