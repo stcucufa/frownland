@@ -98,3 +98,7 @@ g.cord.selected line {
     stroke-width: 4;
     stroke-linecap: round;
 }
+
+g.cord.reference line:first-child {
+    stroke-dasharray: 3, 3;
+}

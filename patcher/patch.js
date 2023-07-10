@@ -84,6 +84,8 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 
     cordWasAdded(cord) {
+        const source = this.boxes.get(cord.outlet.box);
+        cord.isReference = (source.isElement || source.isWindow) && this.boxes.get(cord.inlet.box).isEvent;
         delete this.score;
     },
 
@@ -179,6 +181,7 @@ const Parse = {
             return {
                 label: `Event ${event}`,
                 inlets: 1,
+                isEvent: true,
                 acceptFrom: box => box.isElement || box.isWindow,
                 create: ([target]) => Event(target.element, event)
             };

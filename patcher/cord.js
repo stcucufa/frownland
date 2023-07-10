@@ -1,8 +1,8 @@
-import { create, svg } from "../lib/util.js";
+import { assign, create, svg } from "../lib/util.js";
 import { bringElementFrontward } from "./util.js";
 
 // A patch cord between an outlet and an inlet.
-export const Cord = Object.assign((port, x2, y2) => {
+export const Cord = assign((port, x2, y2) => {
     const properties = {
         element: svg("g", { class: "cord" },
             svg("line", { x1: port.centerX, y1: port.centerY, x2, y2 }),
@@ -17,6 +17,14 @@ export const Cord = Object.assign((port, x2, y2) => {
 }, {
     init() {
         this.patcher = (this.inlet ?? this.outlet).box.patcher;
+    },
+
+    get isReference() {
+        return this.element.classList.contains("reference");
+    },
+
+    set isReference(value) {
+        this.element.classList.toggle("reference", !!value);
     },
 
     // Set the outlet of the cord that was started from an inlet. Switch the
