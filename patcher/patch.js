@@ -1,6 +1,6 @@
 import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
 import { create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
-import { notify } from "../lib/events.js";
+import { notify, notifyAsync } from "../lib/events.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -35,7 +35,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 }
             } catch (error) {
                 this.clearScore();
-                notify(this, "score-error", { error });
+                notify(this, "score", { error });
             }
         }
     },

@@ -74,9 +74,8 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         on(this.patch, "element", ({ element, box }) => {
             this.observeElementInBox(element, box);
         });
-        on(this.patch, "score-error", ({ error }) => {
-            console.error("Score error", error);
-            this.transportBar.stop();
+        on(this.patch, "score", ({ error }) => {
+            this.errorMessage(error?.message);
         });
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
@@ -87,12 +86,23 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         on(this.transportBar, "stop", () => {
             this.locked = false;
             this.patch.clearScore();
+            this.errorMessage();
             for (const [element, box] of this.resizeObserverTargets) {
                 if (element !== box.input) {
                     this.resizeObserver.unobserve(element);
                 }
             }
         });
+    },
+
+    // Show or clear the error message.
+    errorMessage(error) {
+        const p = document.querySelector("p.error");
+        p.classList.toggle("hidden", !error);
+        if (error) {
+            p.textContent = error;
+            this.transportBar.error();
+        }
     },
 
     // Lock the patch when playing (no editing).
