@@ -1,5 +1,5 @@
 import { on } from "../lib/events.js";
-import { create } from "../lib/util.js";
+import { assign, create } from "../lib/util.js";
 import { DragEventListener } from "./drag-event-listener.js";
 import { Box } from "./box.js";
 import { Patch } from "./patch.js";
@@ -35,10 +35,18 @@ const Commands = {
     " ": function() {
         this.transportBar.togglePlayback();
     },
+
+    // Stop playback/unlock.
+    "Escape": function() {
+        this.transportBar.stop();
+    }
 };
 
+// Commands that are still allowed while locked.
+const LockedCommands = new Set(["d", " ", "Escape"]);
+
 // A patcher is used to edit a patch in a canvas.
-const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
+const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
     init() {
         this.elements = new Map();
         this.elements.set(this.canvas, this);
@@ -69,9 +77,11 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
         on(this.transportBar, "play", ({ tape }) => {
+            this.locked = true;
             this.patch.updateScoreForTape(tape);
         });
         on(this.transportBar, "stop", () => {
+            this.locked = false;
             this.patch.clearScore();
             for (const [element, box] of this.resizeObserverTargets) {
                 if (element !== box.input) {
@@ -79,6 +89,16 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
                 }
             }
         });
+    },
+
+    // Lock the patch when playing (no editing).
+    get locked() {
+        return this.canvas.classList.contains("locked");
+    },
+
+    set locked(value) {
+        this.canvas.classList.toggle("locked", value);
+        this.deselect();
     },
 
     // Keep track of the pointer position and listen to keyboard commands.
@@ -91,8 +111,10 @@ const Patcher = Object.assign(canvas => create({ canvas }).call(Patcher), {
                 break;
             case "keyup":
                 // Execute the command associated with the key (when not
-                // otherwise editing).
-                if (!this.editItem && !this.dragEventListener.target) {
+                // otherwise editing). When locked, check whether the command
+                // is still allowed (e.g. can pause/resume, but no new boxes).
+                if (!this.editItem && !this.dragEventListener.target &&
+                    (!this.locked || LockedCommands.has(event.key))) {
                     Commands[event.key]?.call(this);
                 }
                 break;

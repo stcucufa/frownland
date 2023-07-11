@@ -78,6 +78,10 @@ export const TransportBar = Object.assign(element => create({ element }).call(Tr
         this.setState(this.state.play ?? this.state.pause);
     },
 
+    stop() {
+        this.setState(this.state.stop);
+    },
+
     States
 });
 

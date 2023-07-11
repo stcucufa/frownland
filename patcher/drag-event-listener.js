@@ -52,6 +52,6 @@ export const DragEventListener = Object.assign(elements => create({ elements }).
         document.removeEventListener("pointermove", this);
         document.removeEventListener("pointerup", this);
         document.removeEventListener("pointercancel", this);
-        document.removeEventListener("keyup", this);
+        document.removeEventListener("keydown", this);
     }
 });
