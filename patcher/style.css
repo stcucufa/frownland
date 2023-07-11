@@ -31,6 +31,20 @@ button {
     font-size: 1rem;
 }
 
+.hidden {
+    display: none;
+}
+
+p.error {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffd0d0;
+    padding: 1em;
+    margin: 0;
+}
+
 ul.transport-bar {
     position: absolute;
     bottom: 0;

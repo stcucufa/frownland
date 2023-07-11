@@ -36,6 +36,10 @@ const States = {
             this.deck.resume();
         }]
     },
+
+    error: {
+        stop
+    }
 };
 
 // Transport bar controlling a Deck.
@@ -80,6 +84,12 @@ export const TransportBar = Object.assign(element => create({ element }).call(Tr
 
     stop() {
         this.setState(this.state.stop);
+    },
+
+    // Special error state: stop the deck and only allow stopping again to
+    // clear the state.
+    error() {
+        this.setState(["error", () => { this.deck.stop(); }]);
     },
 
     States
