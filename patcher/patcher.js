@@ -209,6 +209,34 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         }
     },
 
+    boxWillMove(box) {
+        if (!this.selection.has(box)) {
+            this.select(box);
+        }
+        this.boxOrigins = new Map();
+        for (const box of this.selection) {
+            this.boxOrigins.set(box, { x: box.x, y: box.y });
+        }
+    },
+
+    boxDidMove(_, dx, dy) {
+        for (const item of this.selection) {
+            const origin = this.boxOrigins.get(item);
+            item.x = origin.x + dx;
+            item.y = origin.y + dy;
+            item.updatePosition();
+        }
+    },
+
+    boxMoveWasCancelled() {
+        for (const item of this.selection) {
+            const origin = this.boxOrigins.get(item);
+            item.x = origin.x;
+            item.y = origin.y;
+            item.updatePosition();
+        }
+    },
+
     // Selection (multiple if dragging a rect, single if tapping an item).
     dragDidBegin(x0, y0) {
         this.selectionRect = { x0, y0 };

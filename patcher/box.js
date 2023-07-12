@@ -128,9 +128,7 @@ export const Box = assign(properties => create(properties).call(Box), {
     // Drag handling
     dragDidBegin() {
         this.willEdit = this.patcher.selection.has(this);
-        this.patcher.select(this);
-        this.x0 = this.x;
-        this.y0 = this.y;
+        this.willMove = true;
     },
 
     dragDidProgress(dx, dy) {
@@ -138,20 +136,22 @@ export const Box = assign(properties => create(properties).call(Box), {
             delete this.willEdit;
             deselectText();
         }
-        this.x = this.x0 + dx;
-        this.y = this.y0 + dy;
-        this.updatePosition();
+        if (this.willMove) {
+            delete this.willMove;
+            this.patcher.boxWillMove(this);
+        }
+        this.patcher.boxDidMove(this, dx, dy);
     },
 
     dragWasCancelled() {
-        this.x = this.x0;
-        this.y = this.y0;
-        this.updatePosition();
+        if (this.willMove) {
+            delete this.willMove;
+        } else {
+            this.patcher.boxMoveWasCancelled();
+        }
     },
 
     dragDidEnd() {
-        delete this.x0;
-        delete this.y0;
         if (this.willEdit) {
             delete this.willEdit;
             this.patcher.willEdit(this);
