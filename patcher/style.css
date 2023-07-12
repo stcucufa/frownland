@@ -77,7 +77,7 @@ g.port circle {
     fill: transparent;
 }
 
-g.port.target circle {
+g.port.potential-target circle {
     fill: rgba(64, 255, 64, 0.25);
 }
 
