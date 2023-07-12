@@ -8,7 +8,7 @@ export const Port = assign(properties => create(properties).call(Port), {
     y: 0,
     width: 12,
     height: 3,
-    r: 16
+    r: 16,
 
     init() {
         this.patcher = this.box.patcher;
