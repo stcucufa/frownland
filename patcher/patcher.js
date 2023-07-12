@@ -239,6 +239,9 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
 
     // Selection (multiple if dragging a rect, single if tapping an item).
     dragDidBegin(x0, y0) {
+        if (this.locked) {
+            return false;
+        }
         this.selectionRect = { x0, y0 };
     },
 
