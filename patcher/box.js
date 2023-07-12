@@ -85,6 +85,7 @@ export const Box = assign(properties => create(properties).call(Box), {
         } else {
             deselectText();
         }
+        return selected;
     },
 
     toggleEditing(editing) {

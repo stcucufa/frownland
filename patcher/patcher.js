@@ -1,9 +1,10 @@
 import { on } from "../lib/events.js";
-import { assign, create } from "../lib/util.js";
+import { assign, create, svg } from "../lib/util.js";
 import { DragEventListener } from "./drag-event-listener.js";
 import { Box } from "./box.js";
 import { Patch } from "./patch.js";
 import { TransportBar } from "./transport-bar.js";
+import { overlap } from "./util.js";
 
 // Keyboard commands for different key. `this` is set to the patcher that calls
 // the command.
@@ -18,7 +19,7 @@ const Commands = {
         const box = Box({
             patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Box.height)
         });
-        this.canvas.appendChild(box.element);
+        this.itemsGroup.appendChild(box.element);
         this.boxWasAdded(box);
     },
 
@@ -48,6 +49,7 @@ const LockedCommands = new Set(["d", " ", "Escape"]);
 // A patcher is used to edit a patch in a canvas.
 const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
     init() {
+        this.itemsGroup = this.canvas.querySelector(".items");
         this.elements = new Map();
         this.elements.set(this.canvas, this);
         this.dragEventListener = DragEventListener(this.elements);
@@ -165,10 +167,13 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         return this.patch.inletAcceptsConnection(inlet, outlet);
     },
 
-    // Select an item, deselecting everything else.
-    select(item) {
+    // Select an item. If it is not a multiple selection, deselect everything
+    // else.
+    select(item, multiple = false) {
         if (!this.selection.has(item)) {
-            this.deselect();
+            if (!multiple) {
+                this.deselect();
+            }
             item.toggleSelected(true);
             this.selection.add(item);
         }
@@ -204,11 +209,39 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         }
     },
 
-    dragDidMove() {
+    // Selection (multiple if dragging a rect, single if tapping an item).
+    dragDidBegin(x0, y0) {
+        this.selectionRect = { x0, y0 };
+    },
+
+    dragDidProgress(dx, dy, x, y) {
         this.selectionMoved = true;
+        if (this.selectionRect) {
+            if (!this.selectionRect.element) {
+                this.selectionRect.element = this.canvas.appendChild(svg("rect", { class: "selection" }));
+            }
+            this.selectionRect.x = Math.min(this.selectionRect.x0, x);
+            this.selectionRect.y = Math.min(this.selectionRect.y0, y);
+            this.selectionRect.width = Math.abs(dx);
+            this.selectionRect.height = Math.abs(dy);
+            for (const attribute of ["x", "y", "width", "height"]) {
+                this.selectionRect.element.setAttribute(attribute, this.selectionRect[attribute]);
+            }
+            for (const box of this.patch.boxes.keys()) {
+                if (box.toggleSelected(overlap(this.selectionRect, box))) {
+                    this.selection.add(box);
+                } else {
+                    this.selection.delete(box);
+                }
+            }
+        }
     },
 
     dragDidEnd() {
+        if (this.selectionRect) {
+            this.selectionRect.element?.remove();
+            delete this.selectionRect;
+        }
         if (!this.selectionMoved) {
             this.deselect();
         }
