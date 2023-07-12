@@ -63,11 +63,13 @@ export const Box = assign(properties => create(properties).call(Box), {
     updateSize(width, height) {
         const w = this.rect.width.baseVal.value;
         if ((width > w) || (width >= Box.width && width < w)) {
+            this.width = width;
             this.rect.setAttribute("width", width);
             this.foreignObject.setAttribute("width", width);
             this.inlets[1].updateX(width - Port.width);
         }
         const h = Math.max(Box.height, height);
+        this.height = h;
         this.rect.setAttribute("height", h);
         this.foreignObject.setAttribute("height", h - 2 * Port.height);
         this.outlets[0].updateY(h - Port.height);
