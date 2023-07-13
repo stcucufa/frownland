@@ -14,7 +14,7 @@ export const Box = assign(properties => create(properties).call(Box), {
         this.inlets = [Port({ box: this }), Port({ box: this, x: this.width - Port.width })];
         this.outlets = [Port({ box: this, y: this.height - Port.height, isOutlet: true })];
         this.rect = svg("rect", { width: this.width, height: this.height });
-        this.input = html("span", { class: "input", spellcheck: false });
+        this.input = html("span", { class: "input", spellcheck: false }, this.label);
         this.foreignObject = svg("foreignObject", {
             y: Port.height,
             width: this.width,
@@ -28,6 +28,29 @@ export const Box = assign(properties => create(properties).call(Box), {
         this.rect.addEventListener("pointerdown", this.patcher.dragEventListener);
         this.updatePosition();
         this.patcher.elements.set(this.rect, this);
+    },
+
+    serialize(id, boxesWithId) {
+        return {
+            id,
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height,
+            label: this.input.textContent,
+            inlets: this.inlets.length,
+            outlets: this.outlets.filter(outlet => outlet.enabled).map(
+                outlet => [...outlet.cords.keys()].map(port => {
+                    const boxId = boxesWithId.get(port.box);
+                    const inletIndex = port.box.inlets.indexOf(port)
+                    return [boxId, inletIndex];
+                })
+            ),
+        };
+    },
+
+    deserialize(patcher, box) {
+        return Box({ patcher, x: box.x, y: box.y, width: box.width, height: box.height, label: box.label });
     },
 
     // Get all the ports (both inlets and outlets)

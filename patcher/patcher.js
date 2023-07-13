@@ -16,11 +16,20 @@ const Commands = {
 
     // Add a new box.
     n() {
-        const box = Box({
+        this.boxWasAdded(Box({
             patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Box.height)
-        });
-        this.itemsGroup.appendChild(box.element);
-        this.boxWasAdded(box);
+        }), true);
+    },
+
+    // Save to local storage.
+    s() {
+        try {
+            const patch = this.patch.serialize();
+            localStorage.setItem("patch", patch);
+            console.info("Saved", JSON.parse(patch));
+        } catch (error) {
+            console.error("Could not serialize: ", error);
+        }
     },
 
     // Delete the selection (box or cord).
@@ -95,6 +104,17 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 }
             }
         });
+
+        try {
+            const json = window.localStorage.getItem("patch");
+            if (json) {
+                const patch = JSON.parse(json);
+                this.patch.deserialize(this, patch);
+                console.info("Loaded", patch);
+            }
+        } catch (error) {
+            console.error("Could not load patch", error);
+        }
     },
 
     // Show or clear the error message.
@@ -142,10 +162,15 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         this.resizeObserver.observe(element);
     },
 
-    boxWasAdded(box) {
-        this.select(box);
+    boxWasAdded(box, interactive) {
+        this.itemsGroup.appendChild(box.element);
         this.observeElementInBox(box.input, box);
-        this.willEdit(box);
+        if (interactive) {
+            this.select(box);
+            this.willEdit(box);
+        } else {
+            this.patch.boxWasEdited(box);
+        }
     },
 
     boxWillBeRemoved(box) {
