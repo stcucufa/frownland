@@ -8,13 +8,13 @@ export const Port = assign(properties => create(properties).call(Port), {
     y: 0,
     width: 12,
     height: 3,
-    r: 10,
+    r: 12,
 
     init() {
         this.patcher = this.box.patcher;
         this.rect = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
         this.target = svg("circle", {
-            cx: this.x + this.width / 2, cy: this.y + this.height / 2, r: this.r
+            class: "target", cx: this.x + this.width / 2, cy: this.y + this.height / 2, r: this.r
         });
         this.element = svg("g", { class: "port" }, this.rect, this.target);
         this.target.addEventListener("pointerdown", this.patcher.dragEventListener);
@@ -67,11 +67,11 @@ export const Port = assign(properties => create(properties).call(Port), {
 
     // Highlight when a current target for a coord.
     get isTargetForCord() {
-        return this.element.classList.contains("target");
+        return this.element.classList.contains("potential-target");
     },
 
     set isTargetForCord(value) {
-        this.element.classList.toggle("target", value);
+        this.element.classList.toggle("potential-target", value);
     },
 
     // Enable or disable the port.
@@ -115,7 +115,7 @@ export const Port = assign(properties => create(properties).call(Port), {
 
     // Update the cord and decide whether it can be connected to a target.
     dragDidProgress(_, __, x, y) {
-        const element = document.elementsFromPoint(x, y)[1];
+        const element = document.elementsFromPoint(x, y).find(e => e.classList.contains("target"));
         const target = this.patcher.elements.get(element)?.possibleTargetForCord?.(this);
         if (target) {
             if (this.dragTarget !== target) {
