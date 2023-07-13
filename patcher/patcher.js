@@ -198,6 +198,13 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             }
             this.editItem = item;
             item.toggleEditing(true);
+            // Deselect anything else
+            for (const selectedItem of this.selection) {
+                if (selectedItem !== item) {
+                    selectedItem.toggleSelected(false);
+                    this.selection.delete(selectedItem);
+                }
+            }
         }
     },
 
