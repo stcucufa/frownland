@@ -131,6 +131,7 @@ export const Box = assign(properties => create(properties).call(Box), {
     dragDidBegin() {
         this.willEdit = this.patcher.selection.has(this);
         this.willMove = true;
+        this.patcher.select(this);
     },
 
     dragDidProgress(dx, dy) {
@@ -160,4 +161,3 @@ export const Box = assign(properties => create(properties).call(Box), {
         }
     },
 });
-

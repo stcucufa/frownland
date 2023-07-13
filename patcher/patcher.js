@@ -257,6 +257,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         if (this.selectionRect) {
             if (!this.selectionRect.element) {
                 this.selectionRect.element = this.canvas.appendChild(svg("rect", { class: "selection" }));
+                this.didEdit();
             }
             this.selectionRect.x = Math.min(this.selectionRect.x0, x);
             this.selectionRect.y = Math.min(this.selectionRect.y0, y);
