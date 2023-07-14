@@ -109,7 +109,7 @@ export const Port = assign(properties => create(properties).call(Port), {
             return false;
         }
         this.cord = Cord(this, x, y);
-        this.patcher.canvas.appendChild(this.cord.element);
+        this.patcher.itemsGroup.appendChild(this.cord.element);
         this.patcher.deselect();
     },
 
