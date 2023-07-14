@@ -80,7 +80,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         const isNew = this.boxes.has(box);
         const node = parse(box.label);
         this.boxes.set(box, node);
-        box.toggleUnknown(!node);
+        box.toggleUnknown(!!node.isUnknown);
         const n = node?.inlets ?? 0;
         box.inlets.forEach((port, i) => { port.enabled = i < n; });
         const m = node?.outlets ?? 1;
@@ -116,7 +116,13 @@ function parse(label) {
     const match = label.match(/^\s*([^\s\/]+)/);
     if (!match || !(match[1] in Parse)) {
         // Unknown item
-        return;
+        return {
+            label,
+            isUnknown: true,
+            create() {
+                throw window.Error(`Unknown item "${label}"`);
+            }
+        };
     }
     return Parse[match[1]](label.substr(match[0].length));
 }
