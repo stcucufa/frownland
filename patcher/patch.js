@@ -21,9 +21,22 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     // Deserialize from a parsed JSON object.
     deserialize(patcher, patch) {
-        const boxes = patch.map(box => Box.deserialize(patcher, box));
-        for (const box of boxes) {
+        const boxes = patch.map(serialized => [Box.deserialize(patcher, serialized), serialized]);
+        // First add all boxes
+        for (const [box] of boxes) {
             patcher.boxWasAdded(box, false);
+        }
+        // Then connect them
+        for (const [box, serialized] of boxes) {
+            serialized.outlets.forEach((destinations, outletIndex) => {
+                const outlet = box.outlets[outletIndex];
+                for (const [boxId, inletIndex] of destinations) {
+                    const [targetBox] = boxes[boxId];
+                    const inlet = targetBox.inlets[inletIndex];
+                    const cord = outlet.connect(inlet);
+                    patcher.itemsGroup.appendChild(cord.element);
+                }
+            });
         }
     },
 

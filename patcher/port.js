@@ -30,6 +30,16 @@ export const Port = assign(properties => create(properties).call(Port), {
         }
     },
 
+    // Connect a new cord from this (an outlet) to another port (an inlet).
+    connect(port) {
+        console.assert(this.isOutlet);
+        const cord = Cord(this, 0, 0);
+        cord.setInlet(port);
+        this.cords.set(port, cord);
+        port.cords.set(this, cord);
+        return cord;
+    },
+
     // Disconnect a cord from or to another port.
     disconnect(port, cord) {
         console.assert(this.cords.get(port) === cord);

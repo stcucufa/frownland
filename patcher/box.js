@@ -38,7 +38,6 @@ export const Box = assign(properties => create(properties).call(Box), {
             width: this.width,
             height: this.height,
             label: this.input.textContent,
-            inlets: this.inlets.length,
             outlets: this.outlets.filter(outlet => outlet.enabled).map(
                 outlet => [...outlet.cords.keys()].map(port => {
                     const boxId = boxesWithId.get(port.box);
