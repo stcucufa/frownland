@@ -65,6 +65,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                         this.score.add(this.createItemFor(box, node));
                     }
                 }
+                notify(this, "score");
             } catch (error) {
                 this.clearScore();
                 notify(this, "score", { error });

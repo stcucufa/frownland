@@ -21,17 +21,6 @@ const Commands = {
         }), true);
     },
 
-    // Save to local storage.
-    s() {
-        try {
-            const patch = this.patch.serialize();
-            localStorage.setItem("patch", patch);
-            console.info("Saved", JSON.parse(patch));
-        } catch (error) {
-            console.error("Could not serialize: ", error);
-        }
-    },
-
     // Delete the selection (box or cord).
     Backspace() {
         for (const item of this.selection) {
@@ -86,7 +75,18 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             this.observeElementInBox(element, box);
         });
         on(this.patch, "score", ({ error }) => {
-            this.errorMessage(error?.message);
+            if (error) {
+                this.errorMessage(error.message);
+            } else {
+                // Save to local storage.
+                try {
+                    const patch = this.patch.serialize();
+                    localStorage.setItem("patch", patch);
+                    console.info("Saved", JSON.parse(patch));
+                } catch (error) {
+                    console.error("Could not serialize: ", error);
+                }
+            }
         });
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
