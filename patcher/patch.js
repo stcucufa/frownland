@@ -143,20 +143,16 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     }
 });
 
-// Parse a box label.
+// Parse a box label and return a (possibly unknown) node.
 function parse(label) {
     const match = label.match(/^\s*([^\s\/]+)/);
-    if (!match || !(match[1] in Parse)) {
-        // Unknown item
-        return {
-            label,
-            isUnknown: true,
-            create() {
-                throw window.Error(`Unknown item "${label}"`);
-            }
-        };
-    }
-    return Parse[match[1]](label.substr(match[0].length));
+    return Parse[match?.[1]]?.(label.substr(match[0].length)) ?? {
+        label,
+        isUnknown: true,
+        create() {
+            throw window.Error(`Unknown item "${label}"`);
+        }
+    };
 }
 
 // Parse time or not (for Delay or dur).
