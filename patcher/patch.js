@@ -67,13 +67,13 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 }
                 notify(this, "score");
             } catch (error) {
-                this.clearScore();
+                delete this.score;
                 notify(this, "score", { error });
             }
         }
     },
 
-    clearScore() {
+    clearElements() {
         for (const [box, input] of this.elementBoxes.entries()) {
             for (let child = box.foreignObject.firstChild; child;) {
                 const sibling = child.nextSibling;
@@ -83,7 +83,6 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             box.foreignObject.appendChild(input);
         }
         this.elementBoxes.clear();
-        delete this.score;
     },
 
     // Create an item from a box/node pair, getting the inputs from the inlets
