@@ -96,6 +96,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         });
         on(this.transportBar, "stop", () => {
             this.locked = false;
+            this.patch.clearElements();
             this.errorMessage();
             for (const [element, box] of this.resizeObserverTargets) {
                 if (element !== box.input) {
