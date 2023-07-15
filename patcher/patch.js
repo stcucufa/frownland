@@ -1,11 +1,43 @@
 import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
-import { create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
+import { assoc, create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 import { notify } from "../lib/events.js";
+import { Box } from "./box.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
         this.boxes = new Map();
         this.elementBoxes = new Map();
+    },
+
+    // Serialize to a string for local storage.
+    serialize() {
+        const boxesWithId = assoc([...this.boxes.keys()], (box, i) => [box, i]);
+        const boxes = [];
+        for (const [box, id] of boxesWithId.entries()) {
+            boxes.push(box.serialize(id, boxesWithId));
+        }
+        return JSON.stringify(boxes);
+    },
+
+    // Deserialize from a parsed JSON object.
+    deserialize(patcher, patch) {
+        const boxes = patch.map(serialized => [Box.deserialize(patcher, serialized), serialized]);
+        // First add all boxes
+        for (const [box] of boxes) {
+            patcher.boxWasAdded(box, false);
+        }
+        // Then connect them
+        for (const [box, serialized] of boxes) {
+            serialized.outlets.forEach((destinations, outletIndex) => {
+                const outlet = box.outlets[outletIndex];
+                for (const [boxId, inletIndex] of destinations) {
+                    const [targetBox] = boxes[boxId];
+                    const inlet = targetBox.inlets[inletIndex];
+                    const cord = outlet.connect(inlet);
+                    patcher.itemsGroup.appendChild(cord.element);
+                }
+            });
+        }
     },
 
     // Dump the score and tape (for debugging)
@@ -33,6 +65,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                         this.score.add(this.createItemFor(box, node));
                     }
                 }
+                notify(this, "score");
             } catch (error) {
                 this.clearScore();
                 notify(this, "score", { error });

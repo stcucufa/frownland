@@ -16,11 +16,9 @@ const Commands = {
 
     // Add a new box.
     n() {
-        const box = Box({
+        this.boxWasAdded(Box({
             patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Box.height)
-        });
-        this.itemsGroup.appendChild(box.element);
-        this.boxWasAdded(box);
+        }), true);
     },
 
     // Delete the selection (box or cord).
@@ -77,7 +75,18 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             this.observeElementInBox(element, box);
         });
         on(this.patch, "score", ({ error }) => {
-            this.errorMessage(error?.message);
+            if (error) {
+                this.errorMessage(error.message);
+            } else {
+                // Save to local storage.
+                try {
+                    const patch = this.patch.serialize();
+                    localStorage.setItem("patch", patch);
+                    console.info("Saved", JSON.parse(patch));
+                } catch (error) {
+                    console.error("Could not serialize: ", error);
+                }
+            }
         });
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
@@ -87,7 +96,6 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         });
         on(this.transportBar, "stop", () => {
             this.locked = false;
-            this.patch.clearScore();
             this.errorMessage();
             for (const [element, box] of this.resizeObserverTargets) {
                 if (element !== box.input) {
@@ -95,6 +103,17 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 }
             }
         });
+
+        try {
+            const json = window.localStorage.getItem("patch");
+            if (json) {
+                const patch = JSON.parse(json);
+                this.patch.deserialize(this, patch);
+                console.info("Loaded", patch);
+            }
+        } catch (error) {
+            console.error("Could not load patch", error);
+        }
     },
 
     // Show or clear the error message.
@@ -142,10 +161,15 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         this.resizeObserver.observe(element);
     },
 
-    boxWasAdded(box) {
-        this.select(box);
+    boxWasAdded(box, interactive) {
+        this.itemsGroup.appendChild(box.element);
         this.observeElementInBox(box.input, box);
-        this.willEdit(box);
+        if (interactive) {
+            this.select(box);
+            this.willEdit(box);
+        } else {
+            this.patch.boxWasEdited(box);
+        }
     },
 
     boxWillBeRemoved(box) {
@@ -233,6 +257,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             item.y = origin.y + dy;
             item.updatePosition();
         }
+        this.patch.clearScore();
     },
 
     boxMoveWasCancelled() {
