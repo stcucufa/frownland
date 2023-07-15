@@ -96,7 +96,6 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         });
         on(this.transportBar, "stop", () => {
             this.locked = false;
-            this.patch.clearScore();
             this.errorMessage();
             for (const [element, box] of this.resizeObserverTargets) {
                 if (element !== box.input) {
@@ -258,6 +257,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             item.y = origin.y + dy;
             item.updatePosition();
         }
+        this.patch.clearScore();
     },
 
     boxMoveWasCancelled() {
