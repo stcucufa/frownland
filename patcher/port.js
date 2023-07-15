@@ -131,7 +131,7 @@ export const Port = assign(properties => create(properties).call(Port), {
                 return this;
             }
         }
-        port.possibleTargets.set(this, false);
+        port.possibleTargets.set(this);
     },
 
     // Create a cord from this port. Currently, only a single outgoing or
