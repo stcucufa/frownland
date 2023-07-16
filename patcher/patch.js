@@ -182,6 +182,13 @@ const only = (Constructor, params = {}) => input => {
     }
 };
 
+// Create an element with a notification so that its size can be observed.
+const createElement = (...args) => function(_, box) {
+    const element = html(...args);
+    notify(this, "element", { element, box });
+    return Element(element, box.foreignObject);
+};
+
 const score = {
     inlets: 1,
     outlets: 0,
@@ -248,11 +255,18 @@ const Parse = {
             return {
                 label: `Element ${tagName} ${normalizeWhitespace(input)}`,
                 isElement: true,
-                create: function(_, box) {
-                    const element = html(tagName, attrs);
-                    notify(this, "element", { element, box });
-                    return Element(element, box.foreignObject);
-                }
+                create: createElement(tagName, attrs)
+            };
+        }
+    },
+
+    Image: input => {
+        const src = input.trim();
+        if (/\S/.test(src)) {
+            return {
+                label: `Image ${src}`,
+                isElement: true,
+                create: createElement("img", { src })
             };
         }
     },
@@ -262,7 +276,7 @@ const Parse = {
             return {
                 label: `Button ${normalizeWhitespace(input)}`,
                 isElement: true,
-                create: (_, box) => Element(html("button", { type: "button" }, input), box.foreignObject)
+                create: createElement("button", { type: "button" }, input)
             };
         }
     },
@@ -272,7 +286,11 @@ const Parse = {
             return {
                 label: `Text ${normalizeWhitespace(input)}`,
                 isElement: true,
-                create: (_, box) => Element(document.createTextNode(input), box.foreignObject)
+                create: (_, box) => {
+                    const element = document.createTextNode(input);
+                    notify(this, "element", { element, box });
+                    return Element(element, box.foreignObject);
+                }
             };
         }
     },
