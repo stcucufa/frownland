@@ -23,7 +23,7 @@ span.input {
     display: inline-block;
 }
 
-span.input:focus {
+span.input:focus, div.input:focus {
     outline: none;
 }
 
@@ -79,6 +79,10 @@ rect.selection {
 g.box rect {
     stroke: #102040;
     fill: #f8f9f0;
+}
+
+g.comment rect {
+    stroke-dasharray: 1, 1;
 }
 
 g.box.selected > rect {

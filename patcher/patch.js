@@ -1,7 +1,7 @@
 import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
 import { assoc, create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 import { notify } from "../lib/events.js";
-import { Box } from "./box.js";
+import { ItemBox } from "./item-box.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -21,7 +21,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     // Deserialize from a parsed JSON object.
     deserialize(patcher, patch) {
-        const boxes = patch.map(serialized => [Box.deserialize(patcher, serialized), serialized]);
+        const boxes = patch.map(serialized => [ItemBox.deserialize(patcher, serialized), serialized]);
         // First add all boxes
         for (const [box] of boxes) {
             patcher.boxWasAdded(box, false);
@@ -109,6 +109,9 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 
     boxWasEdited(box) {
+        if (box.label == null) {
+            return;
+        }
         delete this.score;
         const isNew = this.boxes.has(box);
         const node = parse(box.label);
