@@ -81,7 +81,8 @@ g.box rect {
     fill: #f8f9f0;
 }
 
-g.comment rect {
+g.box.comment rect {
+    fill-opacity: 0;
     stroke-dasharray: 1, 1;
 }
 
@@ -130,4 +131,8 @@ svg.canvas.locked rect.grid {
 svg.canvas:not(.locked) g.box foreignObject,
 svg.canvas.locked g.box > rect {
     pointer-events: none;
+}
+
+svg.canvas.locked .comment rect {
+    stroke: none;
 }
