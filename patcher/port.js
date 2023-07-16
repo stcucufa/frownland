@@ -101,15 +101,37 @@ export const Port = assign(properties => create(properties).call(Port), {
     // Check whether a this is a possible target from another port. One must be
     // an inlet and the other an outlet, there can be only one cord per port
     // (this was already checked for this, but not for the potential target),
-    // and the inlet must accept a connection from the outlet.
+    // and the inlet must accept a connection from the outlet. Also prevent
+    // cycles from being created.
     possibleTargetForCord(port) {
-        if (port.box !== this.box && port.isOutlet !== this.isOutlet && this.cords.size === 0) {
+        if (port.possibleTargets.has(this)) {
+            return port.possibleTargets.get(this);
+        }
+        if (port.isOutlet !== this.isOutlet && this.cords.size === 0) {
             const inlet = this.isOutlet ? port : this;
             const outlet = this.isOutlet ? this : port;
             if (this.patcher.inletAcceptsConnection(inlet, outlet)) {
+                // Check for a cycle
+                const visited = new Set([outlet.box]);
+                const queue = [inlet];
+                while (queue.length > 0) {
+                    const p = queue.pop();
+                    console.assert(!p.isOutlet);
+                    if (visited.has(p.box)) {
+                        port.possibleTargets.set(this);
+                        return;
+                    }
+                    for (const o of p.box.outlets) {
+                        for (const i of o.cords.keys()) {
+                            queue.push(i);
+                        }
+                    }
+                }
+                port.possibleTargets.set(this, this);
                 return this;
             }
         }
+        port.possibleTargets.set(this);
     },
 
     // Create a cord from this port. Currently, only a single outgoing or
@@ -121,6 +143,7 @@ export const Port = assign(properties => create(properties).call(Port), {
         this.cord = Cord(this, x, y);
         this.patcher.itemsGroup.appendChild(this.cord.element);
         this.patcher.deselect();
+        this.possibleTargets = new Map();
     },
 
     // Update the cord and decide whether it can be connected to a target.
@@ -170,6 +193,7 @@ export const Port = assign(properties => create(properties).call(Port), {
         delete this.cord;
         delete this.x0;
         delete this.y0;
+        delete this.possibleTargets;
     }
 });
 
