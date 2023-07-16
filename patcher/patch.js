@@ -67,10 +67,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 }
                 notify(this, "score");
             } catch (error) {
-                delete this.score;
+                this.clearScore();
                 notify(this, "score", { error });
             }
         }
+    },
+
+    clearScore() {
+        delete this.score;
     },
 
     clearElements() {
