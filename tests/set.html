@@ -38,6 +38,18 @@ test("Instantiation (Element target)", t => {
   * Set-2 [17, 40[ <bar.jpg>`, "dump matches");
 });
 
+test("Instantiation (Element target, static value)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const image = html("img", { src: "foo.png" });
+    const instance = tape.instantiate(Set(image, "src", "bar.jpg").dur(23), 17);
+    deck.now = 18;
+    t.match(image.src, /\/bar.jpg$/, "attribute was set");
+    deck.now = 41;
+    t.match(image.src, /\/foo.png$/, "attribute was reset");
+    t.equal(dump(instance), "* Set-0 [17, 40[ <bar.jpg>", "dump matches");
+});
+
         </script>
     </head>
     <body>
