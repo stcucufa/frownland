@@ -67,13 +67,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 }
                 notify(this, "score");
             } catch (error) {
-                delete this.score;
+                this.clearScore();
                 notify(this, "score", { error });
             }
         }
     },
 
-    clearElements() {
+    clearScore() {
+        delete this.score;
         for (const [box, input] of this.elementBoxes.entries()) {
             for (let child = box.foreignObject.firstChild; child;) {
                 const sibling = child.nextSibling;
