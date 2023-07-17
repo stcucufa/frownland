@@ -8,13 +8,29 @@ export const Comment = assign(properties => create(properties).call(Comment), Bo
     text: "",
 
     initElement(element) {
-        this.input = html("div", { class: "input", spellcheck: false }, this.label);
+        this.input = html("div", { class: "input", spellcheck: false }, this.text);
         this.foreignObject = element.appendChild(svg("foreignObject", {
             width: this.width,
             height: this.height
         }, this.input));
         element.classList.add("comment");
         return element;
+    },
+
+    serialize() {
+        return {
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height,
+            text: this.input.textContent,
+        };
+    },
+
+    deserialize(patcher, box) {
+        return Comment({
+            patcher, x: box.x, y: box.y, width: box.width, height: box.height, text: box.text
+        });
     },
 
     // Update the size of the box based on the size of the content of the
