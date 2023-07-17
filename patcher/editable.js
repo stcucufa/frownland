@@ -24,6 +24,10 @@ export const Editable = (Proto, property) => ({
         Proto.dragDidEnd?.call(this);
     },
 
+    deselected() {
+        deselectText();
+    },
+
     toggleEditing(editing) {
         if (editing) {
             try {

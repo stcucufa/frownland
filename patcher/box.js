@@ -1,5 +1,5 @@
 import { assign, create, nop, svg } from "../lib/util.js";
-import { bringElementFrontward, deselectText } from "./util.js";
+import { bringElementFrontward } from "./util.js";
 
 // A draggable box that serves as a basis for all boxes (items, comments, ...)
 export const Box = assign(properties => create(properties).call(Box), {
@@ -32,16 +32,13 @@ export const Box = assign(properties => create(properties).call(Box), {
     toggleSelected(selected) {
         this.element.classList.toggle("selected", selected);
         if (selected) {
-            this.selected();
+            this.selected?.();
             bringElementFrontward(this.element);
         } else {
-            this.deselected();
+            this.deselected?.();
         }
         return selected;
     },
-
-    selected: nop,
-    deselected: nop,
 
     // Drag handling
     dragDidBegin() {

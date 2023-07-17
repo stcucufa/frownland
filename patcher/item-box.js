@@ -1,5 +1,5 @@
 import { assign, create, html, svg } from "../lib/util.js";
-import { bringElementFrontward, deselectText } from "./util.js";
+import { bringElementFrontward } from "./util.js";
 import { Box } from "./box.js";
 import { Editable } from "./editable.js";
 import { Port } from "./port.js";
@@ -57,6 +57,14 @@ export const ItemBox = assign(properties => create(properties).call(ItemBox), Bo
         }
         for (const outlet of this.outlets) {
             yield outlet;
+        }
+    },
+
+    selected() {
+        for (const port of this.ports()) {
+            for (const cord of port.cords.values()) {
+                bringElementFrontward(cord.element);
+            }
         }
     },
 
