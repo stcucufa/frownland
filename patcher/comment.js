@@ -1,8 +1,8 @@
 import { assign, create, html, svg } from "../lib/util.js";
-import { deselectText } from "./util.js";
 import { Box } from "./box.js";
+import { Editable } from "./editable.js";
 
-export const Comment = assign(properties => create(properties).call(Comment), Box, {
+export const Comment = assign(properties => create(properties).call(Comment), Box, Editable(Box, "text"), {
     width: 320,
     height: 22,
     text: "",
@@ -33,49 +33,12 @@ export const Comment = assign(properties => create(properties).call(Comment), Bo
         });
     },
 
-    // Update the size of the box based on the size of the content of the
-    // foreign object.Do not go under the base size.
-    updateSize(width, height) {
-        const w = Math.max(Object.getPrototypeOf(this).width, width);
-        this.width = w;
-        this.rect.setAttribute("width", w);
-        this.foreignObject.setAttribute("width", w);
+    // Update the height of the box based on the size of the content of the
+    // foreign object.
+    updateSize(_, height) {
         const h = Math.max(Object.getPrototypeOf(this).height, height);
         this.height = h;
         this.rect.setAttribute("height", h);
         this.foreignObject.setAttribute("height", h);
-    },
-
-    toggleEditing(editing) {
-        if (editing) {
-            try {
-                this.input.contentEditable = "plaintext-only";
-            } catch (_) {
-                // Firefox (for instance) does not support "plaintext-only"
-                this.input.contentEditable = true;
-            }
-            this.input.addEventListener("keydown", this);
-            window.setTimeout(() => {
-                this.input.focus();
-                const selection = deselectText();
-                const range = document.createRange();
-                range.selectNodeContents(this.input);
-                selection.addRange(range);
-            });
-        } else {
-            this.input.contentEditable = false;
-            this.input.removeEventListener("keydown", this);
-            this.text = this.input.textContent;
-        }
-    },
-
-    handleEvent(event) {
-        switch (event.key) {
-            case "Escape":
-                this.input.textContent = this.text;
-            case "Enter":
-                event.preventDefault();
-                this.patcher.didEdit(this);
-        }
     },
 })
