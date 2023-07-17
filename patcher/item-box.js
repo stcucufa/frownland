@@ -1,33 +1,29 @@
 import { assign, create, html, svg } from "../lib/util.js";
 import { bringElementFrontward, deselectText } from "./util.js";
+import { Box } from "./box.js";
+import { Editable } from "./editable.js";
 import { Port } from "./port.js";
 
 // A box represents an object. It has two inlets and one outlet by default.
-export const ItemBox = assign(properties => create(properties).call(ItemBox), {
-    x: 0,
-    y: 0,
+export const ItemBox = assign(properties => create(properties).call(ItemBox), Box, Editable(Box, "label"), {
     width: 52,
     height: 28,
     label: "",
 
-    init() {
+    initElement(element) {
         this.inlets = [Port({ box: this }), Port({ box: this, x: this.width - Port.width })];
         this.outlets = [Port({ box: this, y: this.height - Port.height, isOutlet: true })];
-        this.rect = svg("rect", { width: this.width, height: this.height });
         this.input = html("span", { class: "input", spellcheck: false }, this.label);
         this.foreignObject = svg("foreignObject", {
             y: Port.height,
             width: this.width,
             height: this.height - 2 * Port.height
         }, this.input);
-        this.element = svg("g", { class: "box" },
-            this.rect,
-            this.foreignObject,
-            [...this.ports()].map(port => port.element)
-        );
-        this.rect.addEventListener("pointerdown", this.patcher.dragEventListener);
-        this.updatePosition();
-        this.patcher.elements.set(this.rect, this);
+        element.appendChild(this.foreignObject);
+        for (const port of this.ports()) {
+            element.appendChild(port.element);
+        }
+        return element;
     },
 
     serialize(id, boxesWithId) {
@@ -66,17 +62,15 @@ export const ItemBox = assign(properties => create(properties).call(ItemBox), {
 
     // Remove all ports when deleting the box.
     remove() {
-        this.patcher.boxWillBeRemoved(this);
+        Box.remove.call(this);
         for (const port of this.ports()) {
             port.remove();
         }
-        this.rect.removeEventListener("pointerdown", this.patcher.ragEventListener);
-        this.element.remove();
     },
 
     // Move all cords from the ports when moving the box.
     updatePosition() {
-        this.element.setAttribute("transform", `translate(${this.x}, ${this.y})`);
+        Box.updatePosition.call(this);
         for (const port of this.ports()) {
             port.updateCords();
         }
@@ -99,89 +93,7 @@ export const ItemBox = assign(properties => create(properties).call(ItemBox), {
         this.outlets[0].updateY(h - Port.height);
     },
 
-    toggleSelected(selected) {
-        this.element.classList.toggle("selected", selected);
-        if (selected) {
-            for (const port of this.ports()) {
-                for (const cord of port.cords.values()) {
-                    bringElementFrontward(cord.element);
-                }
-            }
-            bringElementFrontward(this.element);
-        } else {
-            deselectText();
-        }
-        return selected;
-    },
-
-    toggleEditing(editing) {
-        if (editing) {
-            try {
-                this.input.contentEditable = "plaintext-only";
-            } catch (_) {
-                // Firefox (for instance) does not support "plaintext-only"
-                this.input.contentEditable = true;
-            }
-            this.input.addEventListener("keydown", this);
-            window.setTimeout(() => {
-                this.input.focus();
-                const selection = deselectText();
-                const range = document.createRange();
-                range.selectNodeContents(this.input);
-                selection.addRange(range);
-            });
-        } else {
-            this.input.contentEditable = false;
-            this.input.removeEventListener("keydown", this);
-            this.label = this.input.textContent;
-        }
-    },
-
     toggleUnknown(unknown) {
         this.element.classList.toggle("unknown", unknown);
-    },
-
-    handleEvent(event) {
-        switch (event.key) {
-            case "Escape":
-                this.input.textContent = this.label;
-            case "Enter":
-                event.preventDefault();
-                this.patcher.didEdit(this);
-        }
-    },
-
-    // Drag handling
-    dragDidBegin() {
-        this.willEdit = this.patcher.selection.has(this);
-        this.willMove = true;
-        this.patcher.select(this);
-    },
-
-    dragDidProgress(dx, dy) {
-        if (this.willEdit) {
-            delete this.willEdit;
-            deselectText();
-        }
-        if (this.willMove) {
-            delete this.willMove;
-            this.patcher.boxWillMove(this);
-        }
-        this.patcher.boxDidMove(this, dx, dy);
-    },
-
-    dragWasCancelled() {
-        if (this.willMove) {
-            delete this.willMove;
-        } else {
-            this.patcher.boxMoveWasCancelled();
-        }
-    },
-
-    dragDidEnd() {
-        if (this.willEdit) {
-            delete this.willEdit;
-            this.patcher.willEdit(this);
-        }
     },
 });
