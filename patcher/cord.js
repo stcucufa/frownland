@@ -96,6 +96,9 @@ export const Cord = assign((port, x2, y2) => {
     handleEvent(event) {
         switch (event.type) {
             case "pointerdown":
+                if (event.button > 0) {
+                    return;
+                }
                 event.preventDefault();
                 event.stopPropagation();
                 this.patcher.select(this);
