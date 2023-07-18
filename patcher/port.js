@@ -107,7 +107,10 @@ export const Port = assign(properties => create(properties).call(Port), {
         if (port.possibleTargets.has(this)) {
             return port.possibleTargets.get(this);
         }
-        if (port.isOutlet !== this.isOutlet && this.cords.size === 0) {
+        // Ports must be of opposite polarity (inlet vs. outlet) and inlets
+        // can have only one incoming cord (but outlets can have many outgoing
+        // cords).
+        if (port.isOutlet !== this.isOutlet && (this.isOutlet || this.cords.size === 0)) {
             const inlet = this.isOutlet ? port : this;
             const outlet = this.isOutlet ? this : port;
             if (this.patcher.inletAcceptsConnection(inlet, outlet)) {
@@ -134,10 +137,10 @@ export const Port = assign(properties => create(properties).call(Port), {
         port.possibleTargets.set(this);
     },
 
-    // Create a cord from this port. Currently, only a single outgoing or
-    // incoming cord is allowed (to maintain a tree structure).
+    // Create a cord from this port. Prevent creating new incoming cords for
+    // inlets that already have one.
     dragDidBegin(x, y) {
-        if (this.cords.size > 0) {
+        if (!this.isOutlet && this.cords.size > 0) {
             return false;
         }
         this.cord = Cord(this, x, y);
