@@ -61,9 +61,10 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             tape.erase();
             try {
                 this.score = Score({ tape });
+                const items = new Map();
                 for (const [box, node] of this.boxes.entries()) {
                     if (!node.isComment && !box.outlets[0].enabled) {
-                        this.score.add(this.createItemFor(box, node));
+                        this.score.add(this.createItemFor(items, box, node));
                     }
                 }
                 notify(this, "score");
@@ -89,7 +90,10 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     // Create an item from a box/node pair, getting the inputs from the inlets
     // as necessary.
-    createItemFor(box, node, cord) {
+    createItemFor(items, box, node, cord) {
+        if (items.has(box)) {
+            return items.get(box);
+        }
         if (node.isElement) {
             this.elementBoxes.set(box, box.input);
             box.input.remove();
@@ -99,7 +103,9 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         ).map(([box, cord]) => {
             if (box) {
                 const node = this.boxes.get(box);
-                return this.createItemFor(box, node, cord);
+                const item = this.createItemFor(items, box, node, cord);
+                items.set(box, item);
+                return item;
             }
         });
         const item = node.create.call(this, inputs, box);
