@@ -61,10 +61,9 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             tape.erase();
             try {
                 this.score = Score({ tape });
-                const items = new Map();
                 for (const [box, node] of this.boxes.entries()) {
                     if (!node.isComment && !box.outlets[0].enabled) {
-                        this.score.add(this.createItemFor(items, box, node));
+                        this.score.add(this.createItemFor(new Map(), box, node));
                     }
                 }
                 notify(this, "score");
