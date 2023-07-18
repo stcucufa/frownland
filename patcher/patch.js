@@ -1,7 +1,8 @@
 import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
 import { assoc, create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 import { notify } from "../lib/events.js";
-import { Box } from "./box.js";
+import { ItemBox } from "./item-box.js";
+import { Comment } from "./comment.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
@@ -21,14 +22,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     // Deserialize from a parsed JSON object.
     deserialize(patcher, patch) {
-        const boxes = patch.map(serialized => [Box.deserialize(patcher, serialized), serialized]);
+        const boxes = patch.map(serialized => [deserializeBox(patcher, serialized), serialized]);
         // First add all boxes
         for (const [box] of boxes) {
             patcher.boxWasAdded(box, false);
         }
         // Then connect them
         for (const [box, serialized] of boxes) {
-            serialized.outlets.forEach((destinations, outletIndex) => {
+            serialized.outlets?.forEach((destinations, outletIndex) => {
                 const outlet = box.outlets[outletIndex];
                 for (const [boxId, inletIndex] of destinations) {
                     const [targetBox] = boxes[boxId];
@@ -61,7 +62,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             try {
                 this.score = Score({ tape });
                 for (const [box, node] of this.boxes.entries()) {
-                    if (!box.outlets[0].enabled) {
+                    if (!node.isComment && !box.outlets[0].enabled) {
                         this.score.add(this.createItemFor(box, node));
                     }
                 }
@@ -109,6 +110,10 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 
     boxWasEdited(box) {
+        if (box.label == null) {
+            this.boxes.set(box, { isComment: true });
+            return;
+        }
         delete this.score;
         const isNew = this.boxes.has(box);
         const node = parse(box.label);
@@ -348,3 +353,8 @@ const Parse = {
         }
     }
 };
+
+// Pick the right deserialization method for a serialized box (Item or Comment).
+const deserializeBox = (patcher, serialized) => (
+    typeof serialized.label === "string" ? ItemBox : Comment
+).deserialize(patcher, serialized);

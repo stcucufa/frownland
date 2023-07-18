@@ -1,7 +1,8 @@
 import { on } from "../lib/events.js";
 import { assign, create, svg } from "../lib/util.js";
 import { DragEventListener } from "./drag-event-listener.js";
-import { Box } from "./box.js";
+import { Comment } from "./comment.js";
+import { ItemBox } from "./item-box.js";
 import { Patch } from "./patch.js";
 import { TransportBar } from "./transport-bar.js";
 import { overlap } from "./util.js";
@@ -9,6 +10,13 @@ import { overlap } from "./util.js";
 // Keyboard commands for different key. `this` is set to the patcher that calls
 // the command.
 const Commands = {
+    // Create a comment box
+    c() {
+        this.boxWasAdded(Comment({
+            patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Comment.height)
+        }), true);
+    },
+
     // Dump the score (for debugging)
     d() {
         this.patch.dump();
@@ -16,8 +24,8 @@ const Commands = {
 
     // Add a new box.
     n() {
-        this.boxWasAdded(Box({
-            patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Box.height)
+        this.boxWasAdded(ItemBox({
+            patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - ItemBox.height)
         }), true);
     },
 

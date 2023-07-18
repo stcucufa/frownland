@@ -23,7 +23,7 @@ span.input {
     display: inline-block;
 }
 
-span.input:focus {
+span.input:focus, div.input:focus {
     outline: none;
 }
 
@@ -81,6 +81,11 @@ g.box rect {
     fill: #f8f9f0;
 }
 
+g.box.comment rect {
+    fill-opacity: 0;
+    stroke-dasharray: 1, 1;
+}
+
 g.box.selected > rect {
     outline: solid 3px #83ebf5;
 }
@@ -126,4 +131,8 @@ svg.canvas.locked rect.grid {
 svg.canvas:not(.locked) g.box foreignObject,
 svg.canvas.locked g.box > rect {
     pointer-events: none;
+}
+
+svg.canvas.locked .comment rect {
+    stroke: none;
 }
