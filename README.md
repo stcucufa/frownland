@@ -228,7 +228,10 @@ Currently, the presentation layer consists of:
 * `Element(element, parent, context)`, which adds the DOM element `element` to the `parent` element (or
 `document.body` by default) before the `context` element (which defaults to `null`) using the DOM
 `insertBefore()` method when the element begins, and removes it when the element ends. By default, the
-duration is zero, so nothing happens; `.dur()` can be set to set a duration for the element.
+duration is zero, so nothing happens; `.dur()` can set a duration for the element.
+* `Set(target, name, value?)`, which sets an attribute or property named `name` of the target (currently,
+an element), for the duration of the item; the attribute or property then reverts to its previous value.
+By default, the duration is zero, so nothing happens; `.dur()` can set a duration for the `Set`.
 
 ### Synchronous events layer
 

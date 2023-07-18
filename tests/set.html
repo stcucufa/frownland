@@ -12,7 +12,7 @@ import { Delay, Event, Instant, Par, Seq, Set, dump } from "../lib/score.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 
-test("Set(target, property)", t => {
+test("Set(target, name)", t => {
     const object = {};
     const set = Set(object, "src");
     t.equal(set.show(), "Set<src>", "show");
