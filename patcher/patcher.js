@@ -158,6 +158,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 // otherwise editing). When locked, check whether the command
                 // is still allowed (e.g. can pause/resume, but no new boxes).
                 if (!this.editItem && !this.dragEventListener.target &&
+                    !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey &&
                     (!this.locked || LockedCommands.has(event.key))) {
                     Commands[event.key]?.call(this);
                 }
