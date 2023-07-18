@@ -128,7 +128,7 @@ svg.canvas.locked rect.grid {
     fill: #f8f9f0;
 }
 
-/* Ensure that contents of boxes can be selected, while boxes and cords cannot
+/* Ensure that contents of boxes can be selected, while boxes and cords cannot,
  * when the patch is locked. */
 svg.canvas:not(.locked) g.box foreignObject,
 svg.canvas.locked g.box > rect,
