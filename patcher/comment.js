@@ -27,10 +27,8 @@ export const Comment = assign(properties => create(properties).call(Comment), Bo
         };
     },
 
-    deserialize(patcher, box) {
-        return Comment({
-            patcher, x: box.x, y: box.y, width: box.width, height: box.height, text: box.text
-        });
+    deserialize(patcher, { x, y, width, height, text }) {
+        return Comment({ patcher, x, y, width, height, text });
     },
 
     // Update the height of the box based on the size of the content of the

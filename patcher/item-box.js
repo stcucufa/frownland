@@ -44,10 +44,8 @@ export const ItemBox = assign(properties => create(properties).call(ItemBox), Bo
         };
     },
 
-    deserialize(patcher, box) {
-        return ItemBox({
-            patcher, x: box.x, y: box.y, width: box.width, height: box.height, label: box.label
-        });
+    deserialize(patcher, { x, y, width, height, label }) {
+        return ItemBox({ patcher, x, y, width, height, label });
     },
 
     // Get all the ports (both inlets and outlets)
