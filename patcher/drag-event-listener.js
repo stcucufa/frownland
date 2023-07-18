@@ -5,6 +5,9 @@ export const DragEventListener = Object.assign(elements => create({ elements }).
     handleEvent(event) {
         switch (event.type) {
             case "pointerdown":
+                if (event.button > 0) {
+                    return;
+                }
                 const target = this.elements.get(event.currentTarget);
                 if (target.dragDidBegin?.(event.clientX, event.clientY) === false) {
                     // Not returning from dragDidBegin does *not* cancel the
