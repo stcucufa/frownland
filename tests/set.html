@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Set</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { html, K, timeout } from "../lib/util.js";
+import { Delay, Event, Instant, Par, Seq, Set, dump } from "../lib/score.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+
+test("Set(target, name)", t => {
+    const object = {};
+    const set = Set(object, "src");
+    t.equal(set.show(), "Set<src>", "show");
+    t.equal(set.duration, 0, "zero duration");
+    t.equal(!set.fallible, true, "not fallible");
+});
+
+test("Instantiation (zero dur)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const div = html("div", { class: "foo" });
+    const instance = tape.instantiate(Seq(Instant(K("bar")), Set(div, "class")), 17);
+    deck.now = 18;
+    t.equal(div.getAttribute("class"), "foo", "attribute is unchanged");
+    t.equal(dump(instance),
+`* Seq-0 @17 <bar>
+  * Instant-1 @17 <bar>
+  * Set-2 @17 <bar>`, "dump matches");
+});
+
+test("Instantiation (Element target, attribute)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const div = html("div", { class: "foo" });
+    const instance = tape.instantiate(Seq(
+        Instant(K("bar")),
+        Set(div, "class").dur(23)
+    ), 17);
+    deck.now = 18;
+    t.equal(div.getAttribute("class"), "bar", "attribute was set");
+    deck.now = 41;
+    t.equal(div.getAttribute("class"), "foo", "attribute was reset");
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <bar>
+  * Instant-1 @17 <bar>
+  * Set-2 [17, 40[ <bar>`, "dump matches");
+});
+
+test("Instantiation (Element target, property)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const p = html("p", "Before");
+    const instance = tape.instantiate(Seq(
+        Instant(K("After")),
+        Set(p, "textContent").dur(23)
+    ), 17);
+    deck.now = 18;
+    t.equal(p.textContent, "After", "property was set");
+    deck.now = 41;
+    t.equal(p.textContent, "Before", "property was reset");
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <After>
+  * Instant-1 @17 <After>
+  * Set-2 [17, 40[ <After>`, "dump matches");
+});
+
+test("Instantiation (Element target, static value)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const div = html("div", { class: "foo" });
+    const instance = tape.instantiate(Set(div, "class", "bar").dur(23), 17);
+    deck.now = 18;
+    t.equal(div.getAttribute("class"), "bar", "attribute was set");
+    deck.now = 41;
+    t.equal(div.getAttribute("class"), "foo", "attribute was reset");
+    t.equal(dump(instance), "* Set-0 [17, 40[ <bar>", "dump matches");
+});
+
+test("Cancel", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const p = html("p", "ok");
+    const par = tape.instantiate(Par(
+        Par(Event(window, "synth"), Delay(23)),
+        Set(p, "textContent", "ko").dur(Infinity)
+    ).take(1), 17);
+    deck.now = 31;
+    t.equal(p.textContent, "ko", "textContent was set");
+    window.dispatchEvent(new window.Event("synth"));
+    deck.now = 41;
+    t.match(dump(par), /^\* Par-0 \[17, 40\[ <\[[^\]]+\],>\n  \* Par-1 \[17, 40\[ <\[[^\]]+\],>\n    \* Event-2 \[17, 31\[ <[^>]+>\n    \* Delay-3 \[17, 40\[ <undefined>\n  \* Set-4 \[17, 40\[ \(cancelled\)$/, "dump matches");
+    t.equal(p.textContent, "ok", "textContent was reset");
+});
+
+test("Prune", t => {
+    const tape = Tape();
+    const p = html("p", "ok");
+    const instance = tape.instantiate(Par(
+        Seq(Instant(K([23])), Par.map(Delay)),
+        Seq(Delay(31), Set(p, "textContent", "ko").dur(Infinity))
+    ).take(1), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Par-0 [17, 40[ <23>
+  * Seq-1 [17, 40[ <23>
+    * Instant-2 @17 <23>
+    * Par/map-3 [17, 40[ <23>
+      * Delay-7 [17, 40[ <23>
+  * Seq-4 [17, 40[ (cancelled)
+    * Delay-5 [17, 40[ (cancelled)`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17,40>", "occurrences were removed from the tape");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>
