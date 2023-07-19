@@ -67,6 +67,12 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                         this.score.add(this.createItemFor(new Map(), box, node));
                     }
                 }
+                for (const [box, [input, element]] of this.elementBoxes.entries()) {
+                    input.remove();
+                    if (element) {
+                        box.foreignObject.appendChild(element);
+                    }
+                }
                 notify(this, "score");
             } catch (error) {
                 this.clearScore();
@@ -77,7 +83,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     clearScore() {
         delete this.score;
-        for (const [box, input] of this.elementBoxes.entries()) {
+        for (const [box, [input]] of this.elementBoxes.entries()) {
             for (let child = box.foreignObject.firstChild; child;) {
                 const sibling = child.nextSibling;
                 child.remove();
@@ -95,8 +101,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             return items.get(box);
         }
         if (node.isElement) {
-            this.elementBoxes.set(box, box.input);
-            box.input.remove();
+            this.elementBoxes.set(box, [box.input]);
         }
         const inputs = box.inlets.flatMap(
             inlet => [...inlet.cords.entries()].map(([outlet, cord]) => [outlet.box, cord])
@@ -110,7 +115,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         });
         const item = node.create.call(this, inputs, box);
         if (cord?.isReference && node.isElement) {
-            box.foreignObject.appendChild(item.element);
+            this.elementBoxes.get(box).push(item.element);
         }
         return item;
     },
