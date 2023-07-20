@@ -3,15 +3,22 @@
     <head>
         <title>Try</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="test.css">
+        <link rel="stylesheet" href="../test.css">
         <script type="module">
 
-import { test } from "./test.js";
-import { imagePromise, K } from "../lib/util.js";
-import { notification } from "../lib/events.js";
-import { Await, Delay, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
-import { Tape } from "../lib/tape.js";
-import { Deck } from "../lib/deck.js";
+import { test } from "../test.js";
+import { imagePromise, K } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { Await } from "../../lib/timing/await.js";
+import { Delay } from "../../lib/timing/delay.js";
+import { Event } from "../../lib/timing/event.js";
+import { Instant } from "../../lib/timing/instant.js";
+import { Score } from "../../lib/timing/score.js";
+import { Try } from "../../lib/timing/try.js";
+import { dump } from "../../lib/timing/util.js";
+import { Par, Seq } from "../../lib/score.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
 
 test("Try(x, catch)", t => {
     const item = Try(Event(window, "synth").dur(23), Instant(K("ko")));
@@ -229,6 +236,6 @@ test("Prune (no error)", t => {
         </script>
     </head>
     <body>
-        <p><a href="index.html">Back</a></p>
+        <p><a href="../index.html">Back</a></p>
     </body>
 </html>
