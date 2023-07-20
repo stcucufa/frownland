@@ -3,15 +3,16 @@
     <head>
         <title>Score</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="test.css">
+        <link rel="stylesheet" href="../test.css">
         <script type="module">
 
-import { test } from "./test.js";
-import { on } from "../lib/events.js";
-import { K } from "../lib/util.js";
-import { Deck } from "../lib/deck.js";
-import { Tape } from "../lib/tape.js";
-import { Score, Instant, Delay, Event, Seq, dump } from "../lib/score.js";
+import { test } from "../test.js";
+import { on } from "../../lib/events.js";
+import { K } from "../../lib/util.js";
+import { Deck } from "../../lib/deck.js";
+import { Tape } from "../../lib/tape.js";
+import { Instant, Delay, Event, Seq, dump } from "../../lib/score.js";
+import { Score } from "../../lib/timing/score.js";
 
 test("Score()", t => {
     const score = Score();
