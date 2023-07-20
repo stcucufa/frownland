@@ -3,15 +3,20 @@
     <head>
         <title>Seq</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="test.css">
+        <link rel="stylesheet" href="../test.css">
         <script type="module">
 
-import { test } from "./test.js";
-import { K, timeout } from "../lib/util.js";
-import { notification } from "../lib/events.js";
-import { Await, Instant, Delay, Par, Seq, dump } from "../lib/score.js";
-import { Tape } from "../lib/tape.js";
-import { Deck } from "../lib/deck.js";
+import { test } from "../test.js";
+import { K, timeout } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Await } from "../../lib/timing/await.js";
+import { Delay } from "../../lib/timing/delay.js";
+import { Instant } from "../../lib/timing/instant.js";
+import { Par } from "../../lib/timing/par.js";
+import { Seq } from "../../lib/timing/seq.js";
+import { dump } from "../../lib/timing/util.js";
 
 test("Seq()", t => {
     const seq = Seq();
@@ -210,6 +215,6 @@ test("Prune Seq", t => {
         </script>
     </head>
     <body>
-        <p><a href="index.html">Back</a></p>
+        <p><a href="../index.html">Back</a></p>
     </body>
 </html>
