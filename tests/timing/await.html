@@ -3,15 +3,20 @@
     <head>
         <title>Await</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="test.css">
+        <link rel="stylesheet" href="../test.css">
         <script type="module">
 
-import { test } from "./test.js";
-import { Deck } from "../lib/deck.js";
-import { notification } from "../lib/events.js";
-import { Score, Instant, Delay, Await, Seq, Par, dump } from "../lib/score.js";
-import { Tape } from "../lib/tape.js";
-import { imagePromise, K, timeout } from "../lib/util.js";
+import { test } from "../test.js";
+import { notification } from "../../lib/events.js";
+import { imagePromise, K, timeout } from "../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Score } from "../../lib/timing/score.js";
+import { Instant } from "../../lib/timing/instant.js";
+import { Delay } from "../../lib/timing/delay.js";
+import { Await } from "../../lib/timing/await.js";
+import { Seq, Par } from "../../lib/score.js";
+import { dump } from "../../lib/timing/util.js";
 
 async function ok() {
     await timeout(10);
@@ -324,6 +329,6 @@ test("Runtime error after timeout", async t => {
         </script>
     </head>
     <body>
-        <p><a href="index.html">Back</a></p>
+        <p><a href="../index.html">Back</a></p>
     </body>
 </html>
