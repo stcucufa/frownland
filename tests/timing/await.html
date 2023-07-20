@@ -11,11 +11,12 @@ import { notification } from "../../lib/events.js";
 import { imagePromise, K, timeout } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Score } from "../../lib/timing/score.js";
-import { Instant } from "../../lib/timing/instant.js";
-import { Delay } from "../../lib/timing/delay.js";
 import { Await } from "../../lib/timing/await.js";
-import { Seq, Par } from "../../lib/score.js";
+import { Delay } from "../../lib/timing/delay.js";
+import { Instant } from "../../lib/timing/instant.js";
+import { Par } from "../../lib/timing/par.js";
+import { Score } from "../../lib/timing/score.js";
+import { Seq } from "../../lib/timing/seq.js";
 import { dump } from "../../lib/timing/util.js";
 
 async function ok() {

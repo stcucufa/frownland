@@ -10,7 +10,8 @@ import { test } from "./test.js";
 import { nop } from "../lib/util.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
-import { Instant, dump } from "../lib/score.js";
+import { Instant } from "../lib/timing/instant.js";
+import { dump } from "../lib/timing/util.js";
 
 test("Tape()", t => {
     const tape = Tape();
