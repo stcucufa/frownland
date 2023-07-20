@@ -1,4 +1,6 @@
-import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
+import {
+    Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Set, Try, dump
+} from "../lib/score.js";
 import { assoc, create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 import { notify } from "../lib/events.js";
 import { ItemBox } from "./item-box.js";
@@ -137,7 +139,8 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     cordWasAdded(cord) {
         const source = this.boxes.get(cord.outlet.box);
-        cord.isReference = (source.isElement || source.isWindow) && this.boxes.get(cord.inlet.box).isEvent;
+        cord.isReference = (source.isElement || source.isWindow) &&
+            (this.boxes.get(cord.inlet.box).isEvent || this.boxes.get(cord.inlet.box).isSet);
         delete this.score;
     },
 
@@ -246,6 +249,25 @@ const Parse = {
                 acceptFrom: box => box.isElement || box.isWindow,
                 create: ([target]) => Event(target.element, event)
             };
+        }
+    },
+
+    Set: input => {
+        const match = input.match(/^\s+(\w+)\s*/);
+        if (match) {
+            const name = match[1];
+            let value;
+            const rest = input.substr(match[0].length);
+            if (/\S/.test(rest)) {
+                value = rest.trim();
+            }
+            return {
+                label: `Set ${name}`,
+                inlets: 1,
+                isSet: true,
+                acceptFrom: box => box.isElement || box.isWindow,
+                create: ([target]) => Set(target.element, name, value)
+            }
         }
     },
 
