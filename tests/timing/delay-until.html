@@ -10,10 +10,7 @@ import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Delay } from "../../lib/timing/delay.js";
-import { Instant} from "../../lib/timing/instant.js";
-import { Par } from "../../lib/timing/par.js";
-import { Seq } from "../../lib/timing/seq.js";
+import { Delay, Instant, Par, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Delay.until(t)", t => {

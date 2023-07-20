@@ -1,6 +1,5 @@
-import {
-    Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Set, Try, dump
-} from "../lib/score.js";
+import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Set, Try } from "../lib/timing.js";
+import { dump } from "../lib/timing/util.js";
 import { assoc, create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 import { notify } from "../lib/events.js";
 import { ItemBox } from "./item-box.js";

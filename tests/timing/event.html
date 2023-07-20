@@ -10,11 +10,7 @@ import { test } from "../test.js";
 import { K, timeout } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Delay } from "../../lib/timing/delay.js";
-import { Event } from "../../lib/timing/event.js";
-import { Instant } from "../../lib/timing/instant.js";
-import { Par } from "../../lib/timing/par.js";
-import { Seq } from "../../lib/timing/seq.js";
+import { Delay, Event, Instant, Par, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Event(target, event)", t => {

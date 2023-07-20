@@ -21,10 +21,11 @@ div.placeholder {
         </style>
         <script type="module">
 
-import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try, dump } from "../../lib/score.js";
-import { Tape } from "../../lib/tape.js";
 import { html, imagePromise, K, range, timeout } from "../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
 
 const tape = Tape();
 const deck = Deck({ tape });
