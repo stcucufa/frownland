@@ -3,14 +3,19 @@
     <head>
         <title>Par.take</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="test.css">
+        <link rel="stylesheet" href="../test.css">
         <script type="module">
 
-import { test } from "./test.js";
-import { K } from "../lib/util.js";
-import { Delay, Effect, Event, Instant, Par, Seq, dump } from "../lib/score.js";
-import { Tape } from "../lib/tape.js";
-import { Deck } from "../lib/deck.js";
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay } from "../../lib/timing/delay.js";
+import { Event } from "../../lib/timing/event.js";
+import { Effect, Instant } from "../../lib/timing/instant.js";
+import { Par } from "../../lib/timing/par.js";
+import { Seq } from "../../lib/score.js";
+import { dump } from "../../lib/timing/util.js";
 
 test("Par(xs).take(n = ∞) duration", t => {
     t.equal(
@@ -198,6 +203,6 @@ test("Effects", t => {
         </script>
     </head>
     <body>
-        <p><a href="index.html">Back</a></p>
+        <p><a href="../index.html">Back</a></p>
     </body>
 </html>
