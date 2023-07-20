@@ -3,14 +3,16 @@
     <head>
         <title>Instant &amp; Effect</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="test.css">
+        <link rel="stylesheet" href="../test.css">
         <script type="module">
 
-import { test } from "./test.js";
-import { K } from "../lib/util.js";
-import { Instant, Effect, Delay, Par, Seq, dump } from "../lib/score.js";
-import { Tape } from "../lib/tape.js";
-import { Deck } from "../lib/deck.js";
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay, Par, Seq } from "../../lib/score.js";
+import { Instant, Effect } from "../../lib/timing/instant.js";
+import { dump } from "../../lib/timing/util.js";
 
 test("Instant()", t => {
     const instant = Instant();
