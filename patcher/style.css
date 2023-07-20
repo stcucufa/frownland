@@ -106,6 +106,10 @@ g.port.potential-target circle {
     fill: rgba(64, 255, 64, 0.25);
 }
 
+g.port.invalid-target circle {
+    fill: rgba(255, 64, 64, 0.25);
+}
+
 g.port.disabled {
     display: none;
 }
