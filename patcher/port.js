@@ -1,4 +1,4 @@
-import { assign, create, svg } from "../lib/util.js";
+import { add, assign, create, svg } from "../lib/util.js";
 import { Cord } from "./cord.js";
 
 // Ports are inlets and outlets. Inlets and outlets from different boxes can
@@ -75,13 +75,12 @@ export const Port = assign(properties => create(properties).call(Port), {
         }
     },
 
-    // Highlight when a current target for a coord.
-    get isTargetForCord() {
-        return this.element.classList.contains("potential-target");
-    },
-
-    set isTargetForCord(value) {
-        this.element.classList.toggle("potential-target", value);
+    // Highlight when a current target for a coord. The highlight also shows
+    // whether the target is valid or invalid.
+    set isTargetForCord([possible, target]) {
+        const isTarget = !!target;
+        this.element.classList.toggle("potential-target", isTarget && possible);
+        this.element.classList.toggle("invalid-target", isTarget && !possible);
     },
 
     // Enable or disable the port.
@@ -104,6 +103,10 @@ export const Port = assign(properties => create(properties).call(Port), {
     // and the inlet must accept a connection from the outlet. Also prevent
     // cycles from being created.
     possibleTargetForCord(port) {
+        if (port === this) {
+            // Avoid showing a red target for the starting port.
+            return;
+        }
         if (port.possibleTargets.has(this)) {
             return port.possibleTargets.get(this);
         }
@@ -121,8 +124,7 @@ export const Port = assign(properties => create(properties).call(Port), {
                     const p = queue.pop();
                     console.assert(!p.isOutlet);
                     if (visited.has(p.box)) {
-                        port.possibleTargets.set(this);
-                        return;
+                        return add(port.possibleTargets, this, [false, this]);
                     }
                     for (const o of p.box.outlets) {
                         for (const i of o.cords.keys()) {
@@ -130,11 +132,10 @@ export const Port = assign(properties => create(properties).call(Port), {
                         }
                     }
                 }
-                port.possibleTargets.set(this, this);
-                return this;
+                return add(port.possibleTargets, this, [true, this]);
             }
         }
-        port.possibleTargets.set(this);
+        return add(port.possibleTargets, this, [false, this]);
     },
 
     // Create a cord from this port. Prevent creating new incoming cords for
@@ -152,18 +153,19 @@ export const Port = assign(properties => create(properties).call(Port), {
     // Update the cord and decide whether it can be connected to a target.
     dragDidProgress(_, __, x, y) {
         const element = document.elementsFromPoint(x, y).find(e => e.classList.contains("target"));
-        const target = this.patcher.elements.get(element)?.possibleTargetForCord?.(this);
-        if (target) {
+        const possibleTarget = this.patcher.elements.get(element)?.possibleTargetForCord?.(this);
+        if (possibleTarget) {
+            const [possible, target] = possibleTarget;
             if (this.dragTarget !== target) {
                 if (this.dragTarget) {
-                    this.dragTarget.isTargetForCord = false;
+                    this.dragTarget.isTargetForCord = [false];
                 }
                 this.dragTarget = target;
-                this.dragTarget.isTargetForCord = true;
+                this.dragTarget.isTargetForCord = possibleTarget;
             }
         } else {
             if (this.dragTarget) {
-                this.dragTarget.isTargetForCord = false;
+                this.dragTarget.isTargetForCord = [false];
                 delete this.dragTarget;
             }
         }
@@ -172,7 +174,7 @@ export const Port = assign(properties => create(properties).call(Port), {
 
     dragWasCancelled() {
         if (this.dragTarget) {
-            this.dragTarget.isTargetForCord = false;
+            this.dragTarget.isTargetForCord = [false];
             delete this.dragTarget;
         }
     },
@@ -181,14 +183,19 @@ export const Port = assign(properties => create(properties).call(Port), {
     // otherwise, remove it.
     dragDidEnd() {
         if (this.dragTarget) {
-            this.dragTarget.isTargetForCord = false;
-            this.cords.set(this.dragTarget, this.cord);
-            this.dragTarget.cords.set(this, this.cord);
-            if (this.dragTarget.isOutlet) {
-                this.cord.setOutlet(this.dragTarget);
+            const [isValidTarget] = this.possibleTargets.get(this.dragTarget);
+            if (isValidTarget) {
+                this.cords.set(this.dragTarget, this.cord);
+                this.dragTarget.cords.set(this, this.cord);
+                if (this.dragTarget.isOutlet) {
+                    this.cord.setOutlet(this.dragTarget);
+                } else {
+                    this.cord.setInlet(this.dragTarget);
+                }
             } else {
-                this.cord.setInlet(this.dragTarget);
+                this.cord.element.remove();
             }
+            this.dragTarget.isTargetForCord = [false];
             delete this.dragTarget;
         } else {
             this.cord.element.remove();
