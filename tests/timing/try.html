@@ -3,15 +3,16 @@
     <head>
         <title>Try</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="test.css">
+        <link rel="stylesheet" href="../test.css">
         <script type="module">
 
-import { test } from "./test.js";
-import { imagePromise, K } from "../lib/util.js";
-import { notification } from "../lib/events.js";
-import { Await, Delay, Event, Instant, Par, Score, Seq, Try, dump } from "../lib/score.js";
-import { Tape } from "../lib/tape.js";
-import { Deck } from "../lib/deck.js";
+import { test } from "../test.js";
+import { imagePromise, K } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Await, Delay, Event, Instant, Score, Try, Par, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
 
 test("Try(x, catch)", t => {
     const item = Try(Event(window, "synth").dur(23), Instant(K("ko")));
@@ -229,6 +230,6 @@ test("Prune (no error)", t => {
         </script>
     </head>
     <body>
-        <p><a href="index.html">Back</a></p>
+        <p><a href="../index.html">Back</a></p>
     </body>
 </html>

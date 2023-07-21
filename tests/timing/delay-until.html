@@ -3,14 +3,15 @@
     <head>
         <title>Delay.until</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="test.css">
+        <link rel="stylesheet" href="../test.css">
         <script type="module">
 
-import { test } from "./test.js";
-import { K } from "../lib/util.js";
-import { Instant, Delay, Par, Seq, dump } from "../lib/score.js";
-import { Tape } from "../lib/tape.js";
-import { Deck } from "../lib/deck.js";
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay, Instant, Par, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
 
 test("Delay.until(t)", t => {
     const delay = Delay.until(23);
@@ -107,6 +108,6 @@ test("Prune delay", t => {
         </script>
     </head>
     <body>
-        <p><a href="index.html">Back</a></p>
+        <p><a href="../index.html">Back</a></p>
     </body>
 </html>
