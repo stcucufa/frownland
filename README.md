@@ -129,7 +129,9 @@ finished yet are pruned.
 the time `t` from the beginning of the parent container (usually a `Seq`, since it behaves like a regular
 delay inside a `Par`). If the delay begins _after_ the time _t_, then it has no effect. This is *not*
 repeatable since the delay can occur at most once.
-* `Par.map(g)` and `Seq.map(g)` map the function _g_ to an input list in parallel or in sequence.
+* `Par.map(x)` and `Seq.map(x)` map _x_ to an input list in parallel or in sequence. `x` can either be an
+item, which will be instantiated for each input value, or a function that gets called for each input value
+and is expected to return an item.
 * `Seq.fold(g, z)` folds over an input list with the function _g_ and an initial value _z_ in sequence.
 
 In SMIL, presentations are static in that their content is always the same (the user may influence the
