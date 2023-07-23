@@ -104,12 +104,12 @@ test("Cancel", t => {
         Event(window, "synth")
     ).take(1), 17);
     deck.now = 37;
-    t.equal(dump(instance),
+    t.equal(dump(instance, true),
 `* Par-0 [17, 36[ <19>
   * Seq-1 [17, 36[ <19>
-    * Instant-2 @17 <19>
-    * Par/map-3 [17, 36[ <19>
-      * Delay-5 [17, 36[ <19>
+    * Instant-2 @17 <19> {o0@17}
+    * Par/map-3 [17, 36[ <19> {o1@17}
+      * Delay-5 [17, 36[ <19> {o2@36}
   * Event-4 [17, 36[ (cancelled)`, "dump matches");
 });
 
@@ -126,7 +126,7 @@ test("Cancel with repeat", t => {
     window.dispatchEvent(new window.Event("synth"));
     deck.now = 47;
     window.dispatchEvent(new window.Event("synth"));
-    t.match(dump(par), /^\* Par-0 \[17, 40\[ <>\n  \* Seq\/repeat-1 \[17, 40\[ \(cancelled\)\n    \* Event-2 \[17, 27\[ <[^>]+>\n    \* Event-4 \[27, 37\[ <[^>]+>\n    \* Event-5 \[37, 40\[ \(cancelled\)\n  \* Delay-3 \[17, 40\[ <undefined>$/, "dump matches");
+    t.match(dump(par, true), /^\* Par-0 \[17, 40\[ <>\n  \* Seq\/repeat-1 \[17, 40\[ \(cancelled\)\n    \* Event-2 \[17, 27\[ <[^>]+>\n    \* Event-4 \[27, 37\[ <[^>]+>\n    \* Event-5 \[37, 40\[ \(cancelled\)\n  \* Delay-3 \[17, 40\[ <undefined> {o0@40}$/, "dump matches");
 });
 
 test("Prune", t => {
@@ -137,15 +137,14 @@ test("Prune", t => {
         Seq(Delay(23), Event(window, "synth")),
     ).take(1), 17);
     deck.now = 37;
-    t.equal(dump(choice),
+    t.equal(dump(choice, true),
 `* Par-0 [17, 36[ <19>
   * Seq-1 [17, 36[ <19>
-    * Instant-2 @17 <19>
-    * Par/map-3 [17, 36[ <19>
-      * Delay-7 [17, 36[ <19>
+    * Instant-2 @17 <19> {o0@17}
+    * Par/map-3 [17, 36[ <19> {o1@17}
+      * Delay-7 [17, 36[ <19> {o2@36}
   * Seq-4 [17, 36[ (cancelled)
     * Delay-5 [17, 36[ (cancelled)`, "dump matches");
-    t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
 });
 
 test("Prune with repeat", t => {
@@ -156,15 +155,14 @@ test("Prune with repeat", t => {
         Seq(Delay(23), Event(window, "synth").repeat()),
     ).take(1), 17);
     deck.now = 37;
-    t.equal(dump(choice),
+    t.equal(dump(choice, true),
 `* Par-0 [17, 36[ <19>
   * Seq-1 [17, 36[ <19>
-    * Instant-2 @17 <19>
-    * Par/map-3 [17, 36[ <19>
-      * Delay-8 [17, 36[ <19>
+    * Instant-2 @17 <19> {o0@17}
+    * Par/map-3 [17, 36[ <19> {o1@17}
+      * Delay-8 [17, 36[ <19> {o2@36}
   * Seq-4 [17, 36[ (cancelled)
     * Delay-5 [17, 36[ (cancelled)`, "dump matches");
-    t.equal(tape.show(), "Tape<17,17,36>", "occurrences were removed from the tape");
 });
 
         </script>

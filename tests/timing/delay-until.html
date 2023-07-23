@@ -88,11 +88,10 @@ test("Cancel delay", t => {
         Instant(K("ok")), Delay.until(23)
     ).take(1), 17);
     Deck({ tape }).now = 18;
-    t.equal(dump(choice),
+    t.equal(dump(choice, true),
 `* Par-0 @17 <ok>
-  * Instant-1 @17 <ok>
+  * Instant-1 @17 <ok> {o0@17}
   * Delay/until-2 @17 (cancelled)`, "dump matches");
-    t.equal(tape.show(), "Tape<17>", "no occurrence on tape");
 });
 
 test("Prune delay", t => {
