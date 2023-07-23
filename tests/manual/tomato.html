@@ -13,7 +13,6 @@ import { Element, Instant, Par, Score, Seq, Set } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 const FPS = 9;
-const dur = 1000 / FPS;
 
 const tape = Tape();
 const deck = Deck({ tape });
@@ -30,10 +29,10 @@ score.add(Par(
         Seq.map(Par(
             Seq(
                 Instant(i => `tomato${i.toString().padStart(2, "0")}.png`),
-                Set(image, "src").dur(dur)
+                Set(image, "src").dur(1000 / FPS)
             ),
-            Set(frame, "textContent").dur(dur)
-        ))
+            Set(frame, "textContent").dur(Infinity)
+        ).take(1))
     ).repeat()
 ));
 
