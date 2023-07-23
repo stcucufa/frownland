@@ -200,6 +200,27 @@ const only = (Constructor, params = {}) => input => {
     }
 };
 
+// Containers (par, seq) also have a possible /map modifier.
+const container = Constructor => input => {
+    if (/^\/map\s*$/.test(input)) {
+        return {
+            label: Constructor.map.tag,
+            create: inputs => Constructor.map(inputs[0]),
+            acceptFrom: K(true),
+            inlets: 1,
+            isContainer: true
+        };
+    } else if (!/\S/.test(input)) {
+        return {
+            label: Constructor.tag,
+            create: inputs => Constructor(...inputs),
+            acceptFrom: K(true),
+            inlets: 2,
+            isContainer: true
+        };
+    }
+};
+
 // Create an element with a notification so that its size can be observed.
 const createElement = (...args) => function(_, box) {
     const element = html(...args);
@@ -342,8 +363,8 @@ const Parse = {
         }
     },
 
-    Par: only(Par, { isContainer: true }),
-    Seq: only(Seq, { isContainer: true }),
+    Par: container(Par),
+    Seq: container(Seq),
     Try: only(Try, { isTry: true }),
 
     Score: only({ tag: "Score" }, score),
