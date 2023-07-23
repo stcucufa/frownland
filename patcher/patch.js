@@ -45,8 +45,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     // Dump the score and tape (for debugging)
     dump() {
         if (this.score) {
-            console.log(dump(this.score.instance));
-            console.log(this.score.tape.show());
+            console.log(dump(this.score.instance, true));
         } else {
             console.warn("No score");
         }
