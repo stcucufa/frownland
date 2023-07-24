@@ -397,13 +397,27 @@ const Parse = {
         if (match) {
             const n = parseInt(match[0], 10);
             return {
-                label: `take(${n})`,
+                label: `take ${n}`,
                 create: ([item]) => item.take?.(n),
                 acceptFrom: node => node.isContainer,
                 inlets: 1,
             }
         }
-    }
+    },
+
+    "#first": input => {
+        const match = input.match(/^(?:\s+(\d+))?\s*$/);
+        if (match) {
+            const n = match[1] ? parseInt(match[1], 10) : 1;
+            return {
+                label: `#first ${n}`,
+                inlets: 2,
+                isContainer: true,
+                acceptFrom: K(true),
+                create: items => Par(...items).take(n)
+            }
+        }
+    },
 };
 
 // Pick the right deserialization method for a serialized box (Item or Comment).
