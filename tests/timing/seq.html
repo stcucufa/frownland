@@ -11,7 +11,7 @@ import { K, timeout } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Instant, Par, Seq } from "../../lib/timing.js";
+import { Await, Delay, Instant, Par, Seq, Set } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Seq()", t => {
@@ -104,7 +104,7 @@ test("Instantiation; zero duration", t => {
     t.equal(Object.hasOwn(instance, "value"), true, "value for seq");
 });
 
-test("Instantiation; child with infinite duration", t => {
+test("Instantiation; child with indefinite duration", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq(Instant(), Instant(), Delay(23).repeat(), Par().take(1)), 17);
     Deck({ tape }).now = 18;
@@ -114,6 +114,21 @@ test("Instantiation; child with infinite duration", t => {
   * Instant-2 @17 <undefined>
   * Seq/repeat-3 [17, ∞[
     * Delay-4 [17, 40[`, "dump matches");
+});
+
+test("Instantiation; child with indefinite duration (2)", t => {
+    const tape = Tape();
+    const object = { foo: 1, bar: 2 };
+    const seq = tape.instantiate(Seq(
+        Par(Set(object, "foo", 3).dur(23), Set(object, "bar", 3).dur(Infinity)),
+        Par(Set(object, "foo", 4).dur(23), Set(object, "bar", 4).dur(Infinity)),
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 [17, ∞[
+  * Par-1 [17, ∞[
+    * Set-2 [17, 40[ <3>
+    * Set-3 [17, ∞[ <3>`, "dump matches");
 });
 
 test("Instantiation; child with unresolved duration", t => {
