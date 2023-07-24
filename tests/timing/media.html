@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Media</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { html } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { Media } from "../../lib/timing.js";
+
+test("Media(element, parent, context)", t => {
+    const media = Media(html("video", { src: "../media/animtest.m4v" }));
+    t.equal(media.show(), "Media<VIDEO>", "show");
+    t.undefined(media.duration, "intrinsic duration not resolved yet");
+    t.equal(!media.fallible, true, "not fallible");
+});
+
+test("Intrinsic duration", async t => {
+    const media = Media(html("video", { src: "../media/animtest.m4v" }));
+    const event = await notification(media, "dur");
+    t.equal(event.source, media, "dur event from media");
+    t.approximately(media.duration, 5338, 1, "intrinsic duration");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
