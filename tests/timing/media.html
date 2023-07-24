@@ -9,20 +9,48 @@
 import { test } from "../test.js";
 import { html } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
 import { Media } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
+
+const src = "../media/animtest.m4v";
+const dur = 5338;
 
 test("Media(element, parent, context)", t => {
-    const media = Media(html("video", { src: "../media/animtest.m4v" }));
+    const media = Media(html("video", { src }));
     t.equal(media.show(), "Media<VIDEO>", "show");
     t.undefined(media.duration, "intrinsic duration not resolved yet");
     t.equal(!media.fallible, true, "not fallible");
 });
 
 test("Intrinsic duration", async t => {
-    const media = Media(html("video", { src: "../media/animtest.m4v" }));
+    const media = Media(html("video", { src }));
     const event = await notification(media, "dur");
     t.equal(event.source, media, "dur event from media");
-    t.approximately(media.duration, 5338, 1, "intrinsic duration");
+    t.approximately(media.duration, dur, 1, "intrinsic duration");
+});
+
+test("Intrinsic duration (available immediately)", async t => {
+    const video = html("video", { src });
+    await new Promise(resolve => {
+        video.addEventListener("loadedmetadata", function wait() {
+            video.removeEventListener("loadedmetadata", wait);
+            resolve();
+        });
+    });
+    const media = Media(video);
+    t.approximately(media.duration, dur, 1, "intrinsic duration");
+});
+
+test("Instantiation", async t => {
+    const tape = Tape();
+    const media = Media(html("video", { src }));
+    const i = tape.instantiate(media, 17);
+    Deck({ tape }).start();
+    const { instance, error } = await notification(media, "play");
+    t.equal(instance, i, "play notification");
+    t.above(instance.end, instance.begin, `playing takes some time (${error ? error.message : "no error"})`);
 });
 
         </script>
