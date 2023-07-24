@@ -306,19 +306,18 @@ test("Cancel Seq.fold", t => {
         Seq(Instant(K([1, 2, 3])), Seq.fold(x => Seq(Instant(y => x + y), Delay(23)), 0))
     ).take(1), 17);
     Deck({ tape }).now = 37;
-    t.equal(dump(choice),
+    t.equal(dump(choice, true),
 `* Par-0 [17, 36[ <19>
   * Seq-1 [17, 36[ <19>
-    * Instant-2 @17 <19>
-    * Par/map-3 [17, 36[ <19>
-      * Delay-7 [17, 36[ <19>
+    * Instant-2 @17 <19> {o0@17}
+    * Par/map-3 [17, 36[ <19> {o1@17}
+      * Delay-7 [17, 36[ <19> {o5@36}
   * Seq-4 [17, 36[ (cancelled)
-    * Instant-5 @17 <1,2,3>
-    * Seq/fold-6 [17, 36[ (cancelled)
+    * Instant-5 @17 <1,2,3> {o2@17}
+    * Seq/fold-6 [17, 36[ (cancelled) {o3@17}
       * Seq-8 [17, 36[ (cancelled)
-        * Instant-9 @17 <1>
+        * Instant-9 @17 <1> {o4@17}
         * Delay-10 [17, 36[ (cancelled)`, "dump matches");
-    t.equal(tape.show(), "Tape<17,17,17,17,17,36>", "occurrences where removed from the tape");
 });
 
 test("Prune Seq.fold", t => {
@@ -328,15 +327,14 @@ test("Prune Seq.fold", t => {
         Seq(Delay(23), Seq.fold(x => Instant(y => x + y), 0))
     ).take(1), 17);
     Deck({ tape }).now = 37;
-    t.equal(dump(choice),
+    t.equal(dump(choice, true),
 `* Par-0 [17, 36[ <19>
   * Seq-1 [17, 36[ <19>
-    * Instant-2 @17 <19>
-    * Par/map-3 [17, 36[ <19>
-      * Delay-7 [17, 36[ <19>
+    * Instant-2 @17 <19> {o0@17}
+    * Par/map-3 [17, 36[ <19> {o1@17}
+      * Delay-7 [17, 36[ <19> {o2@36}
   * Seq-4 [17, 36[ (cancelled)
     * Delay-5 [17, 36[ (cancelled)`, "dump matches");
-    t.equal(tape.show(), "Tape<17,17,36>", "occurrences where removed from the tape");
 });
 
         </script>
