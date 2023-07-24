@@ -88,6 +88,15 @@ const TestCase = assign(properties => create(properties).call(TestCase), {
         }
     },
 
+    approximately(value, expected, epsilon, context) {
+        this.expect(
+            Math.abs(value - expected) < epsilon, [
+                () => `${this.expected} ${show(value)} to be approximately ${show(expected)} (±${epsilon})`,
+                context
+            ]
+        )
+    },
+
     above(value, expected, context) {
         this.expect(
             value > expected,

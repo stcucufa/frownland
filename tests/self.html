@@ -37,6 +37,9 @@ function timeout(title, f, timeoutMs) {
     expectations.timeouts += 1;
 }
 
+pass("t.approximately", t => { t.approximately(Math.PI, 3.14159, 1e-5, "π to a few decimals"); });
+fail("t.approximately", t => { t.approximately(Math.E, 3.14159, 1e-5, "wrong constant"); });
+
 pass("t.match", t => { t.match("foo", /^fo+$/, "Regex match"); });
 fail("t.match", t => { t.match("bar", /^fo+$/, "Regex does not match"); });
 
