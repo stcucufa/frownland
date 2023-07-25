@@ -7,7 +7,7 @@
         <script type="module">
 
 import { on } from "../lib/events.js";
-import { nop } from "../lib/util.js";
+import { assoc, nop } from "../lib/util.js";
 import { test } from "./test.js";
 
 const expectations = {
@@ -39,6 +39,43 @@ function timeout(title, f, timeoutMs) {
 
 pass("t.approximately", t => { t.approximately(Math.PI, 3.14159, 1e-5, "π to a few decimals"); });
 fail("t.approximately", t => { t.approximately(Math.E, 3.14159, 1e-5, "wrong constant"); });
+
+pass("t.equal", t => { t.equal([1, [], [{ three: "four" }]], [1, [], [{ three: "four" }]], "arrays"); });
+fail("t.equal", t => { t.equal([1, [], [{ three: "four" }]], [1, 2, [{ three: "four" }]], "different elements"); });
+fail("t.equal", t => { t.equal([1, [], [{ three: "four" }]], [1, [{ three: "four" }]], "different lengths"); });
+fail("t.equal", t => { t.equal([1, [], [{ three: "four" }]], "1, 2, 3, 4", "different type"); });
+fail("t.equal", t => { t.equal([1, [], [{ three: "four" }]], null, "null"); });
+
+pass("t.equal", t => { t.equal(assoc([["foo", 1], ["bar", [2, 3]]]), assoc([["bar", [2, 3]], ["foo", 1]]), "maps"); });
+fail("t.equal", t => { t.equal(assoc([["foo", 1], ["bar", [2, 3]]]), assoc([["baz", [2, 3]], ["foo", 1]]), "different keys"); });
+fail("t.equal", t => { t.equal(assoc([["foo", 1], ["bar", [2, 3]]]), assoc([["bar", [2, 3, 4]], ["foo", 1]]), "different values"); });
+fail("t.equal", t => { t.equal(assoc([["foo", 1], ["bar", [2, 3]]]), assoc([["foo", 1]]), "different sizes"); });
+fail("t.equal", t => { t.equal(assoc([["foo", 1], ["bar", [2, 3]]]), { foo: 1, bar: [2, 3] }, "different types"); });
+fail("t.equal", t => { t.equal(assoc([["foo", 1], ["bar", [2, 3]]]), null, "map !== null"); });
+
+pass("t.equal", t => { t.equal(null, null, "null"); });
+fail("t.equal", t => { t.equal(null, {}, "null !== {}"); });
+
+pass("t.equal", t => { t.equal({ foo: 1, bar: [2, 3] }, { bar: [2, 3], foo: 1 }, "maps"); });
+fail("t.equal", t => { t.equal({ foo: 1, bar: [2, 3] }, { baz: [2, 3], foo: 1 }, "different keys"); });
+fail("t.equal", t => { t.equal({ foo: 1, bar: [2, 3] }, { bar: [2, 3, 4], foo: 1 }, "different values"); });
+fail("t.equal", t => { t.equal({ foo: 1, bar: [2, 3] }, { foo: 1 }, "different sizes"); });
+fail("t.equal", t => { t.equal({ foo: 1, bar: [2, 3] }, ["foo", 1 ], "different types"); });
+fail("t.equal", t => { t.equal({ foo: 1, bar: [2, 3] }, null, "array != null"); });
+
+pass("t.equal", t => { t.equal(17, 17, "numbers"); });
+pass("t.equal", t => { t.equal(0, -0, "0 === -0"); });
+pass("t.equal", t => { t.equal(NaN, NaN, "NaN === NaN (for test purposes)"); });
+fail("t.equal", t => { t.equal(17, 23, "numbers"); });
+fail("t.equal", t => { t.equal(17, NaN, "(almost) numbers"); });
+fail("t.equal", t => { t.equal(17, "17", "string is not a number"); });
+
+pass("t.equal", t => { t.equal("foo", "foo", "strings"); });
+fail("t.equal", t => { t.equal("foo", "Foo", "different strings"); });
+fail("t.equal", t => { t.equal("foo", Symbol.for("foo"), "not a string"); });
+fail("t.equal", t => { t.equal("foo", null, "null"); });
+
+fail("t.equal", t => { t.equal(/foo/, Symbol.for("foo"), "regex !== symbol"); });
 
 pass("t.match", t => { t.match("foo", /^fo+$/, "Regex match"); });
 fail("t.match", t => { t.match("bar", /^fo+$/, "Regex does not match"); });
