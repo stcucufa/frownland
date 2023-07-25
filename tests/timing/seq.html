@@ -11,7 +11,7 @@ import { K, timeout } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Instant, Par, Seq, Set } from "../../lib/timing.js";
+import { Await, Delay, Effect, Instant, Par, Seq, Set } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Seq()", t => {
@@ -20,6 +20,7 @@ test("Seq()", t => {
     t.equal(seq.children, [], "no children");
     t.equal(seq.duration, 0, "zero duration");
     t.equal(!seq.fallible, true, "not fallible");
+    t.equal(seq.hasEffect, false, "no effect when empty");
 });
 
 test("Seq(xs)", t => {
@@ -32,6 +33,12 @@ test("Seq(xs)", t => {
     t.equal(instant.parent, seq, "parent (2)");
     t.equal(seq.duration, 17, "duration");
     t.equal(!seq.fallible, true, "not fallible");
+    t.equal(seq.hasEffect, false, "no effect when no children has effect");
+});
+
+test("Seq(xs).hasEffect", t => {
+    t.equal(Seq(Delay(17), Effect(x => { console.log(x); })).hasEffect, true,
+        "has effect if some child has effect");
 });
 
 test("Seq duration", t => {
