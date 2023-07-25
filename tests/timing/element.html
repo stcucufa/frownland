@@ -49,8 +49,8 @@ test("Cancel", t => {
     const deck = Deck({ tape });
     const wait = html("p", "wait");
     const instance = tape.instantiate(Par(
+        Element(wait).dur(Infinity),
         Delay(23),
-        Element(wait).dur(Infinity)
     ).take(1), 17);
     deck.now = 31;
     window.dispatchEvent(new window.Event("synth"));
@@ -58,8 +58,8 @@ test("Cancel", t => {
     t.equal(wait.parentElement, null, "element was removed");
     t.equal(dump(instance, true),
 `* Par-0 [17, 40[ <>
-  * Delay-1 [17, 40[ <undefined> {o0@40}
-  * Element-2 [17, 40[ (cancelled) {o1@40}`, "dump matches");
+  * Element-1 [17, 40[ (cancelled) {o1@40}
+  * Delay-2 [17, 40[ <undefined> {o0@40}`, "dump matches");
 });
 
 test("Prune", t => {
