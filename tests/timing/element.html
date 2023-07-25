@@ -52,14 +52,12 @@ test("Cancel", t => {
         Element(wait).dur(Infinity),
         Delay(23),
     ).take(1), 17);
-    deck.now = 31;
-    window.dispatchEvent(new window.Event("synth"));
     deck.now = 41;
-    t.equal(wait.parentElement, null, "element was removed");
     t.equal(dump(instance, true),
 `* Par-0 [17, 40[ <>
-  * Element-1 [17, 40[ (cancelled) {o1@40}
-  * Delay-2 [17, 40[ <undefined> {o0@40}`, "dump matches");
+  * Element-1 [17, 40[ (cancelled) {o0@40}
+  * Delay-2 [17, 40[ <undefined> {o1@40}`, "dump matches");
+    t.equal(wait.parentElement, null, "element was removed");
 });
 
 test("Prune", t => {
