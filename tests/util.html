@@ -256,7 +256,26 @@ test("normalizeWhitespace(string)", t => {
         "trim and collapse whitespace");
 });
 
-test("parseTime(string)", t => {
+test("parseTime(string), infinity", t => {
+    t.equal(parseTime("Infinity"), Infinity, "Infinity");
+    t.equal(parseTime("indefinite"), Infinity, "indefinite");
+    t.equal(parseTime("   ∞    "), Infinity, "∞");
+    t.throws(() => { parseTime("Infinity 1s"); }, "only infinity");
+});
+
+test("parseTime(string), clock value", t => {
+    t.equal(parseTime("02:30:03"), 9003000, "02:30:03 = 2h 30mn 3s");
+    t.equal(parseTime("50:00:10.25"), 180010250, "50:00:10.25 = 50h 10s 250ms");
+    t.equal(parseTime("02:33"), 153000, "02:33 = 2mn 33s");
+    t.equal(parseTime("00:10.5"), 10500, "00:10.5 = 10s 500ms");
+    t.throws(() => { parseTime("03:10."); }, "trailing dot");
+    t.throws(() => { parseTime("63:10.5"); }, "too many minutes");
+    t.throws(() => { parseTime("03:70.5"); }, "too many seconds");
+    t.throws(() => { parseTime("3:10.5"); }, "too few digits (minutes)");
+    t.throws(() => { parseTime("03:0.5"); }, "too few digits (seconds)");
+});
+
+test("parseTime(string), timecount value", t => {
     t.equal(parseTime("365 days 6hr"), 31557600000, "1 average year = 31,557,600,000 ms");
     t.equal(parseTime("1w"), 604800000, "1w = 604,800,000 ms");
     t.equal(parseTime("1 week"), 604800000, "1 week = 604,800,000 ms");
@@ -280,13 +299,9 @@ test("parseTime(string)", t => {
     t.equal(parseTime("500"), 500, "ms is the default unit");
     t.equal(parseTime(" 2 hr 30 mn 10 S  "), 9010000, "several units in the right order");
     t.equal(parseTime("2hr30mn10s"), 9010000, "no spaces");
-    t.equal(parseTime("Infinity"), Infinity, "Infinity");
-    t.equal(parseTime("indefinite"), Infinity, "indefinite");
-    t.equal(parseTime("   ∞    "), Infinity, "∞");
     t.throws(() => { parseTime("2hr:30mn:10s"); }, "extra separators");
     t.throws(() => { parseTime(" 10 min  2H "); }, "several units in the wrong order");
     t.throws(() => { parseTime("one week"); }, "unexpected format");
-    t.throws(() => { parseTime("Infinity 1s"); }, "only infinity");
 });
 
 test("partition(xs, p)", t => {
