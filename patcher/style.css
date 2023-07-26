@@ -149,3 +149,7 @@ svg.canvas.locked g.cord line:nth-child(2) {
 svg.canvas.locked .comment rect {
     stroke: none;
 }
+
+rect.bounding {
+    fill: rgba(64, 64, 255, 0.2);
+}

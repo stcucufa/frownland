@@ -124,12 +124,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     boxWasEdited(box) {
         if (box.label == null) {
             this.boxes.set(box, { isComment: true });
+            this.updateBoundingRect();
             return;
         }
         delete this.score;
         const isNew = this.boxes.has(box);
         const node = parse(box.label);
         this.boxes.set(box, node);
+        this.updateBoundingRect();
         box.toggleUnknown(!!node.isUnknown);
         const n = node?.inlets ?? 0;
         box.inlets.forEach((port, i) => { port.enabled = i < n; });
@@ -140,6 +142,28 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     boxWillBeRemoved(box) {
         delete this.score;
         this.boxes.delete(box);
+        this.updateBoundingRect();
+    },
+
+    updateBoundingRect() {
+        this.boundingRect = { x: 0, y: 0, width: 0, height: 0 };
+        for (const box of this.boxes.keys()) {
+            this.boundingRect.x = Math.min(this.boundingRect.x, box.x);
+            this.boundingRect.y = Math.min(this.boundingRect.y, box.y);
+            this.boundingRect.width = Math.max(
+                this.boundingRect.width, box.x + box.width - this.boundingRect.x
+            );
+            this.boundingRect.height = Math.max(
+                this.boundingRect.height, box.y + box.height - this.boundingRect.y
+            );
+        }
+        const rect = document.querySelector("rect.bounding");
+        rect.setAttribute("x", this.boundingRect.x);
+        rect.setAttribute("y", this.boundingRect.y);
+        rect.setAttribute("width", this.boundingRect.width);
+        rect.setAttribute("height", this.boundingRect.height);
+        document.body.style.minWidth = `${this.boundingRect.width}px`;
+        document.body.style.minHeight = `${this.boundingRect.height}px`;
     },
 
     cordWasAdded(cord) {

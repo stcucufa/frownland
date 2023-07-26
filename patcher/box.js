@@ -60,5 +60,9 @@ export const Box = assign(properties => create(properties).call(Box), {
         } else {
             this.patcher.boxMoveWasCancelled();
         }
+    },
+
+    dragDidEnd() {
+        this.patcher.boxMoveEnded();
     }
 });

@@ -279,6 +279,10 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         }
     },
 
+    boxMoveEnded() {
+        this.patch.updateBoundingRect();
+    },
+
     // Selection (multiple if dragging a rect, single if tapping an item).
     dragDidBegin(x0, y0) {
         if (this.locked) {
