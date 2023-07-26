@@ -10,7 +10,7 @@ import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Event, Instant, Par, Seq, Set } from "../../lib/timing.js";
+import { Await, Delay, Effect, Event, Instant, Par, Seq, Set } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Seq.map(child)", t => {
@@ -22,6 +22,11 @@ test("Seq.map(child)", t => {
     t.undefined(map.duration, "unresolved duration");
     t.equal(map.take(0).duration, 0, "down to zero with take(0)");
     t.equal(!map.fallible, true, "not fallible");
+    t.equal(!map.hasEffect, true, "no effect");
+});
+
+test("Seq.map(child).hasEffect", t => {
+    t.equal(Seq.map(Effect(x => { console.log(x); })).hasEffect, true, "has effect if child has effect");
 });
 
 test("Seq.map(child).repeat()", t => {
