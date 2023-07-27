@@ -1,4 +1,6 @@
-import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Set, Try } from "../lib/timing.js";
+import {
+    Await, Delay, Effect, Element, Event, Instant, Media, Par, Score, Seq, Set, Try
+} from "../lib/timing.js";
 import { dump } from "../lib/timing/util.js";
 import { assoc, create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
 import { notify } from "../lib/events.js";
@@ -227,6 +229,13 @@ const createElement = (...args) => function(_, box) {
     return Element(element, box.foreignObject);
 };
 
+// Create a media element with a notification so that its size can be observed.
+const createMedia = (...args) => function(_, box) {
+    const element = html(...args);
+    notify(this, "element", { element, box });
+    return Media(element, box.foreignObject);
+};
+
 const score = {
     inlets: 1,
     outlets: 0,
@@ -325,6 +334,17 @@ const Parse = {
                 isElement: true,
                 create: createElement("img", { src })
             };
+        }
+    },
+
+    Video: input => {
+        const src = input.trim();
+        if (/\S/.test(src)) {
+            return {
+                label: `Video ${src}`,
+                isElement: true,
+                create: createMedia("video", { src })
+            }
         }
     },
 
