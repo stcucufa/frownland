@@ -48,6 +48,11 @@ test("Par(xs).take(n = ∞) duration", t => {
     );
 });
 
+test("Par(xs).take(n = ∞) hasEffect", t => {
+    t.equal(Par(Instant(), Effect(x => { console.log(x); })).take().hasEffect, true, "effect");
+    t.equal(Par(Instant(), Effect(x => { console.log(x); })).take(1).hasEffect, true, "still has effect");
+});
+
 test("Instantiation; n = ∞", t => {
     const tape = Tape();
     const par = tape.instantiate(Par(

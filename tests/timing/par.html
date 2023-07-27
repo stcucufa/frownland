@@ -10,7 +10,7 @@ import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Delay, Instant, Par, Seq } from "../../lib/timing.js";
+import { Delay, Effect, Instant, Par, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Par()", t => {
@@ -19,6 +19,7 @@ test("Par()", t => {
     t.equal(par.children, [], "no children");
     t.equal(par.duration, 0, "no duration");
     t.equal(!par.fallible, true, "not fallible");
+    t.equal(par.hasEffect, false, "no effect when empty");
 });
 
 test("Par(xs)", t => {
@@ -31,6 +32,11 @@ test("Par(xs)", t => {
     t.equal(instant.parent, par, "parent (second child)");
     t.equal(par.duration, 17, "duration");
     t.equal(!par.fallible, true, "not fallible");
+    t.equal(par.hasEffect, false, "no effect when children have no effect");
+});
+
+test("Par(xs).hasEffect", t => {
+    t.equal(Par(Delay(23), Effect(x => { console.log("x"); })).hasEffect, true, "has effect if some child has effect");
 });
 
 test("Par duration", t => {
