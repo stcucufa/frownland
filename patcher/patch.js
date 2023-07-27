@@ -146,14 +146,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 
     updateBoundingRect(box) {
-        this.boundingRect.x = Math.min(this.boundingRect.x, box.x);
-        this.boundingRect.y = Math.min(this.boundingRect.y, box.y);
-        this.boundingRect.width = Math.max(
-            this.boundingRect.width, box.x + box.width - this.boundingRect.x
-        );
-        this.boundingRect.height = Math.max(
-            this.boundingRect.height, box.y + box.height - this.boundingRect.y
-        );
+        const x1 = Math.min(this.boundingRect.x, box.x);
+        const y1 = Math.min(this.boundingRect.y, box.y);
+        const x2 = Math.max(this.boundingRect.x + this.boundingRect.width, box.x + box.width);
+        const y2 = Math.max(this.boundingRect.y + this.boundingRect.height, box.y + box.height);
+        this.boundingRect.x = x1;
+        this.boundingRect.width = x2 - x1;
+        this.boundingRect.y = y1;
+        this.boundingRect.height = y2 - y1;
         const boundingRect = document.querySelector("rect.bounding");
         boundingRect.setAttribute("x", this.boundingRect.x);
         boundingRect.setAttribute("y", this.boundingRect.y);
