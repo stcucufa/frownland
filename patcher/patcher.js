@@ -12,9 +12,8 @@ import { overlap } from "./util.js";
 const Commands = {
     // Create a comment box
     c() {
-        this.boxWasAdded(Comment({
-            patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - Comment.height)
-        }), true);
+        const p = this.pointerPositionInCanvas();
+        this.boxWasAdded(Comment({ patcher: this, x: p.x, y: Math.max(0, p.y - Comment.height) }), true);
     },
 
     // Dump the score (for debugging)
@@ -24,9 +23,8 @@ const Commands = {
 
     // Add a new box.
     n() {
-        this.boxWasAdded(ItemBox({
-            patcher: this, x: this.pointerX, y: Math.max(0, this.pointerY - ItemBox.height)
-        }), true);
+        const p = this.pointerPositionInCanvas();
+        this.boxWasAdded(ItemBox({ patcher: this, x: p.x, y: Math.max(0, p.y - ItemBox.height) }), true);
     },
 
     // Delete the selection (box or cord).
@@ -96,6 +94,10 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 }
             }
         });
+        on(this.patch, "bounding-rect", ({ rect }) => {
+            this.canvas.style.minWidth = `${rect.width}px`;
+            this.canvas.style.minHeight = `${rect.height}px`;
+        });
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
         on(this.transportBar, "play", ({ tape }) => {
@@ -164,6 +166,11 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 }
                 break;
         }
+    },
+
+    pointerPositionInCanvas() {
+        const { x, y } = this.canvas.getBoundingClientRect();
+        return { x: this.pointerX - x, y: this.pointerY - y };
     },
 
     observeElementInBox(element, box) {
@@ -288,7 +295,8 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         if (this.locked) {
             return false;
         }
-        this.selectionRect = { x0, y0 };
+        const { x, y } = this.canvas.getBoundingClientRect();
+        this.selectionRect = { tx: x, ty: y, x0: x0 - x, y0: y0 - y };
     },
 
     dragDidProgress(dx, dy, x, y) {
@@ -298,8 +306,8 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 this.selectionRect.element = this.canvas.appendChild(svg("rect", { class: "selection" }));
                 this.didEdit();
             }
-            this.selectionRect.x = Math.min(this.selectionRect.x0, x);
-            this.selectionRect.y = Math.min(this.selectionRect.y0, y);
+            this.selectionRect.x = Math.min(this.selectionRect.x0, x - this.selectionRect.tx);
+            this.selectionRect.y = Math.min(this.selectionRect.y0, y - this.selectionRect.ty);
             this.selectionRect.width = Math.abs(dx);
             this.selectionRect.height = Math.abs(dy);
             for (const attribute of ["x", "y", "width", "height"]) {

@@ -10,9 +10,14 @@ div.main {
     height: 100%;
 }
 
-svg.canvas {
+div.canvas {
     flex: auto;
+    overflow: auto;
+}
+
+svg.canvas {
     display: block;
+    height: 100%;
     width: 100%;
 }
 

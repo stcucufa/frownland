@@ -10,47 +10,49 @@
         <p class="error hidden">No error!</p>
         <div class="main">
 
-            <svg class="canvas">
-                <defs>
-                    <pattern id="grid" patternUnits="userSpaceOnUse" width="24" height="24">
-                        <rect fill="#f8f9f0" width="24" height="24"/>
-                        <g stroke="#abc">
-                            <line y2="100%"/>
-                            <line x2="100%"/>
-                        </g>
-                    </pattern>
-                    <symbol id="stop" viewBox="0 0 100 100">
-                        <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
-                            d="M20,20v60h60v-60z"/>
-                    </symbol>
-                    <symbol id="play" viewBox="0 0 100 100">
-                        <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
-                            d="M15.359,10v80L69.282,50z"/>
-                    </symbol>
-                    <symbol id="pause" viewBox="0 0 100 100">
-                        <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
-                            d="M20,20v60h20v-60z M60,20v60h20v-60z"/>
-                    </symbol>
-                    <symbol id="step" viewBox="0 0 100 100">
-                        <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
-                            d="M0,20v60L50,50z M52,20v60h10v-60z M92,20v60h-10v-60z"/>
-                    </symbol>
-                    <symbol id="rewind" viewBox="0 0 100 100">
-                        <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
-                            d="M100,20v60L50,50z M50,20v60L0,50z"/>
-                    </symbol>
-                    <symbol id="fastForward" viewBox="0 0 100 100">
-                        <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
-                            d="M0,20v60L50,50z M50,20v60L100,50z"/>
-                    </symbol>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" class="grid"/>
+            <div class="canvas">
+                <svg class="canvas">
+                    <defs>
+                        <pattern id="grid" patternUnits="userSpaceOnUse" width="24" height="24">
+                            <rect fill="#f8f9f0" width="24" height="24"/>
+                            <g stroke="#abc">
+                                <line y2="100%"/>
+                                <line x2="100%"/>
+                            </g>
+                        </pattern>
+                        <symbol id="stop" viewBox="0 0 100 100">
+                            <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                                d="M20,20v60h60v-60z"/>
+                        </symbol>
+                        <symbol id="play" viewBox="0 0 100 100">
+                            <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                                d="M15.359,10v80L69.282,50z"/>
+                        </symbol>
+                        <symbol id="pause" viewBox="0 0 100 100">
+                            <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                                d="M20,20v60h20v-60z M60,20v60h20v-60z"/>
+                        </symbol>
+                        <symbol id="step" viewBox="0 0 100 100">
+                            <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                                d="M0,20v60L50,50z M52,20v60h10v-60z M92,20v60h-10v-60z"/>
+                        </symbol>
+                        <symbol id="rewind" viewBox="0 0 100 100">
+                            <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                                d="M100,20v60L50,50z M50,20v60L0,50z"/>
+                        </symbol>
+                        <symbol id="fastForward" viewBox="0 0 100 100">
+                            <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                                d="M0,20v60L50,50z M50,20v60L100,50z"/>
+                        </symbol>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)" class="grid"/>
 
-                <!-- TODO remove -->
-                <rect class="bounding"/>
+                    <!-- TODO remove -->
+                    <rect class="bounding"/>
 
-                <g class="items"></g>
-            </svg>
+                    <g class="items"></g>
+                </svg>
+            </div>
 
             <ul class="transport-bar">
                 <li>

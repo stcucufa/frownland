@@ -140,11 +140,12 @@ export const Port = assign(properties => create(properties).call(Port), {
 
     // Create a cord from this port. Prevent creating new incoming cords for
     // inlets that already have one.
-    dragDidBegin(x, y) {
+    dragDidBegin(x0, y0) {
         if (!this.isOutlet && this.cords.size > 0) {
             return false;
         }
-        this.cord = Cord(this, x, y);
+        this.cordOrigin = this.patcher.canvas.getBoundingClientRect();
+        this.cord = Cord(this, x0 - this.cordOrigin.x, y0 - this.cordOrigin.y);
         this.patcher.itemsGroup.appendChild(this.cord.element);
         this.patcher.deselect();
         this.possibleTargets = new Map();
@@ -169,6 +170,8 @@ export const Port = assign(properties => create(properties).call(Port), {
                 delete this.dragTarget;
             }
         }
+        x -= this.cordOrigin.x;
+        y -= this.cordOrigin.y;
         this.cord.updateEndpoint(x, y);
     },
 
@@ -201,8 +204,7 @@ export const Port = assign(properties => create(properties).call(Port), {
             this.cord.element.remove();
         }
         delete this.cord;
-        delete this.x0;
-        delete this.y0;
+        delete this.cordOrigin;
         delete this.possibleTargets;
     }
 });

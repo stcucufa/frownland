@@ -146,24 +146,19 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     },
 
     updateBoundingRect() {
-        this.boundingRect = { x: 0, y: 0, width: 0, height: 0 };
+        const rect = { x: 0, y: 0, width: 0, height: 0 };
         for (const box of this.boxes.keys()) {
-            this.boundingRect.x = Math.min(this.boundingRect.x, box.x);
-            this.boundingRect.y = Math.min(this.boundingRect.y, box.y);
-            this.boundingRect.width = Math.max(
-                this.boundingRect.width, box.x + box.width - this.boundingRect.x
-            );
-            this.boundingRect.height = Math.max(
-                this.boundingRect.height, box.y + box.height - this.boundingRect.y
-            );
+            rect.x = Math.min(rect.x, box.x);
+            rect.y = Math.min(rect.y, box.y);
+            rect.width = Math.max(rect.width, box.x + box.width - rect.x);
+            rect.height = Math.max(rect.height, box.y + box.height - rect.y);
         }
-        const rect = document.querySelector("rect.bounding");
-        rect.setAttribute("x", this.boundingRect.x);
-        rect.setAttribute("y", this.boundingRect.y);
-        rect.setAttribute("width", this.boundingRect.width);
-        rect.setAttribute("height", this.boundingRect.height);
-        document.body.style.minWidth = `${this.boundingRect.width}px`;
-        document.body.style.minHeight = `${this.boundingRect.height}px`;
+        const boundingRect = document.querySelector("rect.bounding");
+        boundingRect.setAttribute("x", rect.x);
+        boundingRect.setAttribute("y", rect.y);
+        boundingRect.setAttribute("width", rect.width);
+        boundingRect.setAttribute("height", rect.height);
+        notify(this, "bounding-rect", { rect });
     },
 
     cordWasAdded(cord) {
