@@ -7,11 +7,11 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { K, timeout } from "../lib/util.js";
+import { html, K, timeout } from "../lib/util.js";
 import { on, notification, notifications } from "../lib/events.js";
 import { Deck } from "../lib/deck.js";
 import { Tape } from "../lib/tape.js";
-import { Delay, Instant, Par, Score, Seq } from "../lib/timing.js";
+import { Delay, Instant, Media, Par, Score, Seq } from "../lib/timing.js";
 
 test("Deck({ now?, speed?, tape? })", t => {
     const deck = Deck();
@@ -164,6 +164,29 @@ test("update(d) notifications", t => {
     deck.now = 41;
     t.equal(notifications.before, [0, 41, "nothing"], "Notification before");
     t.equal(notifications.after, [0, 41, "ok!"], "Notification after");
+});
+
+test("synced media playback", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const media = Media(html("video", { src: "./media/animtest.m4v" }));
+    tape.instantiate(media, 0);
+    deck.start();
+    const { instance, error } = await notification(media, "play");
+    if (error) {
+        t.skip("Media could not play");
+    }
+    t.equal(!media.element.paused, true, "media is playing");
+    await timeout(0);
+    deck.pause();
+    await new Promise(resolve => media.element.addEventListener("pause", resolve));
+    t.equal(media.element.paused, true, "media is paused");
+    media.element.addEventListener("play", event => { console.info(event); });
+    deck.resume();
+    await new Promise(resolve => media.element.addEventListener("play", resolve));
+    t.equal(!media.element.paused, true, "media has resumed playing");
+    deck.stop();
+    deck.now = instance.end + 1;
 });
 
         </script>
