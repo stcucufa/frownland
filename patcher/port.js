@@ -144,8 +144,8 @@ export const Port = assign(properties => create(properties).call(Port), {
         if (!this.isOutlet && this.cords.size > 0) {
             return false;
         }
-        this.cordOrigin = this.patcher.canvas.getBoundingClientRect();
-        this.cord = Cord(this, x0 - this.cordOrigin.x, y0 - this.cordOrigin.y);
+        this.canvasRect = this.patcher.canvas.getBoundingClientRect();
+        this.cord = Cord(this, x0 - this.canvasRect.x, y0 - this.canvasRect.y);
         this.patcher.itemsGroup.appendChild(this.cord.element);
         this.patcher.deselect();
         this.possibleTargets = new Map();
@@ -170,9 +170,7 @@ export const Port = assign(properties => create(properties).call(Port), {
                 delete this.dragTarget;
             }
         }
-        x -= this.cordOrigin.x;
-        y -= this.cordOrigin.y;
-        this.cord.updateEndpoint(x, y);
+        this.cord.updateEndpoint(x - this.canvasRect.x, y - this.canvasRect.y);
     },
 
     dragWasCancelled() {
@@ -204,7 +202,7 @@ export const Port = assign(properties => create(properties).call(Port), {
             this.cord.element.remove();
         }
         delete this.cord;
-        delete this.cordOrigin;
+        delete this.canvasRect;
         delete this.possibleTargets;
     }
 });

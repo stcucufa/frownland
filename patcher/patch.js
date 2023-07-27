@@ -9,6 +9,7 @@ import { Comment } from "./comment.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
+        this.boundingRect = { x: 0, y: 0, width: 0, height: 0 };
         this.boxes = new Map();
         this.elementBoxes = new Map();
     },
@@ -124,14 +125,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     boxWasEdited(box) {
         if (box.label == null) {
             this.boxes.set(box, { isComment: true });
-            this.updateBoundingRect();
+            this.updateBoundingRect(box);
             return;
         }
         delete this.score;
         const isNew = this.boxes.has(box);
         const node = parse(box.label);
         this.boxes.set(box, node);
-        this.updateBoundingRect();
+        this.updateBoundingRect(box);
         box.toggleUnknown(!!node.isUnknown);
         const n = node?.inlets ?? 0;
         box.inlets.forEach((port, i) => { port.enabled = i < n; });
@@ -142,23 +143,23 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     boxWillBeRemoved(box) {
         delete this.score;
         this.boxes.delete(box);
-        this.updateBoundingRect();
     },
 
-    updateBoundingRect() {
-        const rect = { x: 0, y: 0, width: 0, height: 0 };
-        for (const box of this.boxes.keys()) {
-            rect.x = Math.min(rect.x, box.x);
-            rect.y = Math.min(rect.y, box.y);
-            rect.width = Math.max(rect.width, box.x + box.width - rect.x);
-            rect.height = Math.max(rect.height, box.y + box.height - rect.y);
-        }
+    updateBoundingRect(box) {
+        this.boundingRect.x = Math.min(this.boundingRect.x, box.x);
+        this.boundingRect.y = Math.min(this.boundingRect.y, box.y);
+        this.boundingRect.width = Math.max(
+            this.boundingRect.width, box.x + box.width - this.boundingRect.x
+        );
+        this.boundingRect.height = Math.max(
+            this.boundingRect.height, box.y + box.height - this.boundingRect.y
+        );
         const boundingRect = document.querySelector("rect.bounding");
-        boundingRect.setAttribute("x", rect.x);
-        boundingRect.setAttribute("y", rect.y);
-        boundingRect.setAttribute("width", rect.width);
-        boundingRect.setAttribute("height", rect.height);
-        notify(this, "bounding-rect", { rect });
+        boundingRect.setAttribute("x", this.boundingRect.x);
+        boundingRect.setAttribute("y", this.boundingRect.y);
+        boundingRect.setAttribute("width", this.boundingRect.width);
+        boundingRect.setAttribute("height", this.boundingRect.height);
+        notify(this, "bounding-rect", { rect: this.boundingRect });
     },
 
     cordWasAdded(cord) {
