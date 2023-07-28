@@ -165,11 +165,6 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         this.boundingRect.width = x2 - x1;
         this.boundingRect.y = Math.max(y1, 0);
         this.boundingRect.height = y2 - y1;
-        const boundingRect = document.querySelector("rect.bounding");
-        boundingRect.setAttribute("x", this.boundingRect.x);
-        boundingRect.setAttribute("y", this.boundingRect.y);
-        boundingRect.setAttribute("width", this.boundingRect.width);
-        boundingRect.setAttribute("height", this.boundingRect.height);
         notify(this, "bounding-rect", { rect: this.boundingRect });
     },
 
