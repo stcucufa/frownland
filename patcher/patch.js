@@ -425,12 +425,12 @@ const Parse = {
         }
     },
 
-    "#first": input => {
+    "first": input => {
         const match = input.match(/^(?:\s+(\d+))?\s*$/);
         if (match) {
             const n = match[1] ? parseInt(match[1], 10) : 1;
             return {
-                label: `#first ${n}`,
+                label: `first ${n}`,
                 inlets: 2,
                 isContainer: true,
                 acceptFrom: K(true),
