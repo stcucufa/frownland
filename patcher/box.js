@@ -63,6 +63,6 @@ export const Box = assign(properties => create(properties).call(Box), {
     },
 
     dragDidEnd() {
-        this.patcher.boxMoveEnded(this);
+        this.patcher.boxMoveEnded();
     }
 });
