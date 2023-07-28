@@ -227,7 +227,7 @@ const mediaNode = tagName => input => {
     const src = input.trim();
     if (/\S/.test(src)) {
         return {
-            label: `Video ${src}`,
+            label: `${tagName} ${src}`,
             isElement: true,
             create: (_, box) => {
                 const element = html(tagName, { src });
