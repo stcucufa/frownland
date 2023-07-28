@@ -20,6 +20,11 @@ test("Delay.until(t)", t => {
     t.equal(!delay.fallible, true, "not fallible");
 });
 
+test("Delay.until(t) with a string value", t => {
+    const delay = Delay.until("01:30");
+    t.equal(delay.show(), "Delay/until<90000>", "show");
+});
+
 test("Instantiation (delay applies)", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq(Instant(K("ok")), Delay(23), Delay.until(31), Delay(19)), 17);
