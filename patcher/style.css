@@ -161,3 +161,11 @@ div.timeline {
     width: 100%;
     background-color: #f8f9f0;
 }
+
+svg.timeline {
+    width: 100%;
+}
+
+svg.timeline g.scale {
+    stroke: #102040;
+}

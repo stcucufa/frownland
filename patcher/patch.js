@@ -3,6 +3,7 @@ import {
 } from "../lib/timing.js";
 import { dump } from "../lib/timing/util.js";
 import { assoc, create, html, I, K, normalizeWhitespace, parseTime, safe } from "../lib/util.js";
+import { removeChildren } from "./util.js";
 import { notify } from "../lib/events.js";
 import { ItemBox } from "./item-box.js";
 import { Comment } from "./comment.js";
@@ -86,11 +87,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     clearScore() {
         delete this.score;
         for (const [box, [input]] of this.elementBoxes.entries()) {
-            for (let child = box.foreignObject.firstChild; child;) {
-                const sibling = child.nextSibling;
-                child.remove();
-                child = sibling;
-            }
+            removeChildren(box.foreignObject);
             box.foreignObject.appendChild(input);
         }
         this.elementBoxes.clear();

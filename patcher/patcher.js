@@ -4,6 +4,7 @@ import { DragEventListener } from "./drag-event-listener.js";
 import { Comment } from "./comment.js";
 import { ItemBox } from "./item-box.js";
 import { Patch } from "./patch.js";
+import { Timeline } from "./timeline.js";
 import { TransportBar } from "./transport-bar.js";
 import { overlap } from "./util.js";
 
@@ -114,6 +115,8 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 }
             }
         });
+
+        this.timeline = Timeline(document.querySelector("svg.timeline"));
 
         try {
             const json = window.localStorage.getItem("patch");
