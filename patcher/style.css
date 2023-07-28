@@ -4,10 +4,16 @@ html, body {
     margin: 0;
 }
 
+div.main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
 svg.canvas {
+    flex: auto;
     display: block;
     width: 100%;
-    height: 100%;
 }
 
 body, text, button {
@@ -46,13 +52,13 @@ p.error {
 }
 
 ul.transport-bar {
-    position: absolute;
-    bottom: 0;
     width: 100%;
     list-style-type: none;
     display: inline-block;
     text-align: center;
-    padding: 0;
+    margin: 0;
+    padding: 0.5rem 0;
+    background-color: #ddd;
 }
 
 ul.transport-bar li {
