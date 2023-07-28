@@ -222,18 +222,27 @@ const container = Constructor => input => {
     }
 };
 
+// Media nodes (Audio, Video).
+const mediaNode = tagName => input => {
+    const src = input.trim();
+    if (/\S/.test(src)) {
+        return {
+            label: `${tagName} ${src}`,
+            isElement: true,
+            create: (_, box) => {
+                const element = html(tagName, { src });
+                notify(this, "element", { element, box });
+                return Media(element, box.foreignObject);
+            }
+        };
+    }
+};
+
 // Create an element with a notification so that its size can be observed.
 const createElement = (...args) => function(_, box) {
     const element = html(...args);
     notify(this, "element", { element, box });
     return Element(element, box.foreignObject);
-};
-
-// Create a media element with a notification so that its size can be observed.
-const createMedia = (...args) => function(_, box) {
-    const element = html(...args);
-    notify(this, "element", { element, box });
-    return Media(element, box.foreignObject);
 };
 
 const score = {
@@ -337,16 +346,8 @@ const Parse = {
         }
     },
 
-    Video: input => {
-        const src = input.trim();
-        if (/\S/.test(src)) {
-            return {
-                label: `Video ${src}`,
-                isElement: true,
-                create: createMedia("video", { src })
-            }
-        }
-    },
+    Audio: mediaNode("audio"),
+    Video: mediaNode("video"),
 
     Button: input => {
         if (/^\s+/.test(input)) {
