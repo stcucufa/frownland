@@ -151,6 +151,8 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         const x2 = Math.max(this.boundingRect.x + this.boundingRect.width, box.x + box.width + padding);
         const y2 = Math.max(this.boundingRect.y + this.boundingRect.height, box.y + box.height + padding);
 
+        // Shift everything when the canvas extends past the left/top edge of
+        // its container.
         if (x1 < 0 || y1 < 0) {
             const tx = Math.min(x1, 0);
             const ty = Math.min(y1, 0);
