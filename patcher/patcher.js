@@ -62,6 +62,8 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         this.canvas.addEventListener("pointermove", this);
         document.addEventListener("keyup", this);
 
+        this.mainElement = document.querySelector("div.main");
+
         // Track the pointer to know where to add new boxes.
         this.pointerX = 0;
         this.pointerY = 0;
@@ -90,6 +92,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                     const patch = this.patch.serialize();
                     localStorage.setItem("patch", patch);
                     console.info("Saved", JSON.parse(patch));
+                    this.timeline.score = this.patch.score;
                 } catch (error) {
                     console.error("Could not serialize: ", error);
                 }
@@ -142,11 +145,11 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
 
     // Lock the patch when playing (no editing).
     get locked() {
-        return this.canvas.classList.contains("locked");
+        return this.mainElement.classList.contains("locked");
     },
 
     set locked(value) {
-        this.canvas.classList.toggle("locked", value);
+        this.mainElement.classList.toggle("locked", value);
         this.deselect();
     },
 
