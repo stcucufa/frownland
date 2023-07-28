@@ -1,5 +1,7 @@
 import { on } from "../lib/events.js";
 import { assign, create, svg } from "../lib/util.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
 import { DragEventListener } from "./drag-event-listener.js";
 import { Comment } from "./comment.js";
 import { ItemBox } from "./item-box.js";
@@ -92,7 +94,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                     const patch = this.patch.serialize();
                     localStorage.setItem("patch", patch);
                     console.info("Saved", JSON.parse(patch));
-                    this.timeline.score = this.patch.score;
+                    this.timeline.tape = this.patch.score.tape;
                 } catch (error) {
                     console.error("Could not serialize: ", error);
                 }
@@ -103,7 +105,13 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             this.canvas.style.minHeight = `${rect.height}px`;
         });
 
-        this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
+        this.deck = Deck({ tape: Tape() });
+        on(this.deck, "update", () => {
+            this.transportBar.updateDisplay();
+            this.timeline.updateDisplay(this.deck);
+        });
+
+        this.transportBar = TransportBar(document.querySelector("ul.transport-bar"), this.deck);
         on(this.transportBar, "play", ({ tape }) => {
             this.locked = true;
             this.patch.updateScoreForTape(tape);

@@ -178,3 +178,7 @@ svg.timeline text {
     stroke: none;
     fill: #102040;
 }
+
+svg.timeline line.playhead {
+    stroke: #ff4040;
+}
