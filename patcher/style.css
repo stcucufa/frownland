@@ -154,3 +154,10 @@ svg.canvas.locked g.cord line:nth-child(2) {
 svg.canvas.locked .comment rect {
     stroke: none;
 }
+
+/* Timeline */
+
+div.timeline {
+    width: 100%;
+    background-color: #f8f9f0;
+}
