@@ -9,10 +9,10 @@
 import { test } from "./test.js";
 import {
     add, addBy, assign, assoc, clamp, clockTime, create, cycle, escapeMarkup,
-    extend, flip, fold1, get, I, imagePromise, isAsync, isEmpty, isIterable,
-    isNumber, isObject, K, mod, nop, normalizeWhitespace, parseTime, partition,
-    push, range, remove, safe, shuffle, sign, single, snd, timecount, timeout,
-    todo, typeOf
+    extend, flip, fold1, get, html, I, imagePromise, isAsync, isEmpty,
+    isIterable, isNumber, isObject, K, mod, nop, normalizeWhitespace, parseTime,
+    partition, push, range, remove, removeChildren, safe, shuffle, sign, single,
+    snd, timecount, timeout, todo, typeOf
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -354,6 +354,13 @@ test("remove(xs, x)", t => {
     const xs = [1, 2, 3, 4];
     t.equal(remove(xs, 3), 3, "return removed item");
     t.equal(xs, [1, 2, 4], "item was removed");
+});
+
+test("removeChildren(node)", t => {
+    const p = html("p", "Some text");
+    t.equal(removeChildren(p).textContent, "", "Remove text content");
+    const div = html("div", html("p", "Some text"), html("p", "Some more text"));
+    t.equal(removeChildren(div).innerHTML, "", "Removed all children");
 });
 
 test("safe(f)", t => {
