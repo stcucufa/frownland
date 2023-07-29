@@ -8,10 +8,11 @@
 
 import { test } from "./test.js";
 import {
-    add, addBy, assign, assoc, clamp, create, cycle, escapeMarkup, extend, flip,
-    fold1, get, I, imagePromise, isAsync, isEmpty, isIterable, isNumber,
-    isObject, K, mod, nop, normalizeWhitespace, parseTime, partition, push,
-    range, remove, safe, shuffle, sign, single, snd, timeout, todo, typeOf
+    add, addBy, assign, assoc, clamp, clockTime, create, cycle, escapeMarkup,
+    extend, flip, fold1, get, I, imagePromise, isAsync, isEmpty, isIterable,
+    isNumber, isObject, K, mod, nop, normalizeWhitespace, parseTime, partition,
+    push, range, remove, safe, shuffle, sign, single, snd, timecount, timeout,
+    todo, typeOf
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -59,6 +60,23 @@ test("assoc(xs, f?)", t => {
     t.equal(assoc(["one", "two", "three"], (x, i) => [x, i + 1]), map);
 });
 
+test("clamp(x, min, max)", t => {
+    t.equal(clamp(0, 1, 10), 1, "min");
+    t.equal(clamp(5, 1, 10), 5, "middle");
+    t.equal(clamp(15, 1, 10), 10, "max");
+});
+
+test("clockTime(t)", t => {
+    t.equal(clockTime(Infinity), "Infinity", "∞");
+    t.equal(clockTime(parseTime("1w")), "168:00:00", "hh+:mm:ss");
+    t.equal(clockTime(9003000), "02:30:03", "hh:mm:ss");
+    t.equal(clockTime(180010250), "50:00:10.25", "hh:mm:ss.ms");
+    t.equal(clockTime(153000), "02:33", "mm:ss");
+    t.equal(clockTime(10500), "00:10.5", "mm:ss.ms");
+    t.equal(clockTime(10500.25), "00:10.5", "mm:ss.ms (integer ms)");
+    t.equal(clockTime(0), "00:00", "zero");
+});
+
 test("create()", t => {
     const Foo = {
         create: create(),
@@ -87,12 +105,6 @@ test("create()", t => {
         }
     };
     t.equal(Baz.create({ value: 17 }).fum, 34, "Object initialized");
-});
-
-test("clamp(x, min, max)", t => {
-    t.equal(clamp(0, 1, 10), 1, "min");
-    t.equal(clamp(5, 1, 10), 5, "middle");
-    t.equal(clamp(15, 1, 10), 10, "max");
 });
 
 test("cycle(xs)", t => {
@@ -299,6 +311,7 @@ test("parseTime(string), timecount value", t => {
     t.equal(parseTime("500"), 500, "ms is the default unit");
     t.equal(parseTime(" 2 hr 30 mn 10 S  "), 9010000, "several units in the right order");
     t.equal(parseTime("2hr30mn10s"), 9010000, "no spaces");
+    t.equal(parseTime("1111.111ms"), 1111.111, "fractional ms");
     t.throws(() => { parseTime("2hr:30mn:10s"); }, "extra separators");
     t.throws(() => { parseTime(" 10 min  2H "); }, "several units in the wrong order");
     t.throws(() => { parseTime("one week"); }, "unexpected format");
@@ -376,6 +389,19 @@ test("single(x)", t => {
 
 test("snd(x, y)", t => {
     t.equal(snd("one", "two"), "two");
+});
+
+test("timecount(t)", t => {
+    t.equal(timecount(Infinity), "Infinity", "Infinity");
+    t.equal(timecount(parseTime("365.25d")), "52w1d6h", "1 average year");
+    t.equal(timecount(604800000), "1w", "604,800,000 ms = 1w");
+    t.equal(timecount(86400000), "1d", "86,400,000 ms = 1d");
+    t.equal(timecount(3600000), "1h", "3,600,000 ms = 1h");
+    t.equal(timecount(60000), "1mn", "60,000 ms = 1mn");
+    t.equal(timecount(1000), "1s", "1,000 ms = 1s");
+    t.equal(timecount(1), "1ms", "1 ms = 1ms");
+    t.equal(timecount(0), "0", "0 ms = 0");
+    t.equal(timecount(1111.111), "1s111ms", "1111.111 ms = 1s111ms (trimmed)");
 });
 
 test("timeout(t)", async t => {
