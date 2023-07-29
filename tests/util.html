@@ -400,8 +400,8 @@ test("timecount(t)", t => {
     t.equal(timecount(60000), "1mn", "60,000 ms = 1mn");
     t.equal(timecount(1000), "1s", "1,000 ms = 1s");
     t.equal(timecount(1), "1ms", "1 ms = 1ms");
+    t.equal(timecount(0), "0", "0 ms = 0");
     t.equal(timecount(1111.111), "1s111ms", "1111.111 ms = 1s111ms (trimmed)");
-    t.equal(timecount(0), "0", "0ms = 0");
 });
 
 test("timeout(t)", async t => {
