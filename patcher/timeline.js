@@ -1,5 +1,4 @@
-import { assign, clockTime, create, svg } from "../lib/util.js";
-import { removeChildren } from "./util.js";
+import { assign, clockTime, create, removeChildren, svg } from "../lib/util.js";
 
 export const Timeline = Object.assign((container) => create({ container }).call(Timeline), {
     init() {
@@ -31,9 +30,6 @@ export const Timeline = Object.assign((container) => create({ container }).call(
     // On size change, re-render everything at the right scale.
     sizeDidChange() {
         const w = this.container.clientWidth;
-        if (w === 0) {
-            return;
-        }
         this.width = w - 2 * this.padding;
         this.ruler.sizeDidChange(this.width, this.end);
         this.occurrencesOverlay.sizeDidChange(this.width, this.end);
@@ -41,12 +37,16 @@ export const Timeline = Object.assign((container) => create({ container }).call(
 
     // On a deck update, move the play head and set the new end if necessary.
     deckDidUpdate(deck) {
+        if (!(this.width > 0)) {
+            return;
+        }
         const end = Math.max(deck.now, this.minimumEnd);
         if (end > this.end) {
             while (end > this.end) {
                 this.end += this.endIncrement;
             }
             this.ruler.endDidChange(this.end);
+            this.occurrencesOverlay.sizeDidChange(this.width, this.end);
         }
         this.occurrencesOverlay.deckDidUpdate(deck, this.width, this.end);
         const x = deck.now / this.end * this.width;
@@ -72,19 +72,25 @@ const Ruler = Object.assign(() => create().call(Ruler, {
 
     sizeDidChange(w, end) {
         removeChildren(this.element);
+        if (w <= 0) {
+            return;
+        }
+
+        console.log("Size did change", w, end);
         const h = Timeline.rulerHeight;
         this.element.appendChild(svg("line", { y1: h, x2: w, y2: h }));
         this.element.appendChild(svg("line", { y1: h, y2: h / 2 }));
         this.element.appendChild(svg("line", { x1: w, y1: h, x2: w, y2: h / 2 }));
         this.element.appendChild(svg("text", { y: h / 2 }, clockTime(0)));
-        this.endText = this.element.appendChild(svg("text", {
+        this.element.appendChild(svg("text", {
             x: w, y: h / 2, "text-anchor": "end"
         }, clockTime(end ?? 0)));
     },
 
     endDidChange(end) {
-        if (this.endText) {
-            this.endText.textValue = clockTime(end);
+        const text = this.element.querySelector(`text[text-anchor="end"]`);
+        if (text) {
+            text.textContent = clockTime(end);
         }
     }
 }));
@@ -108,6 +114,10 @@ const OccurrencesOverlay = Object.assign(() => create().call(OccurrencesOverlay,
 
     sizeDidChange(width, end) {
         removeChildren(this.element);
+        if (width <= 0) {
+            return;
+        }
+
         if (this.occurrences) {
             if (end > 0) {
                 for (const occurrence of this.occurrences.keys()) {
