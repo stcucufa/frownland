@@ -170,7 +170,7 @@ svg.timeline {
     width: 100%;
 }
 
-svg.timeline g.scale {
+svg.timeline g.ruler {
     stroke: #102040;
 }
 

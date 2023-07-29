@@ -94,7 +94,6 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                     const patch = this.patch.serialize();
                     localStorage.setItem("patch", patch);
                     console.info("Saved", JSON.parse(patch));
-                    this.timeline.tape = this.patch.score.tape;
                 } catch (error) {
                     console.error("Could not serialize: ", error);
                 }
@@ -105,13 +104,16 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             this.canvas.style.minHeight = `${rect.height}px`;
         });
 
-        this.deck = Deck({ tape: Tape() });
+        this.timeline = Timeline(document.querySelector("svg.timeline"));
+
+        const tape = Tape();
+        this.deck = Deck({ tape });
         on(this.deck, "update", () => {
             this.transportBar.updateDisplay();
-            this.timeline.updateDisplay(this.deck);
+            this.timeline.deckDidUpdate(this.deck);
         });
-        on(this.deck.tape, "add", ({ occurrence }) => { this.timeline.addedOccurrence(occurrence); });
-        on(this.deck.tape, "remove", ({ occurrence }) => { this.timeline.removedOccurrence(occurrence); });
+        on(tape, "add", ({ occurrence }) => { this.timeline.occurrenceWasAdded(occurrence); });
+        on(tape, "remove", ({ occurrence }) => { this.timeline.occurrenceWasRemoved(occurrence); });
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"), this.deck);
         on(this.transportBar, "play", ({ tape }) => {
@@ -128,8 +130,6 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 }
             }
         });
-
-        this.timeline = Timeline(document.querySelector("svg.timeline"));
 
         try {
             const json = window.localStorage.getItem("patch");
