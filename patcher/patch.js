@@ -9,6 +9,7 @@ import { Comment } from "./comment.js";
 
 export const Patch = Object.assign(properties => create(properties).call(Patch), {
     init() {
+        this.boundingRect = { x: 0, y: 0, width: 0, height: 0 };
         this.boxes = new Map();
         this.elementBoxes = new Map();
     },
@@ -124,12 +125,14 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     boxWasEdited(box) {
         if (box.label == null) {
             this.boxes.set(box, { isComment: true });
+            this.updateBoundingRect(box);
             return;
         }
         delete this.score;
         const isNew = this.boxes.has(box);
         const node = parse(box.label);
         this.boxes.set(box, node);
+        this.updateBoundingRect(box);
         box.toggleUnknown(!!node.isUnknown);
         const n = node?.inlets ?? 0;
         box.inlets.forEach((port, i) => { port.enabled = i < n; });
@@ -140,6 +143,31 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     boxWillBeRemoved(box) {
         delete this.score;
         this.boxes.delete(box);
+    },
+
+    updateBoundingRect(box, padding = 8) {
+        const x1 = Math.min(this.boundingRect.x, box.x - padding);
+        const y1 = Math.min(this.boundingRect.y, box.y - padding);
+        const x2 = Math.max(this.boundingRect.x + this.boundingRect.width, box.x + box.width + padding);
+        const y2 = Math.max(this.boundingRect.y + this.boundingRect.height, box.y + box.height + padding);
+
+        // Shift everything when the canvas extends past the left/top edge of
+        // its container.
+        if (x1 < 0 || y1 < 0) {
+            const tx = Math.min(x1, 0);
+            const ty = Math.min(y1, 0);
+            for (const box of this.boxes.keys()) {
+                box.x -= tx;
+                box.y -= ty;
+                box.updatePosition();
+            }
+        }
+
+        this.boundingRect.x = Math.max(x1, 0);
+        this.boundingRect.width = x2 - x1;
+        this.boundingRect.y = Math.max(y1, 0);
+        this.boundingRect.height = y2 - y1;
+        notify(this, "bounding-rect", { rect: this.boundingRect });
     },
 
     cordWasAdded(cord) {
