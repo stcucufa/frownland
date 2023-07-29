@@ -182,3 +182,7 @@ svg.timeline text {
 svg.timeline line.playhead {
     stroke: #ff4040;
 }
+
+svg.timeline circle.occurrence {
+    fill: rgba(64, 255, 62, 0.5);
+}

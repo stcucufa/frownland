@@ -110,6 +110,8 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             this.transportBar.updateDisplay();
             this.timeline.updateDisplay(this.deck);
         });
+        on(this.deck.tape, "add", ({ occurrence }) => { this.timeline.addedOccurrence(occurrence); });
+        on(this.deck.tape, "remove", ({ occurrence }) => { this.timeline.removedOccurrence(occurrence); });
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"), this.deck);
         on(this.transportBar, "play", ({ tape }) => {

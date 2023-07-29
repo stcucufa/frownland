@@ -10,6 +10,7 @@ export const Timeline = Object.assign((element) => create({ element }).call(Time
     scaleHeight: 24,
     minimumEnd: 30000,
     endIncrement: 10000,
+    occurrenceRadius: 6,
 
     draw() {
         const w = this.element.clientWidth;
@@ -19,6 +20,7 @@ export const Timeline = Object.assign((element) => create({ element }).call(Time
         this.end = this.minimumEnd;
         this.w = w - 2 * this.padding;
         removeChildren(this.element);
+        delete this.occurrences;
         const g = this.element.appendChild(svg("g", { class: "scale" }));
         const h = this.scaleHeight;
         const y = this.padding + h;
@@ -35,6 +37,26 @@ export const Timeline = Object.assign((element) => create({ element }).call(Time
         this.element.style.height = `${this.scaleHeight + 2 * this.padding}px`;
     },
 
+    addedOccurrence(occurrence) {
+        if (!this.occurrences) {
+            return;
+        }
+        this.occurrences.set(occurrence, this.element.appendChild(svg("circle", {
+            class: "occurrence",
+            cx: this.padding + occurrence.t / this.end * this.w,
+            cy: this.padding + this.scaleHeight - this.occurrenceRadius,
+            r: this.occurrenceRadius
+        })));
+    },
+
+    removeOccurrence(occurrence) {
+        if (!this.occurrences) {
+            return;
+        }
+        this.occurrences.get(occurrence).remove();
+        this.occurrences.delete(occurrence);
+    },
+
     updateDisplay(deck) {
         if (!this.playHead) {
             return;
@@ -44,6 +66,12 @@ export const Timeline = Object.assign((element) => create({ element }).call(Time
                 this.end += this.endIncrement;
             }
             this.endText.textContent = clockTime(this.end);
+        }
+        if (!this.occurrences) {
+            this.occurrences = new Map();
+            for (const occurrence of this.tape.occurrences) {
+                this.addedOccurrence(occurrence);
+            }
         }
         const x = deck.now / this.end * this.w;
         this.playHead.setAttribute("x1", x);
