@@ -13,11 +13,9 @@ export const Timeline = Object.assign((container) => create({ container }).call(
         g.appendChild(this.ruler.element);
         this.occurrencesOverlay = OccurrencesOverlay();
         g.appendChild(this.occurrencesOverlay.element);
-        this.playHead = g.appendChild(svg("line", {
-            class: "playhead", y1: 0, y2: this.rulerHeight
-        }));
-
-        this.container.style.height = `${this.rulerHeight + 2 * this.padding + this.occurrenceRadius}px`;
+        const h = this.rulerHeight + this.occurrenceRadius;
+        this.playHead = g.appendChild(svg("line", { class: "playhead", y1: 0, y2: h }));
+        this.container.style.height = `${h + 2 * this.padding}px`;
     },
 
     // Constants for drawing the timeline and its subcomponents.
