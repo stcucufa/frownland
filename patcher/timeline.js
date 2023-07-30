@@ -25,6 +25,12 @@ export const Timeline = Object.assign((container) => create({ container }).call(
     endIncrement: 2000,
     occurrenceRadius: 6,
 
+    // Tape was erased, so clear everything.
+    tapeWasErased() {
+        this.end = this.minimumEnd;
+        this.occurrencesOverlay.tapeWasErased();
+    },
+
     // On size change, re-render everything at the right scale.
     sizeDidChange() {
         const w = this.container.clientWidth;
@@ -62,7 +68,7 @@ export const Timeline = Object.assign((container) => create({ container }).call(
     },
 });
 
-// Ruler, showing the timecount 
+// Ruler, showing timecount values.
 const Ruler = Object.assign(() => create().call(Ruler, {
     init() {
         this.element = svg("g", { class: "ruler" });
@@ -99,6 +105,11 @@ const OccurrencesOverlay = Object.assign(() => create().call(OccurrencesOverlay,
             class: "occurrences-overlay",
             transform: `translate(0, ${Timeline.rulerHeight})`
         });
+    },
+
+    tapeWasErased() {
+        delete this.occurrences;
+        removeChildren(this.element);
     },
 
     deckDidUpdate(deck, width, end) {

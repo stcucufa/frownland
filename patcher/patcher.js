@@ -114,6 +114,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         });
         on(tape, "add", ({ occurrence }) => { this.timeline.occurrenceWasAdded(occurrence); });
         on(tape, "remove", ({ occurrence }) => { this.timeline.occurrenceWasRemoved(occurrence); });
+        on(tape, "erase", () => { this.timeline.tapeWasErased(); });
 
         this.transportBar = TransportBar(document.querySelector("ul.transport-bar"), this.deck);
         on(this.transportBar, "play", ({ tape }) => {
