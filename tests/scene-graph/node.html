@@ -12,6 +12,22 @@ import { Node } from "../../lib/scene-graph/node.js";
 test("Node()", t => {
     const node = Node();
     t.equal(node.children, [], "no children");
+    t.equal(node.x, 0, "position (x)");
+    t.equal(node.y, 0, "position (y)");
+    t.equal(node.width, 0, "size (width)");
+    t.equal(node.height, 0, "size (height)");
+});
+
+test("Node({ properties })", t => {
+    const node = Node({ x: 100, width: 200, height: 300 });
+    t.equal(node.children, [], "no children");
+    t.equal(node.x, 100, "position (x)");
+    t.equal(node.y, 0, "position (y, default)");
+    t.equal(node.width, 200, "size (width)");
+    t.equal(node.height, 300, "size (height)");
+    const p = Node({ children: [node] });
+    t.equal(p.children, [node], "node with children");
+    t.equal(node.parent, p, "children parent is set");
 });
 
 test("Node.appendChild(child)", t => {
@@ -34,6 +50,22 @@ test("Node.remove()", t => {
     t.equal(c.remove(), c, "return the node");
     t.equal(p.children, [], "node was removed from parent");
     t.undefined(c.parent, "parent is unset");
+});
+
+test("Node.renderAt(renderer, x, y)", t => {
+    const renderer = {
+        rendering: [],
+        renderNodeAt(node, x, y) {
+            this.rendering.push([node, x, y]);
+        }
+    };
+
+    const node = Node({ x: 100, children: [Node({ y: 25 })] });
+    node.renderAt(renderer, 50, -50);
+    t.equal(renderer.rendering, [
+        [node, 150, -50],
+        [node.children[0], 150, -25]
+    ], "rendered the node as expected");
 });
 
         </script>
