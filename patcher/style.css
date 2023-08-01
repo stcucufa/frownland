@@ -139,18 +139,50 @@ g.cord.reference line:first-child {
     stroke-dasharray: 4, 4;
 }
 
-svg.canvas.locked rect.grid {
+div.main.locked svg.canvas rect.grid {
     fill: #f8f9f0;
 }
 
 /* Ensure that contents of boxes can be selected, while boxes and cords cannot,
  * when the patch is locked. */
-svg.canvas:not(.locked) g.box foreignObject,
-svg.canvas.locked g.box > rect,
-svg.canvas.locked g.cord line:nth-child(2) {
+div.main:not(.locked) svg.canvas g.box foreignObject,
+div.main.locked svg.canvas g.box > rect,
+div.main.locked svg.canvas g.cord line:nth-child(2) {
     pointer-events: none;
 }
 
-svg.canvas.locked .comment rect {
+div.main.locked svg.canvas .comment rect {
     stroke: none;
+}
+
+/* Timeline */
+
+div.main:not(.locked) div.timeline {
+    display: none;
+}
+
+div.timeline {
+    width: 100%;
+    background-color: #f8f9f0;
+}
+
+svg.timeline {
+    width: 100%;
+}
+
+svg.timeline g.ruler {
+    stroke: #102040;
+}
+
+svg.timeline text {
+    stroke: none;
+    fill: #102040;
+}
+
+svg.timeline line.playhead {
+    stroke: #ff4040;
+}
+
+svg.timeline circle.occurrence {
+    fill: rgba(64, 255, 62, 0.5);
 }

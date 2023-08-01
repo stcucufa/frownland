@@ -1,7 +1,5 @@
 import { notify, on } from "../lib/events.js";
 import { assoc, create, nop } from "../lib/util.js";
-import { Tape } from "../lib/tape.js";
-import { Deck } from "../lib/deck.js";
 
 const stop = ["stopped", function() {
     this.deck.stop();
@@ -43,7 +41,7 @@ const States = {
 };
 
 // Transport bar controlling a Deck.
-export const TransportBar = Object.assign(element => create({ element }).call(TransportBar), {
+export const TransportBar = Object.assign((element, deck) => create({ element, deck }).call(TransportBar), {
     init() {
         this.buttons = assoc(
             this.element.querySelectorAll("button"),
@@ -53,10 +51,6 @@ export const TransportBar = Object.assign(element => create({ element }).call(Tr
             }
         );
         this.display = this.element.querySelector("span.display");
-        this.deck = Deck({ tape: Tape() });
-        on(this.deck, "update", () => {
-            this.updateDisplay();
-        });
         this.setState(stop);
     },
 

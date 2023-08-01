@@ -1,9 +1,12 @@
 import { on } from "../lib/events.js";
 import { assign, create, svg } from "../lib/util.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
 import { DragEventListener } from "./drag-event-listener.js";
 import { Comment } from "./comment.js";
 import { ItemBox } from "./item-box.js";
 import { Patch } from "./patch.js";
+import { Timeline } from "./timeline.js";
 import { TransportBar } from "./transport-bar.js";
 import { overlap } from "./util.js";
 
@@ -61,6 +64,8 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         this.canvas.addEventListener("pointermove", this);
         document.addEventListener("keyup", this);
 
+        this.mainElement = document.querySelector("div.main");
+
         // Track the pointer to know where to add new boxes.
         this.pointerX = 0;
         this.pointerY = 0;
@@ -99,7 +104,19 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             this.canvas.style.minHeight = `${rect.height}px`;
         });
 
-        this.transportBar = TransportBar(document.querySelector("ul.transport-bar"));
+        this.timeline = Timeline(document.querySelector("svg.timeline"));
+
+        const tape = Tape();
+        this.deck = Deck({ tape });
+        on(this.deck, "update", () => {
+            this.transportBar.updateDisplay();
+            this.timeline.deckDidUpdate(this.deck);
+        });
+        on(tape, "add", ({ occurrence }) => { this.timeline.occurrenceWasAdded(occurrence); });
+        on(tape, "remove", ({ occurrence }) => { this.timeline.occurrenceWasRemoved(occurrence); });
+        on(tape, "erase", () => { this.timeline.tapeWasErased(); });
+
+        this.transportBar = TransportBar(document.querySelector("ul.transport-bar"), this.deck);
         on(this.transportBar, "play", ({ tape }) => {
             this.locked = true;
             this.patch.updateScoreForTape(tape);
@@ -139,11 +156,11 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
 
     // Lock the patch when playing (no editing).
     get locked() {
-        return this.canvas.classList.contains("locked");
+        return this.mainElement.classList.contains("locked");
     },
 
     set locked(value) {
-        this.canvas.classList.toggle("locked", value);
+        this.mainElement.classList.toggle("locked", value);
         this.deselect();
     },
 
