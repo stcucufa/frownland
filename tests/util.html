@@ -444,6 +444,7 @@ test("typeOf(x)", t => {
     t.equal(typeOf(new Map()), "map");
     t.equal(typeOf(new Set()), "set");
     t.equal(typeof({ foo: 1, bar: 2 }), "object");
+    t.equal(typeOf(Object.create(x => x + 1)), "object/function", "function object");
 });
 
         </script>

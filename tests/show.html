@@ -48,6 +48,11 @@ test("object", t => {
     t.equal(show({ foo: 17, toString() { return `Showable(${this.foo})` } }), "Showable(17)", "use custom toString()");
 });
 
+test("function and function object", t => {
+    t.equal(show(x => x + 1), "x => x + 1", "regular function");
+    t.equal(show(Object.create(x => x + 2)), "x => x + 2", "function object");
+});
+
 test("string", t => {
     t.equal(show(""), "\"\"", "empty string");
     t.equal(show("foo bar"), "\"foo bar\"", "simple string");
