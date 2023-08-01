@@ -189,6 +189,18 @@ test("synced media playback", async t => {
     deck.now = instance.end + 1;
 });
 
+test("Pause, stop, play", t => {
+    const deck = Deck({ speed: 2 });
+    deck.start();
+    t.equal(deck.speed, 2, "speed is set");
+    deck.pause();
+    t.equal(deck.speed, 0, "paused");
+    deck.stop();
+    deck.start();
+    t.equal(deck.paused, false, "not paused anymore");
+    t.equal(deck.speed, 1, "reverted to normal speed");
+});
+
         </script>
     </head>
     <body>
