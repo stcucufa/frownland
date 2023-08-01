@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Scene Graph Node</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { Node } from "../../lib/scene-graph/node.js";
+
+test("Node()", t => {
+    const node = Node();
+    t.equal(node.children, [], "no children");
+});
+
+test("Node.appendChild(child)", t => {
+    const p = Node();
+    const c = Node();
+    t.equal(p.appendChild(c), c, "return the added child");
+    t.equal(p.children, [c], "child was added");
+    t.equal(c.parent, p, "parent is set on child");
+    const d = p.appendChild(Node());
+    t.equal(p.children, [c, d], "child is added at the end");
+    const q = Node();
+    q.appendChild(c);
+    t.equal(p.children, [d], "child is removed if added to a different node");
+    t.equal(c.parent, q, "parent is updated on child");
+});
+
+test("Node.remove()", t => {
+    const p = Node();
+    const c = p.appendChild(Node());
+    t.equal(c.remove(), c, "return the node");
+    t.equal(p.children, [], "node was removed from parent");
+    t.undefined(c.parent, "parent is unset");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
