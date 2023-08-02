@@ -68,7 +68,10 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 this.score = Score({ tape });
                 for (const [box, node] of this.boxes.entries()) {
                     if (!node.isComment && !box.outlets[0].enabled) {
-                        this.score.add(this.createItemFor(new Map(), box, node));
+                        const item = this.createItemFor(new Map(), box, node);
+                        if (item) {
+                            this.score.add(item);
+                        }
                     }
                 }
                 for (const [box, [input, element]] of this.elementBoxes.entries()) {
@@ -114,7 +117,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             }
         });
         const item = node.create.call(this, inputs, box);
-        if (cord?.isReference && node.isElement) {
+        if (item && cord?.isReference && node.isElement) {
             this.elementBoxes.get(box).push(item.element);
         }
         return item;
