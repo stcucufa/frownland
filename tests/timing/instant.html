@@ -110,6 +110,19 @@ test("Instant(f).var(v)", t => {
   * Instant-3 @17 <ok!>`, "dump matches");
 });
 
+test("Instant(f).var(v).var(w)", t => {
+    const tape = Tape();
+    const ok = Instant(K("ok"));
+    const bang = Instant(K("!"));
+    const seq = tape.instantiate(Seq(ok, bang, Instant(([_, x, y]) => x + y).var(ok).var(bang)), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 <ok!>
+  * Instant-1 @17 <ok>
+  * Instant-2 @17 <!>
+  * Instant-3 @17 <ok!>`, "dump matches");
+});
+
 test("Instant(f).var(v); error if v has no instance", t => {
     const tape = Tape();
     const bang = Instant(K("!"));
@@ -180,6 +193,17 @@ test("Effect(f).dur(d), string", t => {
 `* Seq-0 [17, 40[ <ok>
   * Delay-1 [17, 40[ <undefined>
   * Effect-2 @40 <ok>`, "dump matches");
+});
+
+test("Effect(f).var(v)", t => {
+    const tape = Tape();
+    const bang = Instant(K("!"));
+    const log = [];
+    const seq = tape.instantiate(Seq(
+        bang, Instant(K("ok")), Effect(([x, y], t) => { log.push([t, x + y]); }).var(bang)
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(log, [[17, "ok!"]], "effect with the right inputs");
 });
 
 test("Runtime error (Instant)", t => {
