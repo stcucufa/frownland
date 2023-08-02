@@ -14,6 +14,8 @@ div {
     padding: 16px;
     border-radius: 8px;
     box-sizing: border-box;
+    left: 200px;
+    top: 100px;
 }
 
         </style>
@@ -31,20 +33,24 @@ const score = Score({ tape });
 const box = document.querySelector("div");
 
 // FIXME 1T0I label modifier (use label for this event)
-const down = Event(box, "pointerdown");
+const down = Effect(event => {
+    event.preventDefault();
+    const rect = box.getBoundingClientRect();
+    return [event.clientX - rect.x, event.clientY - rect.y];
+});
 
 score.add(Seq(
+    Event(box, "pointerdown"),
     down,
-    Effect(event => { console.log(">>> Drag start", event); }),
     Par(
         Seq(
             Event(document, "pointermove"),
-            Effect(([event, d]) => { console.log("... dragging", event, d); }).var(down)
+            Effect(([event, [x0, y0]]) => {
+                box.style.left = `${event.clientX - x0}px`;
+                box.style.top = `${event.clientY - y0}px`;
+            }).var(down)
         ).repeat(),
-        Seq(
-            Event(document, "pointerup"),
-            Effect(event => { console.log("<<< Drag end", event); })
-        )
+        Event(document, "pointerup"),
     ).take(1)
 ).repeat());
 
