@@ -20,7 +20,8 @@ div {
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Event, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
+import { Await, Delay, Event, Effect, Instant, Par, Score, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
 import { Tape } from "../../lib/tape.js";
 import { imagePromise, K, range } from "../../lib/util.js";
 
@@ -29,13 +30,16 @@ const deck = Deck({ tape });
 const score = Score({ tape });
 const box = document.querySelector("div");
 
+// FIXME 1T0I label modifier (use label for this event)
+const down = Event(box, "pointerdown");
+
 score.add(Seq(
-    Event(box, "pointerdown"),
+    down,
     Effect(event => { console.log(">>> Drag start", event); }),
     Par(
         Seq(
             Event(document, "pointermove"),
-            Effect(event => { console.log("... dragging", event); })
+            Effect(([event, d]) => { console.log("... dragging", event, d); }).var(down)
         ).repeat(),
         Seq(
             Event(document, "pointerup"),
@@ -45,6 +49,7 @@ score.add(Seq(
 ).repeat());
 
 deck.start();
+console.log(dump(score.instance));
 
         </script>
     </head>
