@@ -130,13 +130,17 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             return;
         }
         delete this.score;
-        const isNew = this.boxes.has(box);
+        const isNew = !this.boxes.has(box);
         const node = parse(box.label);
         this.boxes.set(box, node);
         this.updateBoundingRect(box);
         box.toggleUnknown(!!node.isUnknown);
-        const n = node?.inlets ?? 0;
-        box.inlets.forEach((port, i) => { port.enabled = i < n; });
+        if (isNew || !node.isVariadic) {
+            const n = node.inlets ?? 0;
+            box.inlets.forEach((port, i) => { port.enabled = i < n; });
+        } else if (node.isVariadic && !box.inlets[1].enabled && box.inlets[0].cords.size > 0) {
+            box.inlets[1].enabled = true;
+        }
         const m = node?.outlets ?? 1;
         box.outlets.forEach((port, i) => { port.enabled = i < m; });
     },
@@ -206,6 +210,7 @@ function parse(label) {
     return Parse[match?.[1]]?.(label.substr(match[0].length)) ?? {
         label,
         isUnknown: true,
+        isVariadic: true,
         create() {
             throw window.Error(`Unknown item "${label}"`);
         }
