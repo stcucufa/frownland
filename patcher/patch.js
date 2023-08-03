@@ -184,7 +184,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     cordWillBeRemoved(cord) {
         const box = cord.inlet.box;
-        if (this.boxes.get(box).isVariadic && cord.inlet === box.inlets[0] &&
+        if (this.boxes.get(box)?.isVariadic && cord.inlet === box.inlets[0] &&
             box.inlets[1].cords.size === 0) {
             box.inlets[1].enabled = false;
         }
@@ -226,10 +226,7 @@ const evalNode = Constructor => safe(input => {
             inlets: 1,
             isFunction: true,
             isVariadic: true,
-            create: ([extraVar]) => {
-                const item = Constructor(f);
-                return extraVar ? item.var(extraVar) : item;
-            }
+            create: extraVars => extraVars.reduce((item, v) => item.var(v), Constructor(f))
         };
     }
 });
