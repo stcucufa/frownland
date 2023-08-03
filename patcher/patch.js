@@ -386,17 +386,16 @@ const Parse = {
     },
 
     Text: input => {
-        if (/^\s+/.test(input)) {
-            return {
-                label: `Text ${normalizeWhitespace(input)}`,
-                isElement: true,
-                create: (_, box) => {
-                    const element = document.createTextNode(input);
-                    notify(this, "element", { element, box });
-                    return Element(element, box.foreignObject);
-                }
-            };
-        }
+        const hasContent = /\S/.test(input);
+        return {
+            label: `Text${hasContent ? ` ${normalizeWhitespace(input)}` : ""}`,
+            isElement: true,
+            create: (_, box) => {
+                const element = document.createTextNode(hasContent ? input : "");
+                notify(this, "element", { element, box });
+                return Element(element, box.foreignObject);
+            }
+        };
     },
 
     Window: input => {
