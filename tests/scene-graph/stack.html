@@ -7,57 +7,57 @@
         <script type="module">
 
 import { test } from "../test.js";
-import { Node } from "../../lib/scene-graph/node.js";
+import { View } from "../../lib/scene-graph/view.js";
 import { Hstack, Vstack } from "../../lib/scene-graph/stack.js";
 
 test("Hstack()", t => {
-    const node = Hstack();
-    t.equal(node.children, [], "no children");
-    t.equal(node.x, 0, "position (x)");
-    t.equal(node.y, 0, "position (y)");
-    t.equal(node.width, 0, "size (width)");
-    t.equal(node.height, 0, "size (height)");
+    const view = Hstack();
+    t.equal(view.children, [], "no children");
+    t.equal(view.x, 0, "position (x)");
+    t.equal(view.y, 0, "position (y)");
+    t.equal(view.width, 0, "size (width)");
+    t.equal(view.height, 0, "size (height)");
 });
 
 test("Hstack.renderAt(renderer, x, y)", t => {
     const renderer = {
         rendering: [],
-        renderNodeAt(node, x, y) {
-            this.rendering.push([node, x, y]);
+        renderViewAt(view, x, y) {
+            this.rendering.push([view, x, y]);
         }
     };
 
-    const node = Hstack({ x: 100, children: [Node({ width: 25 }), Node({ width: 125 })] });
-    node.renderAt(renderer, 50, -50);
+    const view = Hstack({ x: 100, children: [View({ width: 25 }), View({ width: 125 })] });
+    view.renderAt(renderer, 50, -50);
     t.equal(renderer.rendering, [
-        [node.children[0], 150, -50],
-        [node.children[1], 175, -50]
-    ], "rendered the node as expected");
+        [view.children[0], 150, -50],
+        [view.children[1], 175, -50]
+    ], "rendered the view as expected");
 });
 
 test("Vstack()", t => {
-    const node = Vstack();
-    t.equal(node.children, [], "no children");
-    t.equal(node.x, 0, "position (x)");
-    t.equal(node.y, 0, "position (y)");
-    t.equal(node.width, 0, "size (width)");
-    t.equal(node.height, 0, "size (height)");
+    const view = Vstack();
+    t.equal(view.children, [], "no children");
+    t.equal(view.x, 0, "position (x)");
+    t.equal(view.y, 0, "position (y)");
+    t.equal(view.width, 0, "size (width)");
+    t.equal(view.height, 0, "size (height)");
 });
 
 test("Vstack.renderAt(renderer, x, y)", t => {
     const renderer = {
         rendering: [],
-        renderNodeAt(node, x, y) {
-            this.rendering.push([node, x, y]);
+        renderViewAt(view, x, y) {
+            this.rendering.push([view, x, y]);
         }
     };
 
-    const node = Vstack({ x: 100, children: [Node({ height: 25 }), Node({ height: 125 })] });
-    node.renderAt(renderer, 50, -50);
+    const view = Vstack({ x: 100, children: [View({ height: 25 }), View({ height: 125 })] });
+    view.renderAt(renderer, 50, -50);
     t.equal(renderer.rendering, [
-        [node.children[0], 150, -50],
-        [node.children[1], 150, -25]
-    ], "rendered the node as expected");
+        [view.children[0], 150, -50],
+        [view.children[1], 150, -25]
+    ], "rendered the view as expected");
 });
 
         </script>

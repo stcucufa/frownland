@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>View</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { View } from "../../lib/scene-graph/view.js";
+
+test("View()", t => {
+    const view = View();
+    t.equal(view.children, [], "no children");
+    t.equal(view.x, 0, "position (x)");
+    t.equal(view.y, 0, "position (y)");
+    t.equal(view.width, 0, "size (width)");
+    t.equal(view.height, 0, "size (height)");
+});
+
+test("View({ properties })", t => {
+    const view = View({ x: 100, width: 200, height: 300 });
+    t.equal(view.children, [], "no children");
+    t.equal(view.x, 100, "position (x)");
+    t.equal(view.y, 0, "position (y, default)");
+    t.equal(view.width, 200, "size (width)");
+    t.equal(view.height, 300, "size (height)");
+    const p = View({ children: [view] });
+    t.equal(p.children, [view], "view with children");
+    t.equal(view.parent, p, "children parent is set");
+});
+
+test("View.appendChild(child)", t => {
+    const p = View();
+    const c = View();
+    t.equal(p.appendChild(c), c, "return the added child");
+    t.equal(p.children, [c], "child was added");
+    t.equal(c.parent, p, "parent is set on child");
+    const d = p.appendChild(View());
+    t.equal(p.children, [c, d], "child is added at the end");
+    const q = View();
+    q.appendChild(c);
+    t.equal(p.children, [d], "child is removed if added to a different view");
+    t.equal(c.parent, q, "parent is updated on child");
+});
+
+test("View.remove()", t => {
+    const p = View();
+    const c = p.appendChild(View());
+    t.equal(c.remove(), c, "return the view");
+    t.equal(p.children, [], "view was removed from parent");
+    t.undefined(c.parent, "parent is unset");
+});
+
+test("View.renderAt(renderer, x, y)", t => {
+    const renderer = {
+        rendering: [],
+        renderViewAt(view, x, y) {
+            this.rendering.push([view, x, y]);
+        }
+    };
+
+    const view = View({ x: 100, children: [View({ y: 25 })] });
+    view.renderAt(renderer, 50, -50);
+    t.equal(renderer.rendering, [
+        [view, 150, -50],
+        [view.children[0], 150, -25]
+    ], "rendered the view as expected");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
