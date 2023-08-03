@@ -68,8 +68,8 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 this.score = Score({ tape });
                 for (const [box, node] of this.boxes.entries()) {
                     if (!node.isComment && !box.outlets[0].enabled) {
-                        const item = this.createItemFor(new Map(), box, node);
-                        if (item) {
+                        const items = this.createItemFor(new Map(), box, node);
+                        for (const item of items) {
                             this.score.add(item);
                         }
                     }
@@ -176,13 +176,18 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         const target = this.boxes.get(cord.inlet.box);
         cord.isReference = (target.isFunction) ||
             ((source.isElement || source.isWindow) && (target.isEvent || target.isSet));
-        if (target.isDyadic && cord.outlet === target.inlets[0]) {
-            target.inlets[1].enabled = true;
+        if (target.isVariadic && cord.inlet === cord.inlet.box.inlets[0]) {
+            cord.inlet.box.inlets[1].enabled = true;
         }
         delete this.score;
     },
 
     cordWillBeRemoved(cord) {
+        const box = cord.inlet.box;
+        if (this.boxes.get(box).isVariadic && cord.inlet === box.inlets[0] &&
+            box.inlets[1].cords.size === 0) {
+            box.inlets[1].enabled = false;
+        }
         delete this.score;
     },
 
@@ -220,6 +225,7 @@ const evalNode = Constructor => safe(input => {
             acceptFrom: K(true),
             inlets: 1,
             isFunction: true,
+            isVariadic: true,
             create: ([extraVar]) => {
                 const item = Constructor(f);
                 return extraVar ? item.var(extraVar) : item;
@@ -286,9 +292,9 @@ const createElement = (...args) => function(_, box) {
 
 const score = {
     inlets: 1,
-    isDyadic: true,
+    isVariadic: true,
     outlets: 0,
-    create: ([item]) => item
+    create: inputs => inputs.filter(i => !!i)
 };
 
 // Parse different kinds of items and modifiers.
