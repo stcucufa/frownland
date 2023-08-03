@@ -173,8 +173,9 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
 
     cordWasAdded(cord) {
         const source = this.boxes.get(cord.outlet.box);
-        cord.isReference = (source.isElement || source.isWindow) &&
-            (this.boxes.get(cord.inlet.box).isEvent || this.boxes.get(cord.inlet.box).isSet);
+        const target = this.boxes.get(cord.inlet.box);
+        cord.isReference = (target.isFunction) ||
+            ((source.isElement || source.isWindow) && (target.isEvent || target.isSet));
         delete this.score;
     },
 
@@ -213,7 +214,13 @@ const evalNode = Constructor => safe(input => {
         return {
             label: `${Constructor.tag} ${normalizeWhitespace(input)}`,
             source: input,
-            create: () => Constructor(f)
+            acceptFrom: K(true),
+            inlets: 1,
+            isFunction: true,
+            create: ([extraVar]) => {
+                const item = Constructor(f);
+                return extraVar ? item.var(extraVar) : item;
+            }
         };
     }
 });
