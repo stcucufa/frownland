@@ -14,13 +14,16 @@ div {
     padding: 16px;
     border-radius: 8px;
     box-sizing: border-box;
+    left: 200px;
+    top: 100px;
 }
 
         </style>
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Event, Effect, Instant, Par, Score, Seq, dump } from "../../lib/score.js";
+import { Await, Delay, Event, Effect, Instant, Par, Score, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
 import { Tape } from "../../lib/tape.js";
 import { imagePromise, K, range } from "../../lib/util.js";
 
@@ -29,22 +32,30 @@ const deck = Deck({ tape });
 const score = Score({ tape });
 const box = document.querySelector("div");
 
+// FIXME 1T0I label modifier (use label for this event)
+const down = Effect(event => {
+    event.preventDefault();
+    const rect = box.getBoundingClientRect();
+    return [event.clientX - rect.x, event.clientY - rect.y];
+});
+
 score.add(Seq(
     Event(box, "pointerdown"),
-    Effect(event => { console.log(">>> Drag start", event); }),
+    down,
     Par(
         Seq(
             Event(document, "pointermove"),
-            Effect(event => { console.log("... dragging", event); })
+            Effect(([event, [x0, y0]]) => {
+                box.style.left = `${event.clientX - x0}px`;
+                box.style.top = `${event.clientY - y0}px`;
+            }).var(down)
         ).repeat(),
-        Seq(
-            Event(document, "pointerup"),
-            Effect(event => { console.log("<<< Drag end", event); })
-        )
+        Event(document, "pointerup"),
     ).take(1)
 ).repeat());
 
 deck.start();
+console.log(dump(score.instance));
 
         </script>
     </head>
