@@ -176,6 +176,9 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         const target = this.boxes.get(cord.inlet.box);
         cord.isReference = (target.isFunction) ||
             ((source.isElement || source.isWindow) && (target.isEvent || target.isSet));
+        if (target.isDyadic && cord.outlet === target.inlets[0]) {
+            target.inlets[1].enabled = true;
+        }
         delete this.score;
     },
 
@@ -283,6 +286,7 @@ const createElement = (...args) => function(_, box) {
 
 const score = {
     inlets: 1,
+    isDyadic: true,
     outlets: 0,
     create: ([item]) => item
 };
