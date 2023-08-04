@@ -68,8 +68,8 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 this.score = Score({ tape });
                 for (const [box, node] of this.boxes.entries()) {
                     if (!node.isComment && !box.outlets[0].enabled) {
-                        const item = this.createItemFor(new Map(), box, node);
-                        if (item) {
+                        const items = this.createItemFor(new Map(), box, node);
+                        for (const item of items) {
                             this.score.add(item);
                         }
                     }
@@ -130,13 +130,17 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
             return;
         }
         delete this.score;
-        const isNew = this.boxes.has(box);
+        const isNew = !this.boxes.has(box);
         const node = parse(box.label);
         this.boxes.set(box, node);
         this.updateBoundingRect(box);
         box.toggleUnknown(!!node.isUnknown);
-        const n = node?.inlets ?? 0;
-        box.inlets.forEach((port, i) => { port.enabled = i < n; });
+        if (isNew || !node.isVariadic) {
+            const n = node.inlets ?? 0;
+            box.inlets.forEach((port, i) => { port.enabled = i < n; });
+        } else if (node.isVariadic && !box.inlets[1].enabled && box.inlets[0].cords.size > 0) {
+            box.inlets[1].enabled = true;
+        }
         const m = node?.outlets ?? 1;
         box.outlets.forEach((port, i) => { port.enabled = i < m; });
     },
@@ -176,10 +180,18 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         const target = this.boxes.get(cord.inlet.box);
         cord.isReference = (target.isFunction) ||
             ((source.isElement || source.isWindow) && (target.isEvent || target.isSet));
+        if (target.isVariadic && cord.inlet === cord.inlet.box.inlets[0]) {
+            cord.inlet.box.inlets[1].enabled = true;
+        }
         delete this.score;
     },
 
     cordWillBeRemoved(cord) {
+        const box = cord.inlet.box;
+        if (this.boxes.get(box)?.isVariadic && cord.inlet === box.inlets[0] &&
+            box.inlets[1].cords.size === 0) {
+            box.inlets[1].enabled = false;
+        }
         delete this.score;
     },
 
@@ -198,6 +210,7 @@ function parse(label) {
     return Parse[match?.[1]]?.(label.substr(match[0].length)) ?? {
         label,
         isUnknown: true,
+        isVariadic: true,
         create() {
             throw window.Error(`Unknown item "${label}"`);
         }
@@ -217,10 +230,8 @@ const evalNode = Constructor => safe(input => {
             acceptFrom: K(true),
             inlets: 1,
             isFunction: true,
-            create: ([extraVar]) => {
-                const item = Constructor(f);
-                return extraVar ? item.var(extraVar) : item;
-            }
+            isVariadic: true,
+            create: extraVars => extraVars.reduce((item, v) => item.var(v), Constructor(f))
         };
     }
 });
@@ -283,8 +294,9 @@ const createElement = (...args) => function(_, box) {
 
 const score = {
     inlets: 1,
+    isVariadic: true,
     outlets: 0,
-    create: ([item]) => item
+    create: inputs => inputs.filter(i => !!i)
 };
 
 // Parse different kinds of items and modifiers.
