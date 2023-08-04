@@ -32,30 +32,26 @@ const deck = Deck({ tape });
 const score = Score({ tape });
 const box = document.querySelector("div");
 
-// FIXME 1T0I label modifier (use label for this event)
-const down = Effect(event => {
-    event.preventDefault();
-    const rect = box.getBoundingClientRect();
-    return [event.clientX - rect.x, event.clientY - rect.y];
-});
-
 score.add(Seq(
     Event(box, "pointerdown"),
-    down,
+    Effect(event => {
+        event.preventDefault();
+        const rect = box.getBoundingClientRect();
+        return [event.clientX - rect.x, event.clientY - rect.y];
+    }).label("down"),
     Par(
         Seq(
             Event(document, "pointermove"),
             Effect(([event, [x0, y0]]) => {
                 box.style.left = `${event.clientX - x0}px`;
                 box.style.top = `${event.clientY - y0}px`;
-            }).var(down)
+            }).var("down")
         ).repeat(),
         Event(document, "pointerup"),
-    ).take(1)
+    ).take(1),
 ).repeat());
 
 deck.start();
-console.log(dump(score.instance));
 
         </script>
     </head>
