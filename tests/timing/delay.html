@@ -40,6 +40,13 @@ test("Delay.repeat()", t => {
     t.equal(Delay(0).repeat().fallible, true, "zero duration delay cannot repeat");
 });
 
+test("Delay(d).label(l)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Delay(23).label("wait"), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance), `* Delay-0 "wait" [17, 40[ <undefined>`, "dump matches");
+});
+
 test("Instantiation", t => {
     const tape = Tape();
     const delay = Delay(23);

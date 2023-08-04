@@ -35,6 +35,11 @@ test("Par(xs)", t => {
     t.equal(par.hasEffect, false, "no effect when children have no effect");
 });
 
+test("Par(xs).label(l)", t => {
+    const par = Tape().instantiate(Par().label("empty"), 17);
+    t.equal(dump(par), `* Par-0 "empty" @17`, "dump matches");
+});
+
 test("Par(xs).hasEffect", t => {
     t.equal(Par(Delay(23), Effect(x => { console.log("x"); })).hasEffect, true, "has effect if some child has effect");
 });

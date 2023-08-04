@@ -98,7 +98,7 @@ test("Instant(f).repeat().take(n); n finite", t => {
   * Instant-3 @17 <ok>`, "dump matches");
 });
 
-test("Instant(f).label(v)", t => {
+test("Instant(f).label(l)", t => {
     const tape = Tape();
     const seq = tape.instantiate(Instant(K("!")).label("bang"), 17);
     Deck({ tape }).now = 18;

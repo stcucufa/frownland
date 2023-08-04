@@ -28,6 +28,15 @@ test("Try(x, catch) failibility", t => {
     t.equal(fallibleChild.fallible, true, "failure cannot be caught");
 });
 
+test("Try(x, catch).label(l)", t => {
+    const instance = Tape().instantiate(
+        Try(Event(window, "synth").dur(23), Instant(K("ko"))).label("test"), 17
+    );
+    t.equal(dump(instance),
+`* Try-0 "test" [17, ∞[
+  * Instant-2 @17`, "dump matches");
+});
+
 test("Instantiation (no error, zero duration)", t => {
     const tape = Tape();
     const instance = tape.instantiate(Try(Instant(K("ok")), Instant(K("ko"))), 17);
