@@ -138,6 +138,24 @@ test("Instant(f).var(v).var(w)", t => {
   * Instant-3 @17 <ok!>`, "dump matches");
 });
 
+test("Instant(f).var(v).var(w), triple Seq", t => {
+    const tape = Tape();
+    const two = Instant(K(2));
+    const three = Instant(K(3));
+    const seq = tape.instantiate(Seq(
+        Seq(Seq(two, three), Instant(K(1))), Instant(([x, y, z], t) => [x, y, z, t]).var(two).var(three)
+    ), 17)
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 <1,2,3,17>
+  * Seq-1 @17 <1>
+    * Seq-2 @17 <3>
+      * Instant-3 @17 <2>
+      * Instant-4 @17 <3>
+    * Instant-5 @17 <1>
+  * Instant-6 @17 <1,2,3,17>`, "dump matches");
+});
+
 test("Instant(f).var(v); error if v has no instance", t => {
     const tape = Tape();
     const bang = Instant(K("!"));
