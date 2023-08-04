@@ -24,6 +24,11 @@ test("Seq.fold(g, z)", t => {
     t.equal(Seq.fold(Instant).dur(23).duration, 23, "duration can be set with dur()");
 });
 
+test("Seq.fold(g, z).label(l)", t => {
+    const map = Tape().instantiate(Seq.fold(Delay, 1).label("delays"), 17);
+    t.equal(dump(map), `* Seq/fold-0 "delays" [17, ∞[`, "dump matches");
+});
+
 test("Seq.fold(g, z).repeat()", t => {
     const seq = Seq.fold(Delay, 1);
     const repeat = seq.repeat();

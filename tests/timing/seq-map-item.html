@@ -29,6 +29,11 @@ test("Seq.map(child).hasEffect", t => {
     t.equal(Seq.map(Effect(x => { console.log(x); })).hasEffect, true, "has effect if child has effect");
 });
 
+test("Seq.map(child).label(l)", t => {
+    const map = Tape().instantiate(Seq.map(Instant()).label("instants"), 17);
+    t.equal(dump(map), `* Seq/map-0 "instants" [17, ∞[`, "dump matches");
+});
+
 test("Seq.map(child).repeat()", t => {
     const seq = Seq.map(Instant());
     const repeat = seq.repeat();
