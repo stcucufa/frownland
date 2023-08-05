@@ -199,6 +199,21 @@ test("Child failure (not the last child)", async t => {
   * Await-1 [17, 36[ (timeout)`, "dump matches");
 });
 
+test("Child var while in progress", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K("ok")),
+        Seq(Instant(K("ko")), Instant(([x, y]) => `${y} not ${x}`).var("seq")).label("seq")
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Seq-0 @17 <ok not ko>
+  * Instant-1 @17 <ok>
+  * Seq-2 "seq" @17 <ok not ko>
+    * Instant-3 @17 <ko>
+    * Instant-4 @17 <ok not ko>`, "dump matches");
+});
+
 test("Cancel Seq", t => {
     const tape = Tape();
     const instance = tape.instantiate(Par(
