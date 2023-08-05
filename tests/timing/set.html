@@ -21,6 +21,12 @@ test("Set(target, name)", t => {
     t.equal(!set.fallible, true, "not fallible");
 });
 
+test("Set(target, name).label(l)", t => {
+    const object = {};
+    const set = Tape().instantiate(Set(object, "src").label("object.src"), 17);
+    t.equal(dump(set), `* Set-0 "object.src" @17`, "dump matches");
+});
+
 test("Instantiation (zero dur)", t => {
     const tape = Tape();
     const deck = Deck({ tape });

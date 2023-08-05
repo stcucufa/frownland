@@ -22,6 +22,11 @@ test("Seq.map(g)", t => {
     t.equal(!map.fallible, true, "not fallible");
 });
 
+test("Seq.map(g).label(l)", t => {
+    const map = Tape().instantiate(Seq.map(Delay).label("delays"), 17);
+    t.equal(dump(map), `* Seq/map-0 "delays" [17, ∞[`, "dump matches");
+});
+
 test("Seq.map(g).repeat()", t => {
     const seq = Seq.map(Delay);
     const repeat = seq.repeat();

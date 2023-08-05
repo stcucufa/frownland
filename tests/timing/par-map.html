@@ -22,6 +22,11 @@ test("Par.map(g)", t => {
     t.equal(par.take(0).duration, 0, "down to zero with take(0)");
 });
 
+test("Par.map(g).label(l)", t => {
+    const par = Tape().instantiate(Par.map(Delay).label("delays"), 17);
+    t.equal(dump(par), `* Par/map-0 "delays" [17, ∞[`, "dump matches");
+});
+
 test("Par.map(g).repeat()", t => {
     const par = Par.map(Delay);
     const repeat = par.repeat();

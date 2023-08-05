@@ -20,6 +20,13 @@ test("Element(element, parent, context)", t => {
     t.equal(!element.fallible, true, "not fallible");
 });
 
+test("Element(element, parent, durration).label(l)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Element(html("p", "Hello")).label("hello"), 17);
+    Deck({ tape }).now = 18;
+    t.match(dump(instance), /^\* Element-0 "hello" @17 <[^>]+>$/, "dump matches");
+});
+
 test("Instantiation (zero duration)", t => {
     const tape = Tape();
     const instance = tape.instantiate(Element(html("p", "Hello")), 17);

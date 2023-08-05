@@ -36,6 +36,15 @@ test("Seq(xs)", t => {
     t.equal(seq.hasEffect, false, "no effect when no children has effect");
 });
 
+test("Seq(xs).label(l)", t => {
+    const par = Tape().instantiate(Seq().label("empty"), 17);
+    t.equal(dump(par), `* Seq-0 "empty" @17`, "dump matches");
+});
+
+test("Par(xs).hasEffect", t => {
+    t.equal(Par(Delay(23), Effect(x => { console.log("x"); })).hasEffect, true, "has effect if some child has effect");
+});
+
 test("Seq(xs).hasEffect", t => {
     t.equal(Seq(Delay(17), Effect(x => { console.log(x); })).hasEffect, true,
         "has effect if some child has effect");

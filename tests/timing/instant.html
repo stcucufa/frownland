@@ -98,6 +98,13 @@ test("Instant(f).repeat().take(n); n finite", t => {
   * Instant-3 @17 <ok>`, "dump matches");
 });
 
+test("Instant(f).label(l)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Instant(K("!")).label("bang"), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq), `* Instant-0 "bang" @17 <!>`, "dump matches");
+});
+
 test("Instant(f).var(v)", t => {
     const tape = Tape();
     const bang = Instant(K("!"));
@@ -106,6 +113,19 @@ test("Instant(f).var(v)", t => {
     t.equal(dump(seq),
 `* Seq-0 @17 <ok!>
   * Instant-1 @17 <!>
+  * Instant-2 @17 <ok>
+  * Instant-3 @17 <ok!>`, "dump matches");
+});
+
+test("Instant(f).var(v) matching label", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq(
+        Instant(K("!")).label("bang"), Instant(K("ok")), Instant(([x, y]) => x + y).var("bang")
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 <ok!>
+  * Instant-1 "bang" @17 <!>
   * Instant-2 @17 <ok>
   * Instant-3 @17 <ok!>`, "dump matches");
 });
@@ -140,18 +160,17 @@ test("Instant(f).var(v).var(w)", t => {
 
 test("Instant(f).var(v).var(w), triple Seq", t => {
     const tape = Tape();
-    const two = Instant(K(2));
-    const three = Instant(K(3));
     const seq = tape.instantiate(Seq(
-        Seq(Seq(two, three), Instant(K(1))), Instant(([x, y, z], t) => [x, y, z, t]).var(two).var(three)
+        Seq(Seq(Instant(K(2)).label(2), Instant(K(3)).label(3)), Instant(K(1))),
+        Instant(([x, y, z], t) => [x, y, z, t]).var(2).var(3)
     ), 17)
     Deck({ tape }).now = 18;
     t.equal(dump(seq),
 `* Seq-0 @17 <1,2,3,17>
   * Seq-1 @17 <1>
     * Seq-2 @17 <3>
-      * Instant-3 @17 <2>
-      * Instant-4 @17 <3>
+      * Instant-3 "2" @17 <2>
+      * Instant-4 "3" @17 <3>
     * Instant-5 @17 <1>
   * Instant-6 @17 <1,2,3,17>`, "dump matches");
 });
@@ -226,6 +245,16 @@ test("Effect(f).dur(d), string", t => {
 `* Seq-0 [17, 40[ <ok>
   * Delay-1 [17, 40[ <undefined>
   * Effect-2 @40 <ok>`, "dump matches");
+});
+
+test("Effect(f).label(l)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Effect(() => {
+        console.warn("Some effect");
+        return "ok";
+    }).label("warning"), 17);
+    t.warns(() => { Deck({ tape }).now = 18; }, "has effect when running");
+    t.equal(dump(instance), `* Effect-0 "warning" @17 <ok>`, "dump matches");
 });
 
 test("Effect(f).var(v)", t => {

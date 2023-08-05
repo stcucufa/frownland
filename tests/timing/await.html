@@ -36,6 +36,16 @@ test("Instantiation", async t => {
     t.equal(dump(instance), "* Await-0 [17, 27[ <undefined>", "dump matches");
 });
 
+test("Await(f).label(l)", async t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Await(() => timeout(10)).label("timeout"), 17);
+    const deck = Deck({ tape });
+    deck.now = 27;
+    const e = await notification(deck, "await");
+    t.equal(e.instance, instance, "instance did end");
+    t.equal(dump(instance), `* Await-0 "timeout" [17, 27[ <undefined>`, "dump matches");
+});
+
 test("Running deck", async t => {
     const tape = Tape();
     const deck = Deck({ tape });

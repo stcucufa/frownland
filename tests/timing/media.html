@@ -24,6 +24,12 @@ test("Media(element, parent, context)", t => {
     t.equal(!media.fallible, true, "not fallible");
 });
 
+test("Media(element, parent, context).label(l)", t => {
+    const tape = Tape();
+    const media = tape.instantiate(Media(html("video", { src })).label("anim"), 17);
+    t.equal(dump(media), `* Media-0 "anim" [17, ∞[`, "dump matches");
+});
+
 test("Intrinsic duration", async t => {
     const media = Media(html("video", { src }));
     const event = await notification(media, "dur");
