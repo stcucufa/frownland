@@ -33,11 +33,12 @@ test("Instantiation (zero dur)", t => {
     const div = html("div", { class: "foo" });
     const instance = tape.instantiate(Seq(Instant(K("bar")), Set(div, "class")), 17);
     deck.now = 18;
-    t.equal(div.getAttribute("class"), "foo", "attribute is unchanged");
-    t.equal(dump(instance),
+    t.equal(div.getAttribute("class"), "bar", "attribute was set");
+    t.equal(dump(instance, true),
 `* Seq-0 @17 <bar>
-  * Instant-1 @17 <bar>
-  * Set-2 @17 <bar>`, "dump matches");
+  * Instant-1 @17 <bar> {o0@17}
+  * Set-2 @17 <bar> {o1@17}`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17>", "no other occurrence");
 });
 
 test("Instantiation (Element target, attribute)", t => {
