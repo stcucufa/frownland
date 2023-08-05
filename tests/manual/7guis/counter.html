@@ -8,7 +8,7 @@
 
 import { Tape } from "../../../lib/tape.js";
 import { Deck } from "../../../lib/deck.js";
-import { Effect, Event, Instant, Score, Seq } from "../../../lib/timing.js";
+import { Effect, Event, Instant, Score, Seq, gate } from "../../../lib/timing.js";
 
 const tape = Tape();
 const deck = Deck({ tape });
@@ -17,11 +17,8 @@ const input = document.querySelector("input");
 const button = document.querySelector("button");
 
 score.add(Seq(
-    Seq(
-        Event(button, "click"),
-        Instant(([_, x]) => x).var("count")
-    ).label("count"),
-    Instant((x = 0) => x + 1),
+    gate(Event(button, "click"), Instant((x = 0) => x + 1)),
+    // FIXME 1U0C Set with no duration should just set a value
     Effect(v => { input.value = v; return v; })
 ).repeat());
 
