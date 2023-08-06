@@ -1,5 +1,6 @@
 import {
-    Await, Delay, Effect, Element, Event, Instant, Media, Par, Score, Seq, Set, Try
+    Await, Delay, Effect, Element, Event, Instant, Media, Par, Score, Seq, Set, Try,
+    gate
 } from "../lib/timing.js";
 import { dump } from "../lib/timing/util.js";
 import {
@@ -472,7 +473,7 @@ const Parse = {
         }
     },
 
-    "first": input => {
+    first: input => {
         const match = input.match(/^(?:\s+(\d+))?\s*$/);
         if (match) {
             const n = match[1] ? parseInt(match[1], 10) : 1;
@@ -485,6 +486,8 @@ const Parse = {
             }
         }
     },
+
+    gate: only(gate),
 };
 
 // Pick the right deserialization method for a serialized box (Item or Comment).
