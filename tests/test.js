@@ -256,7 +256,8 @@ function initFrame(tests) {
         }
 
         if (status) {
-            status.innerHTML = `${icon("running")} Running ${currentLi.innerHTML}`;
+            status.innerHTML = `${icon("running")} Running ${currentLi.innerHTML}
+                <span class="results"> (starting)</span>`;
         }
 
         startTimeout = setTimeout(() => {
@@ -288,28 +289,37 @@ function initFrame(tests) {
         success(e, data) {
             updateIcon("pass", data);
             this.successes += 1;
+            this.updateStatus();
             postMessage(e.source, "run");
         },
 
         failure(e, data) {
             updateIcon("fail", data);
             this.failures += 1;
+            this.updateStatus();
             postMessage(e.source, "run");
         },
 
         timeout(e, data) {
             updateIcon("timeout", data);
             this.timeouts += 1;
+            this.updateStatus();
             postMessage(e.source, "run");
         },
 
         skipped(e, data) {
             updateIcon("skip", data);
             this.skips += 1;
+            this.updateStatus();
             postMessage(e.source, "run");
         },
 
         done() {
+            this.updateStatus(true);
+            nextTest();
+        },
+
+        updateStatus(done = false) {
             if (status) {
                 const reports = [
                     ["successes", this.successes],
@@ -319,13 +329,20 @@ function initFrame(tests) {
                     ["missing", missing]
                 ].filter(([_, n]) => n > 0).map(xs => xs.join(": "));
                 const failure = this.failures > 0 || this.timeouts > 0 || missing > 0;
-                status.innerHTML = `${icon(
-                    this.failures > 0 ? "fail" :
-                    this.timeouts > 0 ? "timeout" :
-                    this.skips > 0 ? "skip" : "pass"
-                )} Done, ${escapeMarkup(reports.join(", "))}.`;
+                if (done) {
+                    status.innerHTML = `${icon(
+                        this.failures > 0 ? "fail" :
+                        this.timeouts > 0 ? "timeout" :
+                        this.skips > 0 ? "skip" : "pass"
+                    )} Done, ${escapeMarkup(reports.join(", "))}.`;
+                } else {
+                    status.querySelector("span.results").innerHTML = `${icon(
+                        this.failures > 0 ? "fail" :
+                        this.timeouts > 0 ? "timeout" :
+                        this.skips > 0 ? "skip" : "pass"
+                    )} ${escapeMarkup(reports.join(", "))}.`;
+                }
             }
-            nextTest();
         },
 
         successes: 0,
