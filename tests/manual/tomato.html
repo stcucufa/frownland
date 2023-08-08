@@ -9,7 +9,7 @@
 import { html, K, range } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Element, Instant, Par, Score, Seq, Set } from "../../lib/timing.js";
+import { Element, first, Instant, Score, Seq, Set } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 const FPS = 9;
@@ -24,13 +24,13 @@ const frame = document.querySelector("span");
 score.add(Element(image).dur(Infinity));
 score.add(Seq(
     Instant(K([...range(1, 18)])),
-    Seq.map(Par(
+    Seq.map(first(
         Seq(
             Instant(i => `tomato${i.toString().padStart(2, "0")}.png`),
             Set(image, "src").dur(1000 / FPS)
         ),
         Set(document.querySelector("span"), "textContent").dur(Infinity)
-    ).take(1))
+    ))
 ).repeat());
 
 deck.start();
