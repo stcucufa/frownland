@@ -109,19 +109,19 @@ g.box g.port rect {
     fill: #102040;
 }
 
-g.port circle {
+g.targets circle {
     fill: transparent;
 }
 
-g.port.potential-target circle {
+g.targets circle.potential-target {
     fill: rgba(64, 255, 64, 0.25);
 }
 
-g.port.invalid-target circle {
+g.targets circle.invalid-target {
     fill: rgba(255, 64, 64, 0.25);
 }
 
-g.port.disabled {
+g.port.disabled, g.targets circle.disabled {
     display: none;
 }
 

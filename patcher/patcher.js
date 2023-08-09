@@ -57,6 +57,7 @@ const LockedCommands = new Set(["d", " ", "Escape"]);
 const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
     init() {
         this.itemsGroup = this.canvas.querySelector(".items");
+        this.targetsGroup = this.canvas.querySelector(".targets");
         this.elements = new Map();
         this.elements.set(this.canvas, this);
         this.dragEventListener = DragEventListener(this.elements);
@@ -197,6 +198,9 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
 
     boxWasAdded(box, interactive) {
         this.itemsGroup.appendChild(box.element);
+        if (box.targets) {
+            this.targetsGroup.appendChild(box.targets);
+        }
         this.observeElementInBox(box.input, box);
         if (interactive) {
             this.select(box);

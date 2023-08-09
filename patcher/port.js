@@ -13,18 +13,19 @@ export const Port = assign(properties => create(properties).call(Port), {
     init() {
         this.patcher = this.box.patcher;
         this.rect = svg("rect", { width: this.width, height: this.height, x: this.x, y: this.y });
+        this.element = svg("g", { class: "port" }, this.rect);
         this.target = svg("circle", {
             class: "target", cx: this.x + this.width / 2, cy: this.y + this.height / 2, r: this.r
         });
-        this.element = svg("g", { class: "port" }, this.rect, this.target);
-        this.target.addEventListener("pointerdown", this.patcher.dragEventListener);
         this.patcher.elements.set(this.target, this);
+        this.target.addEventListener("pointerdown", this.patcher.dragEventListener);
         this.cords = new Map();
     },
 
     // Remove all cords from/to this port when deleting it.
     remove() {
         this.target.removeEventListener("pointerdown", this.patcher.dragEventListener);
+        this.target.remove();
         for (const cord of this.cords.values()) {
             cord.remove();
         }
@@ -79,8 +80,8 @@ export const Port = assign(properties => create(properties).call(Port), {
     // whether the target is valid or invalid.
     set isTargetForCord([possible, target]) {
         const isTarget = !!target;
-        this.element.classList.toggle("potential-target", isTarget && possible);
-        this.element.classList.toggle("invalid-target", isTarget && !possible);
+        this.target.classList.toggle("potential-target", isTarget && possible);
+        this.target.classList.toggle("invalid-target", isTarget && !possible);
     },
 
     // Enable or disable the port.
@@ -90,6 +91,7 @@ export const Port = assign(properties => create(properties).call(Port), {
 
     set enabled(value) {
         this.element.classList.toggle("disabled", !value);
+        this.target.classList.toggle("disabled", !value);
         if (!value) {
             for (const cord of this.cords.values()) {
                 cord.remove();

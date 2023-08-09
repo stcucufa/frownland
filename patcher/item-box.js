@@ -20,8 +20,10 @@ export const ItemBox = assign(properties => create(properties).call(ItemBox), Bo
             height: this.height - 2 * Port.height
         }, this.input);
         element.appendChild(this.foreignObject);
+        this.targets = svg("g");
         for (const port of this.ports()) {
             element.appendChild(port.element);
+            this.targets.appendChild(port.target);
         }
         return element;
     },
@@ -59,6 +61,7 @@ export const ItemBox = assign(properties => create(properties).call(ItemBox), Bo
     },
 
     selected() {
+        bringElementFrontward(this.targets);
         for (const port of this.ports()) {
             for (const cord of port.cords.values()) {
                 bringElementFrontward(cord.element);
@@ -77,6 +80,7 @@ export const ItemBox = assign(properties => create(properties).call(ItemBox), Bo
     // Move all cords from the ports when moving the box.
     updatePosition() {
         Box.updatePosition.call(this);
+        this.targets.setAttribute("transform", this.element.getAttribute("transform"));
         for (const port of this.ports()) {
             port.updateCords();
         }
