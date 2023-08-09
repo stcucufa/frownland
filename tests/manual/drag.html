@@ -22,7 +22,7 @@ div {
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Event, Effect, Instant, Par, Score, Seq } from "../../lib/timing.js";
+import { Await, Delay, Event, Effect, first, Instant, Score, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 import { Tape } from "../../lib/tape.js";
 import { imagePromise, K, range } from "../../lib/util.js";
@@ -39,7 +39,7 @@ score.add(Seq(
         const rect = box.getBoundingClientRect();
         return [event.clientX - rect.x, event.clientY - rect.y];
     }).label("down"),
-    Par(
+    first(
         Seq(
             Event(document, "pointermove"),
             Effect(([event, [x0, y0]]) => {
@@ -48,7 +48,7 @@ score.add(Seq(
             }).var("down")
         ).repeat(),
         Event(document, "pointerup"),
-    ).take(1),
+    ),
 ).repeat());
 
 deck.start();

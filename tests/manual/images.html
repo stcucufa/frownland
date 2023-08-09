@@ -24,7 +24,7 @@ div.placeholder {
 import { html, imagePromise, K, range, timeout } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Effect, Element, Event, Instant, Par, Score, Seq, Try } from "../../lib/timing.js";
+import { Await, Delay, Effect, Element, Event, first, Instant, Score, Seq, Try } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 const tape = Tape();
@@ -33,10 +33,10 @@ const score = Score({ tape });
 const button = html("button", { type: "button" }, "Begin");
 
 score.add(Seq(
-    Par(
+    first(
         Element(button, document.querySelector("span")).dur(Infinity),
         Event(button, "click").repeat().take(3)
-    ).take(1),
+    ),
     Await(async () => await (await fetch("images.json")).json()),
     Seq.map(([w, h]) => Seq(
         Try(
