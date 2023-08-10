@@ -13,6 +13,11 @@ import { Deck } from "../../lib/deck.js";
 import { Delay, Instant, Effect, Par, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
+test("Tags", t => {
+    t.equal(Instant.tag, "Instant", "Instant");
+    t.equal(Effect.tag, "Effect", "Effect");
+});
+
 test("Instant()", t => {
     const instant = Instant();
     t.equal(instant.show(), "Instant", "show");

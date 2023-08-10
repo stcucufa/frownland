@@ -14,6 +14,8 @@ import { Deck } from "../../lib/deck.js";
 import { Await, Delay, Effect, Instant, Par, Seq, Set } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
+test("Tag", t => { t.equal(Seq.tag, "Seq", "Seq"); });
+
 test("Seq()", t => {
     const seq = Seq();
     t.equal(seq.show(), "Seq/0", "show");

@@ -14,6 +14,8 @@ import { Deck } from "../../lib/deck.js";
 import { Await, Delay, Event, Instant, Score, Try, Par, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
+test("Tag", t => { t.equal(Try.tag, "Try", "Try"); });
+
 test("Try(x, catch)", t => {
     const item = Try(Event(window, "synth").dur(23), Instant(K("ko")));
     t.equal(item.show(), "Try", "show");

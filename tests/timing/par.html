@@ -13,6 +13,8 @@ import { Deck } from "../../lib/deck.js";
 import { Delay, Effect, Instant, Par, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
+test("Tag", t => { t.equal(Par.tag, "Par", "Par"); });
+
 test("Par()", t => {
     const par = Par();
     t.equal(par.show(), "Par/0", "show");
