@@ -9,10 +9,11 @@
 import { test } from "./test.js";
 import {
     add, addBy, assign, assoc, clamp, clockTime, create, cycle, escapeMarkup,
-    extend, flip, fold1, get, html, I, imagePromise, isAsync, isEmpty,
-    isIterable, isNumber, isObject, K, mod, nop, normalizeWhitespace, parseTime,
-    partition, push, range, remove, removeChildren, safe, shuffle, sign, single,
-    snd, timecount, timeout, todo, typeOf
+    extend, filterit, flip, foldit, fold1, get, html, I, imagePromise, isAsync,
+    isEmpty, isIterable, isNumber, isObject, K, mapit, mod, nop,
+    normalizeWhitespace, parseTime, partition, push, range, remove,
+    removeChildren, reverse, safe, shuffle, sign, single, snd, timecount,
+    timeout, todo, typeOf
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -134,6 +135,14 @@ test("extend(object, ...properties)", t => {
     t.equal(Bar.x, "z", "x");
 });
 
+test("filterit(xs, p, this?)", t => {
+    t.equal(filterit(range(1, 10), x => x % 2 === 0), [2, 4, 6, 8, 10], "filter/collect iterator values");
+    t.equal(filterit(new Set().values(), x => x % 2 === 0), [], "empty set");
+    t.equal(filterit(new Set(["foo", "bar", "baz"]).values(), function(x) {
+        return this[x] % 2 === 0;
+    }, { foo: 1, bar: 2, baz: 3 }), ["bar"], "this");
+});
+
 test("flip(f)", t => {
     const sub = (x, y) => x - y;
     const bus = flip(sub);
@@ -142,6 +151,14 @@ test("flip(f)", t => {
     const xyz = (x, y, z) => x + y + z;
     const yx = flip(xyz);
     t.equal(yx(1, 2), NaN, "Flip discards any extra argument");
+});
+
+test("foldit(xs, f, z, this?)", t => {
+    t.equal(foldit(range(1, 10), (z, x) => z + x, 0), 55, "fold over an iterator");
+    t.equal(foldit(new Set().values(), (z, x) => z + x, 0), 0, "empty set");
+    t.equal(foldit(new Set(["foo", "bar", "baz"]).values(), function(z, x) {
+        return z + this[x];
+    }, 0, { foo: 1, bar: 2, baz: 3 }), 6, "this");
 });
 
 test("fold1(xs, f, this?)", t => {
@@ -250,6 +267,14 @@ test("isObject(x)", t => {
 test("K(x)", t => {
     t.typeof(K, "function", "K returns a constant function");
     t.equal(K("foo")("bar"), "foo", "K x y = x");
+});
+
+test("mapit(xs, f, this?)", t => {
+    t.equal(mapit(range(1, 7), x => x ** 2), [1, 4, 9, 16, 25, 36, 49], "map/collect iterator values");
+    t.equal(mapit(new Set().values(), x => x ** 2), [], "empty set");
+    t.equal(mapit(new Set(["foo", "bar", "baz"]).values(), function(x) {
+        return this[x] ** 2;
+    }, { foo: 1, bar: 2, baz: 3 }), [1, 4, 9], "this");
 });
 
 test("mod(x, m)", t => {
@@ -361,6 +386,11 @@ test("removeChildren(node)", t => {
     t.equal(removeChildren(p).textContent, "", "Remove text content");
     const div = html("div", html("p", "Some text"), html("p", "Some more text"));
     t.equal(removeChildren(div).innerHTML, "", "Removed all children");
+});
+
+test("reverse(xs)", t => {
+    t.equal([...reverse([])], [], "empty array");
+    t.equal([...reverse([1, 2, 3])], [3, 2, 1], "non-empty array");
 });
 
 test("safe(f)", t => {
