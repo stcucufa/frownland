@@ -133,6 +133,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
         delete this.score;
         const isNew = !this.boxes.has(box);
         const node = parse(box.label);
+        box.textContent = node.label;
         this.boxes.set(box, node);
         this.updateBoundingRect(box);
         box.toggleUnknown(!!node.isUnknown);
@@ -487,7 +488,7 @@ const Parse = {
         }
     },
 
-    gate: only(gate),
+    gate: only(gate, { label: "gate" }),
 };
 
 // Pick the right deserialization method for a serialized box (Item or Comment).

@@ -60,4 +60,14 @@ export const Editable = (Proto, property) => ({
                 this.patcher.didEdit(this);
         }
     },
+
+    get textContent() {
+        return this[property];
+    },
+
+    set textContent(value) {
+        this[property] = value;
+        this.input.textContent = value;
+
+    }
 });
