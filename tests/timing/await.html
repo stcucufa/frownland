@@ -19,6 +19,8 @@ async function ok() {
     return "ok";
 };
 
+test("Tag", t => { t.equal(Await.tag, "Await", "Await"); });
+
 test("Await(f)", t => {
     const item = Await(() => timeout(100));
     t.equal(item.show(), "Await", "show");

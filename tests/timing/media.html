@@ -17,6 +17,8 @@ import { dump } from "../../lib/timing/util.js";
 const src = "../media/animtest.m4v";
 const dur = 5338;
 
+test("Tag", t => { t.equal(Media.tag, "Media", "Media"); });
+
 test("Media(element, parent, context)", t => {
     const media = Media(html("video", { src }));
     t.equal(media.show(), "Media<VIDEO>", "show");
