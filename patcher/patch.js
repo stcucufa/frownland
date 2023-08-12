@@ -254,7 +254,7 @@ const only = (Constructor, params = {}) => input => {
 const container = Constructor => input => {
     if (/^\/map\s*$/.test(input)) {
         return {
-            label: Constructor.map.tag,
+            label: `${Constructor.tag}/map`,
             create: inputs => Constructor.map(inputs[0]),
             acceptFrom: K(true),
             inlets: 1,
