@@ -10,7 +10,7 @@ import { test } from "../test.js";
 import { html, K } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Delay, Effect, Element, Event, first, Instant, Par, Seq, Set } from "../../lib/timing.js";
+import { Delay, Effect, Element, Event, first, Instant, Par, Repeat, Seq, Set } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Par(xs).take(n = ∞) duration", t => {
@@ -191,7 +191,7 @@ test("Allowing failure during instantiation", t => {
         Delay(31),
         Par().take(1), // fails
         Delay(19),
-        Instant().repeat(), // fails
+        Repeat(Instant()), // fails
     ).take(3), 17);
     t.equal(dump(par),
 `* Par-0 [17, 48[

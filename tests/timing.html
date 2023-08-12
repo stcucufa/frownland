@@ -11,7 +11,7 @@ import { html, K } from "../lib/util.js";
 import { Deck } from "../lib/deck.js";
 import { Tape } from "../lib/tape.js";
 import {
-    Await, Delay, Effect, Element, Event, Instant, Media, Par, Score, Seq, Set, Try,
+    Await, Delay, Effect, Element, Event, Instant, Media, Par, Repeat, Score, Seq, Set, Try,
     gate
 } from "../lib/timing.js";
 
@@ -25,6 +25,7 @@ test("Exports", t => {
     t.equal(Instant(() => "ok").show(), "Instant", "Instant");
     t.equal(Media(html("video", { src: "media/animtest.m4v" })).show(), "Media<VIDEO>", "Media");
     t.equal(Par().show(), "Par/0", "Par");
+    t.equal(Repeat().show(), "Repeat", "Repeat");
     t.equal(Score().show(), "Score/0", "Score");
     t.equal(Seq().show(), "Seq/0", "Seq");
     t.equal(Set(p, "textContent").show(), "Set<textContent>", "Set");

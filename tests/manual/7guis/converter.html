@@ -8,7 +8,7 @@
 
 import { Tape } from "../../../lib/tape.js";
 import { Deck } from "../../../lib/deck.js";
-import { Event, first, Instant, Score, Seq, Set } from "../../../lib/timing.js";
+import { Event, first, Instant, Repeat, Score, Seq, Set } from "../../../lib/timing.js";
 
 const tape = Tape();
 const deck = Deck({ tape });
@@ -21,10 +21,10 @@ const convert = (from, to, conversion) => Seq(
 );
 
 const [celsius, fahrenheit] = document.querySelectorAll("input");
-score.add(first(
+score.add(Repeat(first(
     convert(celsius, fahrenheit, c => c * 9 / 5 + 32),
     convert(fahrenheit, celsius, f => (f - 32) * 5 / 9)
-).repeat());
+)));
 
 deck.start();
 

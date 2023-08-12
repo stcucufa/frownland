@@ -10,7 +10,7 @@ import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Delay, Effect, Instant, Par, Seq } from "../../lib/timing.js";
+import { Delay, Effect, Instant, Par, Repeat, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Tag", t => { t.equal(Par.tag, "Par", "Par"); });
@@ -48,11 +48,11 @@ test("Par(xs).hasEffect", t => {
 
 test("Par duration", t => {
     t.equal(
-        Par(Instant(), Delay(23), Seq.fold(), Par.map(), Delay(31).repeat()).duration, Infinity,
+        Par(Instant(), Delay(23), Seq.fold(), Par.map(), Repeat(Delay(31))).duration, Infinity,
         "indefinite duration (repeated child at the end)"
     );
     t.equal(
-        Par(Instant(), Delay(23).repeat(), Seq.fold(), Par.map(), Delay(31)).duration, Infinity,
+        Par(Instant(), Repeat(Delay(23)), Seq.fold(), Par.map(), Delay(31)).duration, Infinity,
         "indefinite duration (repeated child)"
     );
     t.undefined(
@@ -170,7 +170,7 @@ test("Failure during instantiation", t => {
     const tape = Tape();
     t.undefined(tape.instantiate(Par(
         Instant(() => { throw Error("should be pruned"); }),
-        Instant().repeat(),
+        Repeat(Instant()),
         Instant(() => { throw Error("should not be intantiated"); })
     ), 17), "failed to instantiate par");
     t.equal(tape.occurrences.length, 0, "no occurrences on tape");

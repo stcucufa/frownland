@@ -10,7 +10,7 @@ import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Delay, Instant, Par, Seq } from "../../lib/timing.js";
+import { Delay, Instant, Par, Repeat, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Seq(xs).take(n = ∞) duration", t => {
@@ -75,7 +75,7 @@ test("Instantiation failure in child after nth", t => {
         Instant(K("ok")),
         Instant(),
         Instant(),
-        Instant().repeat(),
+        Repeat(Instant()),
         Instant(() => { throw Error("should not be intantiated"); })
     ).take(3), 17);
     Deck({ tape }).now = 18;

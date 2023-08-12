@@ -29,16 +29,6 @@ test("Seq.fold(g, z).label(l)", t => {
     t.equal(dump(map), `* Seq/fold-0 "delays" [17, ∞[`, "dump matches");
 });
 
-test("Seq.fold(g, z).repeat()", t => {
-    const seq = Seq.fold(Delay, 1);
-    const repeat = seq.repeat();
-    t.equal(repeat.show(), "Seq/repeat", "show");
-    t.equal(repeat.child, seq, "repeat child");
-    t.equal(repeat.duration, Infinity, "indefinite duration");
-    t.equal(!repeat.fallible, true, "not fallible");
-    t.undefined(repeat.take(3).duration, "repeat dur (limited)");
-});
-
 test("Instantiation; child of Seq", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq(Instant(K([1, 2, 3])), Seq.fold(x => Instant(y => x + y), 0)), 17);
@@ -142,23 +132,6 @@ test("Instantiation failure; could not instantiate input", t => {
 `* Seq-0 @17 (failed)
   * Instant-1 @17 <1,2,3>
   * Seq/fold-2 @17 (input error)`, "dump matches");
-});
-
-test("Seq.fold(g, z).repeat(); instantiation failure", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(
-        Seq(Instant(K([1, 2, 3])), Seq.fold(x => Instant(y => x + y), 0).repeat()), 17
-    );
-    Deck({ tape }).now = 18;
-    t.equal(dump(seq),
-`* Seq-0 [17, ∞[ (failed)
-  * Instant-1 @17 <1,2,3>
-  * Seq/repeat-2 @17 (failed)
-    * Seq/fold-3 @17 <6>
-      * Instant-4 @17 <1>
-      * Instant-5 @17 <3>
-      * Instant-6 @17 <6>
-    * Seq/fold-7 @17 (input error)`, "dump matches");
 });
 
 test("Seq.fold(g, z).take(n = ∞)", t => {

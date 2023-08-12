@@ -27,16 +27,6 @@ test("Par.map(g).label(l)", t => {
     t.equal(dump(par), `* Par/map-0 "delays" [17, ∞[`, "dump matches");
 });
 
-test("Par.map(g).repeat()", t => {
-    const par = Par.map(Delay);
-    const repeat = par.repeat();
-    t.equal(repeat.show(), "Seq/repeat", "show");
-    t.equal(repeat.child, par, "repeat child");
-    t.equal(repeat.duration, Infinity, "indefinite duration");
-    t.equal(!repeat.fallible, true, "not fallible");
-    t.undefined(repeat.take(3).duration, "repeat dur (limited)");
-});
-
 test("Instantiation", t => {
     const tape = Tape();
     const instance = tape.instantiate(Seq(
@@ -215,50 +205,6 @@ test("Par.map(g) failure: could not instantiate input", t => {
 `* Seq-0 @17 (failed)
   * Instant-1 @17 <1,2,3>
   * Par/map-2 @17 (input error)`, "dump matches");
-});
-
-test("Par.map(g).repeat()", t => {
-    const tape = Tape();
-    const instance = tape.instantiate(Seq(
-        Instant(K([19, 23])),
-        Par.map(Delay).repeat()
-    ), 17);
-    Deck({ tape }).now = 69;
-    t.equal(dump(instance),
-`* Seq-0 [17, ∞[
-  * Instant-1 @17 <19,23>
-  * Seq/repeat-2 [17, ∞[
-    * Par/map-3 [17, 40[ <19,23>
-      * Delay-4 [17, 36[ <19>
-      * Delay-5 [17, 40[ <23>
-    * Par/map-6 [40, 63[ <19,23>
-      * Delay-7 [40, 59[ <19>
-      * Delay-8 [40, 63[ <23>
-    * Par/map-9 [63, 86[
-      * Delay-10 [63, 82[
-      * Delay-11 [63, 86[`, "dump matches");
-});
-
-test("Par.map(g).repeat().take(n)", t => {
-    const tape = Tape();
-    const instance = tape.instantiate(Seq(
-        Instant(K([19, 23])),
-        Par.map(Delay).repeat().take(3)
-    ), 17);
-    Deck({ tape }).now = 87;
-    t.equal(dump(instance),
-`* Seq-0 [17, 86[ <19,23>
-  * Instant-1 @17 <19,23>
-  * Seq/repeat-2 [17, 86[ <19,23>
-    * Par/map-3 [17, 40[ <19,23>
-      * Delay-4 [17, 36[ <19>
-      * Delay-5 [17, 40[ <23>
-    * Par/map-6 [40, 63[ <19,23>
-      * Delay-7 [40, 59[ <19>
-      * Delay-8 [40, 63[ <23>
-    * Par/map-9 [63, 86[ <19,23>
-      * Delay-10 [63, 82[ <19>
-      * Delay-11 [63, 86[ <23>`, "dump matches");
 });
 
 test("Par may recover from failing child", t => {
