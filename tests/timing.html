@@ -11,8 +11,7 @@ import { html, K } from "../lib/util.js";
 import { Deck } from "../lib/deck.js";
 import { Tape } from "../lib/tape.js";
 import {
-    Await, Delay, Effect, Element, Event, Instant, Media, Par, Repeat, Score, Seq, Set, Try,
-    gate
+    Await, Delay, Effect, Element, Event, Instant, Media, Par, Repeat, Score, Seq, Set, Try
 } from "../lib/timing.js";
 
 test("Exports", t => {
@@ -30,16 +29,6 @@ test("Exports", t => {
     t.equal(Seq().show(), "Seq/0", "Seq");
     t.equal(Set(p, "textContent").show(), "Set<textContent>", "Set");
     t.equal(Try(Instant(() => { throw "!!!"; }), Instant(() => "ko")).show(), "Try", "Try");
-});
-
-test("gate(x, y)", t => {
-    const tape = Tape();
-    const instance = tape.instantiate(Seq(
-        Instant(K("ok")),
-        gate(Effect(() => { console.warn("ko"); }), Instant(x => x + "!"))
-    ), 17);
-    t.warns(() => { Deck({ tape }).now = 18; }, "has effect when running");
-    t.equal(instance.value, "ok!", "value matches");
 });
 
         </script>
