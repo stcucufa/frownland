@@ -34,16 +34,6 @@ test("Seq.map(child).label(l)", t => {
     t.equal(dump(map), `* Seq/map-0 "instants" [17, ∞[`, "dump matches");
 });
 
-test("Seq.map(child).repeat()", t => {
-    const seq = Seq.map(Instant());
-    const repeat = seq.repeat();
-    t.equal(repeat.show(), "Seq/repeat", "show");
-    t.equal(repeat.child, seq, "repeat child");
-    t.equal(repeat.duration, Infinity, "indefinite duration");
-    t.equal(!repeat.fallible, true, "not fallible");
-    t.undefined(repeat.take(3).duration, "repeat dur (limited)");
-});
-
 test("Instantiation", t => {
     const tape = Tape();
     const seq = tape.instantiate(Seq(
@@ -181,65 +171,6 @@ test("Seq.map(child) failure; input is not an array", t => {
 `* Seq-0 @17 (failed)
   * Instant-1 @17 <oops>
   * Seq/map-2 @17 (input error)`, "dump matches");
-});
-
-test("Seq.map(child).repeat(); instantiation", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq(
-        Instant(K([19, 23])), Seq.map(Instant(x => x * 2).dur(29)).repeat()
-    ), 17);
-    Deck({ tape }).now = 111;
-    t.equal(dump(seq),
-`* Seq-0 [17, ∞[
-  * Instant-1 @17 <19,23>
-  * Seq/repeat-2 [17, ∞[
-    * Seq/map-3 [17, 75[ <38,46>
-      * Seq-4 [17, 46[ <38>
-        * Delay-5 [17, 46[ <19>
-        * Instant-6 @46 <38>
-      * Seq-7 [46, 75[ <46>
-        * Delay-8 [46, 75[ <23>
-        * Instant-9 @75 <46>
-    * Seq/map-10 [75, 133[
-      * Seq-11 [75, 104[ <76>
-        * Delay-12 [75, 104[ <38>
-        * Instant-13 @104 <76>
-      * Seq-14 [104, 133[
-        * Delay-15 [104, 133[
-        * Instant-16 @133`, "dump matches");
-});
-
-test("Seq.map(child).repeat().take(n)", t => {
-    const tape = Tape();
-    const seq = tape.instantiate(Seq(
-        Instant(K([19, 23])), Seq.map(Instant(x => x * 2).dur(29)).repeat().take(3)
-    ), 17);
-    Deck({ tape }).now = 192;
-    t.equal(dump(seq),
-`* Seq-0 [17, 191[ <152,184>
-  * Instant-1 @17 <19,23>
-  * Seq/repeat-2 [17, 191[ <152,184>
-    * Seq/map-3 [17, 75[ <38,46>
-      * Seq-4 [17, 46[ <38>
-        * Delay-5 [17, 46[ <19>
-        * Instant-6 @46 <38>
-      * Seq-7 [46, 75[ <46>
-        * Delay-8 [46, 75[ <23>
-        * Instant-9 @75 <46>
-    * Seq/map-10 [75, 133[ <76,92>
-      * Seq-11 [75, 104[ <76>
-        * Delay-12 [75, 104[ <38>
-        * Instant-13 @104 <76>
-      * Seq-14 [104, 133[ <92>
-        * Delay-15 [104, 133[ <46>
-        * Instant-16 @133 <92>
-    * Seq/map-17 [133, 191[ <152,184>
-      * Seq-18 [133, 162[ <152>
-        * Delay-19 [133, 162[ <76>
-        * Instant-20 @162 <152>
-      * Seq-21 [162, 191[ <184>
-        * Delay-22 [162, 191[ <92>
-        * Instant-23 @191 <184>`, "dump matches");
 });
 
 test("Seq.map(child).dur(d), extending duration", t => {

@@ -26,7 +26,7 @@ div.tapped {
         <script type="module">
 
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Event, Effect, first, Instant, Score, Seq } from "../../lib/timing.js";
+import { Await, Delay, Event, Effect, first, Instant, Repeat, Score, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 import { Tape } from "../../lib/tape.js";
 import { imagePromise, K, range } from "../../lib/util.js";
@@ -36,13 +36,14 @@ const deck = Deck({ tape });
 const score = Score({ tape });
 const box = document.querySelector("div");
 
-const until = (x, y) => first(x.repeat(), y);
+// FIXME 1V02	Repeat.until()
+const until = (x, y) => first(Repeat(x), y);
 const drag = ([event, [x0, y0]]) => {
     box.style.left = `${event.clientX - x0}px`;
     box.style.top = `${event.clientY - y0}px`;
 };
 
-score.add(Seq(
+score.add(Repeat(Seq(
     Event(box, "pointerdown"),
     first(
 
@@ -66,7 +67,7 @@ score.add(Seq(
             )
         ),
     )
-).repeat());
+)));
 
 deck.start();
 

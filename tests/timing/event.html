@@ -10,7 +10,7 @@ import { test } from "../test.js";
 import { K, timeout } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Delay, Event, first, Instant, Par, Seq } from "../../lib/timing.js";
+import { Delay, Event, first, Instant, Par, Repeat, Seq } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Tag", t => { t.equal(Event.tag, "Event", "Event"); });
@@ -42,23 +42,6 @@ test("Instantiation", t => {
     window.dispatchEvent(event);
     t.equal(instance.value, event, "instance value");
     t.match(dump(instance), /^\* Event-0 \[17, 27\[ <[^>]+>$/, "dump matches");
-});
-
-test("Repeat", t => {
-    const tape = Tape();
-    const deck = Deck({ tape });
-    const seq = tape.instantiate(Seq(
-        Event(window, "synth").repeat().take(3),
-        Instant(K("ok"))
-    ), 17);
-    deck.now = 27;
-    window.dispatchEvent(new window.Event("synth"));
-    deck.now = 37;
-    window.dispatchEvent(new window.Event("synth"));
-    deck.now = 47;
-    window.dispatchEvent(new window.Event("synth"));
-    deck.now = 48;
-    t.match(dump(seq), /^\* Seq-0 \[17, 47\[ <ok>\n  \* Seq\/repeat-1 \[17, 47\[ <[^>]+>\n    \* Event-2 \[17, 27\[ <[^>]+>\n    \* Event-3 \[27, 37\[ <[^>]+>\n    \* Event-4 \[37, 47\[ <[^>]+>\n  \* Instant-5 @47 <ok>$/, "dump matches");
 });
 
 test("Event(target, type).dur(0)", t => {
@@ -140,7 +123,7 @@ test("Cancel with repeat", t => {
     const tape = Tape();
     const deck = Deck({ tape });
     const par = tape.instantiate(Par(
-        Event(window, "synth").repeat(),
+        Repeat(Event(window, "synth")),
         Delay(23),
     ).take(1), 17);
     deck.now = 27;
@@ -149,7 +132,7 @@ test("Cancel with repeat", t => {
     window.dispatchEvent(new window.Event("synth"));
     deck.now = 47;
     window.dispatchEvent(new window.Event("synth"));
-    t.match(dump(par, true), /^\* Par-0 \[17, 40\[ <>\n  \* Seq\/repeat-1 \[17, 40\[ \(cancelled\)\n    \* Event-2 \[17, 27\[ <[^>]+>\n    \* Event-4 \[27, 37\[ <[^>]+>\n    \* Event-5 \[37, 40\[ \(cancelled\)\n  \* Delay-3 \[17, 40\[ <undefined> {o0@40}$/, "dump matches");
+    t.match(dump(par, true), /^\* Par-0 \[17, 40\[ <>\n  \* Repeat-1 \[17, 40\[ \(cancelled\)\n    \* Event-2 \[17, 27\[ <[^>]+>\n    \* Event-4 \[27, 37\[ <[^>]+>\n    \* Event-5 \[37, 40\[ \(cancelled\)\n  \* Delay-3 \[17, 40\[ <undefined> {o0@40}$/, "dump matches");
 });
 
 test("Cancel with multiple event types for the same target", t => {
@@ -185,7 +168,7 @@ test("Prune with repeat", t => {
     const deck = Deck({ tape });
     const choice = tape.instantiate(Par(
         Seq(Instant(K([19])), Par.map(Delay)),
-        Seq(Delay(23), Event(window, "synth").repeat()),
+        Seq(Delay(23), Repeat(Event(window, "synth"))),
     ).take(1), 17);
     deck.now = 37;
     t.equal(dump(choice, true),

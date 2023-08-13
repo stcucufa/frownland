@@ -8,7 +8,7 @@
 
 import { Tape } from "../../../lib/tape.js";
 import { Deck } from "../../../lib/deck.js";
-import { Event, Instant, Score, Seq, Set, gate } from "../../../lib/timing.js";
+import { Event, Instant, Repeat, Score, Seq, Set, gate } from "../../../lib/timing.js";
 
 const tape = Tape();
 const deck = Deck({ tape });
@@ -18,10 +18,10 @@ const button = document.querySelector("button");
 
 score.add(Seq(
     Instant(() => input.valueAsNumber),
-    Seq(
+    Repeat(Seq(
         gate(Event(button, "click"), Instant(x => x + 1)),
         Set(input, "value")
-    ).repeat()
+    ))
 ));
 
 deck.start();

@@ -1,5 +1,5 @@
 import {
-    Await, Delay, Effect, Element, Event, Instant, Media, Par, Score, Seq, Set, Try,
+    Await, Delay, Effect, Element, Event, Instant, Media, Par, Repeat, Score, Seq, Set, Try,
     gate
 } from "../lib/timing.js";
 import { dump } from "../lib/timing/util.js";
@@ -453,9 +453,8 @@ const Parse = {
         }
     },
 
-    repeat: only(item => item.repeat(), {
-        label: "repeat",
-        create: ([item]) => item.repeat?.(),
+    Repeat: only(Repeat, {
+        create: ([item]) => Repeat(item),
         isContainer: true,
         acceptFrom: node => !node.isTry,
         inlets: 1,
