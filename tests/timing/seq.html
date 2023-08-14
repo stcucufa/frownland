@@ -11,7 +11,9 @@ import { K, timeout } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Await, Delay, Effect, Event, first, Instant, Par, Repeat, Seq, Set } from "../../lib/timing.js";
+import {
+    Await, Delay, Effect, Event, first, gate, Instant, Par, Repeat, Seq, Set
+} from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
 test("Tag", t => { t.equal(Seq.tag, "Seq", "Seq"); });
@@ -269,6 +271,16 @@ test("Evaluation order check", t => {
     deck.now = 32;
     t.equal(instance.value, [event], "Ended with the correct value");
     console.log(dump(instance));
+});
+
+test("gate(x, y)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K("ok")),
+        gate(Effect(() => { console.warn("ko"); }), Instant(x => x + "!"))
+    ), 17);
+    t.warns(() => { Deck({ tape }).now = 18; }, "has effect when running");
+    t.equal(instance.value, "ok!", "value matches");
 });
 
         </script>
