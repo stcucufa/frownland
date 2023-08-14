@@ -269,7 +269,7 @@ test("Evaluation order check", t => {
     const event = new window.Event("A");
     window.dispatchEvent(event);
     deck.now = 32;
-    t.equal(instance.value, [event], "Ended with the correct value");
+    t.equal(instance.value, event, "Ended with the correct value");
     console.log(dump(instance));
 });
 

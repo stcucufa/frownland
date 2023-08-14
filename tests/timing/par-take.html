@@ -90,7 +90,7 @@ test("Instantiation; n < xs.length", t => {
   * Instant-1 @17 <B>`, "dump matches");
 });
 
-test("first() is a synonym for Par().take(1)", t => {
+test("first() is a synonym for Par().take(1) but returns a single value", t => {
     const tape = Tape();
     const par = tape.instantiate(first(
         Seq(Instant(K("A")), Delay(23), Instant(x => x + "*")),
@@ -99,7 +99,7 @@ test("first() is a synonym for Par().take(1)", t => {
         Seq(Instant(K("D")), Delay(19), Instant(x => x + "*")),
     ), 17);
     Deck({ tape }).now = 49;
-    t.equal(par.value, ["B"], "dynamic value");
+    t.equal(par.value, "B", "single value");
     t.equal(dump(par),
 `* Par-0 @17 <B>
   * Instant-1 @17 <B>`, "dump matches");
