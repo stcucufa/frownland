@@ -453,12 +453,25 @@ const Parse = {
         }
     },
 
-    Repeat: only(Repeat, {
-        create: ([item]) => Repeat(item),
-        isContainer: true,
-        acceptFrom: node => !node.isTry,
-        inlets: 1,
-    }),
+    Repeat: input => {
+        if (/^\/until\s*$/.test(input)) {
+            return {
+                label: `${Repeat.tag}/until`,
+                create: ([x, y]) => Repeat(x).until(y),
+                acceptFrom: K(true),
+                inlets: 2,
+                isContainer: true
+            };
+        } else if (!/\S/.test(input)) {
+            return {
+                label: Repeat.tag,
+                create: ([item]) => Repeat(item),
+                acceptFrom: K(true),
+                inlets: 1,
+                isContainer: true
+            };
+        }
+    },
 
     take: input => {
         const match = input.match(/^\s+\d+\s*$/);
