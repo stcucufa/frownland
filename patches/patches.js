@@ -56,7 +56,9 @@ const PatchesView = assign(() => create().call(PatchesView), {
     },
 
     addPatchID(id) {
-        this.element.appendChild(html("li", `Patch #${id}`));
+        const openButton = html("button", { type: "button" }, "Open");
+        openButton.addEventListener("click", () => { window.location = `../patcher/?id=${id}`; });
+        this.element.appendChild(html("li", `Patch #${id} `, openButton));
     }
 });
 
