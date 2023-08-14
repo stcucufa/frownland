@@ -1,15 +1,34 @@
 import { assign, create, html } from "../lib/util.js";
 import { notify, on } from "../lib/events.js";
-import { Patch, PatchView } from "./patch.js";
 
-// Manage a list of patches.
+// Manage a list of patches by their ID.
 const Patches = assign(() => create().call(Patches), {
+    localStorageKey: "patches:ids",
+
     init() {
-        this.patches = [];
+        this.ids = [];
     },
 
-    addPatch(patch) {
-        this.patches.push(patch);
+    // Attempt to get saved IDs from local storage.
+    loadPatchIDs() {
+        try {
+            const json = window.localStorage.getItem(this.localStorageKey);
+            if (json) {
+                this.ids = JSON.parse(json);
+            }
+        } catch (error) {
+            notify(this, "error", { message: "Could not load from local storage", error });
+        }
+    },
+
+    // Add the ID of the new patch to the list and save it to local storage.
+    addPatchID(id) {
+        this.ids.push(id);
+        try {
+            localStorage.setItem(this.localStorageKey, JSON.stringify(this.ids));
+        } catch (error) {
+            notify(this, "error", { message: "Could not save to local storage", error });
+        }
     }
 });
 
@@ -36,22 +55,29 @@ const PatchesView = assign(() => create().call(PatchesView), {
         }
     },
 
-    addPatch(patch) {
-        this.element.appendChild(PatchView(patch).element);
+    addPatchID(id) {
+        this.element.appendChild(html("li", `Patch #${id}`));
     }
 });
 
 const PatchesController = assign(() => create().call(PatchesController), {
     init() {
         this.model = Patches();
+        on(this.model, "error", ({ message, error }) => { console.error(message, error); });
+
         this.view = PatchesView();
         on(this.view, "new", () => { this.createPatch(); });
+
+        this.model.loadPatchIDs();
+        for (const id of this.model.ids) {
+            this.view.addPatchID(id);
+        }
     },
 
     createPatch() {
-        const patch = Patch();
-        this.model.addPatch(patch);
-        this.view.addPatch(patch);
+        const id = Math.random().toString(36).substr(2, 7);
+        this.model.addPatchID(id);
+        this.view.addPatchID(id);
     }
 });
 
