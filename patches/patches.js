@@ -1,5 +1,6 @@
 import { assign, create, html, remove } from "../lib/util.js";
 import { notify, on } from "../lib/events.js";
+import { button } from "./util.js";
 
 // Manage a list of patches by their ID.
 const Patches = assign(() => create().call(Patches), {
@@ -45,12 +46,7 @@ const Patches = assign(() => create().call(Patches), {
     }
 });
 
-function button(label, f) {
-    const button = html("button", { type: "button" }, label);
-    button.addEventListener("click", f);
-    return button;
-}
-
+// Show a list of patches.
 const PatchesView = assign(() => create().call(PatchesView), {
     init() {
         this.ul = html("ul", { class: "patches" });
@@ -60,8 +56,8 @@ const PatchesView = assign(() => create().call(PatchesView), {
         ));
     },
 
+    // Add an item to the list of patches.
     addPatchID(id) {
-
         const openButton = button("open", () => { window.location = `../patcher/?id=${id}`; });
         const deleteButton = button("delete", () => {
             try {
@@ -76,6 +72,7 @@ const PatchesView = assign(() => create().call(PatchesView), {
     }
 });
 
+// Controller for the app coordinating the view and model.
 const PatchesController = assign(() => create().call(PatchesController), {
     init() {
         this.model = Patches();
@@ -91,6 +88,7 @@ const PatchesController = assign(() => create().call(PatchesController), {
         }
     },
 
+    // Create metadata for a new patch.
     createPatch() {
         const id = Math.random().toString(36).substr(2, 7);
         this.model.addPatchID(id);
