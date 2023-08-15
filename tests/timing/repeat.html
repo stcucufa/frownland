@@ -603,7 +603,7 @@ test("Repeat(x).until(y)", t => {
     );
     Deck({ tape }).now = 129;
     t.equal(values, [0, 1, 2, 3, 4], "went through the loop");
-    t.equal(instance.value, ["ok"], "ended correctly");
+    t.equal(instance.value, "ok", "ended correctly");
 });
 
         </script>
