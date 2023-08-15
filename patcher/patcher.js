@@ -65,6 +65,10 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         this.canvas.addEventListener("pointermove", this);
         document.addEventListener("keyup", this);
 
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+        const patchKey = id ? `patch:${id}` : "patch";
+
         this.mainElement = document.querySelector("div.main");
 
         // Track the pointer to know where to add new boxes.
@@ -93,7 +97,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 // Save to local storage.
                 try {
                     const patch = this.patch.serialize();
-                    localStorage.setItem("patch", patch);
+                    localStorage.setItem(patchKey, patch);
                     console.info("Saved", JSON.parse(patch));
                 } catch (error) {
                     console.error("Could not serialize: ", error);
@@ -134,7 +138,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         });
 
         try {
-            const json = window.localStorage.getItem("patch");
+            const json = window.localStorage.getItem(patchKey);
             if (json) {
                 const patch = JSON.parse(json);
                 this.patch.deserialize(this, patch);
