@@ -12,7 +12,7 @@ import { notification } from "../../lib/events.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
 import { dump } from "../../lib/timing/util.js";
-import { Await, Delay, Event, Instant, Par, Repeat, Score, Seq } from "../../lib/timing.js";
+import { Await, Delay, Effect, Event, Instant, Par, Repeat, Score, Seq } from "../../lib/timing.js";
 
 test("Tag", t => { t.equal(Repeat.tag, "Repeat", "Repeat"); });
 
@@ -589,6 +589,21 @@ test("Repeat(Seq.fold(g, z)); instantiation failure", t => {
       * Instant-5 @17 <3>
       * Instant-6 @17 <6>
     * Seq/fold-7 @17 (input error)`, "dump matches");
+});
+
+test("Repeat(x).until(y)", t => {
+    const tape = Tape();
+    const values = [];
+    const instance = tape.instantiate(
+        Repeat(
+            Seq(Effect((x = 0) => (values.push(x), x + 1)), Delay(23))
+        ).until(
+            Seq(Delay(111), Instant(K("ok")))
+        ), 17
+    );
+    Deck({ tape }).now = 129;
+    t.equal(values, [0, 1, 2, 3, 4], "went through the loop");
+    t.equal(instance.value, "ok", "ended correctly");
 });
 
         </script>
