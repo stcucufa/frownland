@@ -385,6 +385,28 @@ const Parse = {
         }
     },
 
+    // Input element (default is text, but a short way to change the type is
+    // Input/<type>, e.g. Input/number)
+    Input: input => {
+        let match = input.match(/^\/(\w+)\s*/);
+        const modifier = match?.[1] ?? "";
+        input = input.substr(match?.[0].length ?? 0);
+        let params = input;
+        const attrs = {};
+        while (match = params.match(/^\s*(\w+)\s*="([^"]+)"(\s+|$)/)) {
+            attrs[match[1]] = match[2];
+            params = params.substr(match[0].length);
+        }
+        if (!/\S/.test(params)) {
+            attrs.type = modifier || "text";
+            return {
+                label: `Input${modifier ? `/${modifier}` : ""} ${normalizeWhitespace(input)}`,
+                isElement: true,
+                create: createElement("input", attrs)
+            };
+        }
+    },
+
     Image: input => {
         const src = input.trim();
         if (/\S/.test(src)) {
