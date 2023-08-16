@@ -147,7 +147,7 @@ const OccurrencesOverlay = Object.assign(() => create().call(OccurrencesOverlay,
         })));
     },
 
-    removeOccurrence(occurrence) {
+    occurrenceWasRemoved(occurrence) {
         if (!this.occurrences) {
             return;
         }
