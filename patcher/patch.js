@@ -276,7 +276,7 @@ const mediaNode = tagName => input => {
     const src = input.trim();
     if (/\S/.test(src)) {
         return {
-            label: `${tagName} ${src}`,
+            label: `${tagName.replace(/^./, c => c.toUpperCase())} ${src}`,
             isElement: true,
             create: (_, box) => {
                 const element = html(tagName, { src });
@@ -364,13 +364,13 @@ const Parse = {
     },
 
     Element: input => {
-        let params = input;
-        let match = params.match(/^\s+(\w+)/);
+        let match = input.match(/^\s+(\w+)/);
         if (!match) {
             return;
         }
         const tagName = match[1];
-        params = params.substr(match[0].length);
+        let params = input.substr(match[0].length);
+        const labelParams = normalizeWhitespace(params);
         const attrs = {};
         while (match = params.match(/^\s+(\w+)\s*="([^"]+)"/)) {
             attrs[match[1]] = match[2];
@@ -378,7 +378,7 @@ const Parse = {
         }
         if (!/\S/.test(params)) {
             return {
-                label: `Element ${tagName} ${normalizeWhitespace(input)}`,
+                label: `Element ${tagName} ${labelParams}`,
                 isElement: true,
                 create: createElement(tagName, attrs)
             };
@@ -513,7 +513,7 @@ const Parse = {
         if (match) {
             const n = match[1] ? parseInt(match[1], 10) : 1;
             return {
-                label: `first ${n}`,
+                label: `first${match[1] ? ` ${n}` : ""}`,
                 inlets: 2,
                 isContainer: true,
                 acceptFrom: K(true),
