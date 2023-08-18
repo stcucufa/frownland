@@ -68,6 +68,7 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
         const params = new URLSearchParams(window.location.search);
         const id = params.get("id");
         const patchKey = id ? `patch:${id}` : "patch";
+        const patchMetadataKey = id ? `patch:meta:${id}` : "";
 
         this.mainElement = document.querySelector("div.main");
 
@@ -98,6 +99,10 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 try {
                     const patch = this.patch.serialize();
                     localStorage.setItem(patchKey, patch);
+                    if (this.patchMetadata) {
+                        this.patchMetadata.modified = Date.now();
+                        localStorage.setItem(patchMetadataKey, JSON.stringify(this.patchMetadata));
+                    }
                     console.info("Saved", JSON.parse(patch));
                 } catch (error) {
                     console.error("Could not serialize: ", error);
@@ -142,7 +147,10 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
             if (json) {
                 const patch = JSON.parse(json);
                 this.patch.deserialize(this, patch);
-                console.info("Loaded", patch);
+                if (patchMetadataKey) {
+                    this.patchMetadata = JSON.parse(localStorage.getItem(patchMetadataKey));
+                }
+                console.info("Loaded", patch, this.patchMetadata);
             }
         } catch (error) {
             console.error("Could not load patch", error);
