@@ -104,8 +104,12 @@ const PatchesView = assign(() => create().call(PatchesView), {
                 console.error(`Could not remove item "patch:${id}"`, error);
             }
         });
-        const title = html("span", {}, metadata.title ?? `Untitled patch ${id}`);
-        const item = this.ul.appendChild(html("li", title, " ", openButton, " ", deleteButton));
+        const title = html("span", metadata.title ?? `Untitled patch ${id}`);
+        const date = html("span",
+            { class: "date" },
+            `(${new Date(metadata.modified ?? metadata.created).toLocaleString()})`
+        );
+        const item = this.ul.appendChild(html("li", title, " ", date, " ", openButton, " ", deleteButton));
     }
 });
 
