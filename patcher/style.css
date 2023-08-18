@@ -143,6 +143,10 @@ div.main.locked svg.canvas rect.grid {
     fill: #f8f9f0;
 }
 
+div.main.locked g.targets {
+    display: none;
+}
+
 /* Ensure that contents of boxes can be selected, while boxes and cords cannot,
  * when the patch is locked. */
 div.main:not(.locked) svg.canvas g.box foreignObject,
