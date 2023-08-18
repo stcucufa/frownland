@@ -29,6 +29,17 @@ const Patches = assign(() => create().call(Patches), {
         }
     },
 
+    // Set the title of a patch and save the updated metadata.
+    setPatchTitle(id, title) {
+        const metadata = this.metadata[id];
+        console.assert(metadata);
+        if (metadata.title !== title) {
+            metadata.title = title;
+            metadata.modified = Date.now();
+            this.saveMetadataToLocalStorage(id);
+        }
+    },
+
     // Keys for local storage: patch IDs and metadata for individula patches.
     localStorageKeys: {
         ids: "patches:ids",
@@ -64,10 +75,19 @@ const Patches = assign(() => create().call(Patches), {
         try {
             localStorage.setItem(this.localStorageKeys.ids, JSON.stringify(this.ids));
             if (id) {
-                localStorage.setItem(this.localStorageKeys.metadata(id), JSON.stringify(this.metadata[id]));
+                this.saveMetadataToLocalStorage(id);
             }
         } catch (error) {
             notify(this, "error", { message: "Could not save to local storage", error });
+        }
+    },
+
+    // Save the metadata for a given ID.
+    saveMetadataToLocalStorage(id) {
+        try {
+            localStorage.setItem(this.localStorageKeys.metadata(id), JSON.stringify(this.metadata[id]));
+        } catch (error) {
+            notify(this, "error", { message: "Could not save metadatato local storage", error });
         }
     },
 
@@ -104,12 +124,30 @@ const PatchesView = assign(() => create().call(PatchesView), {
                 console.error(`Could not remove item "patch:${id}"`, error);
             }
         });
-        const title = html("span", metadata.title ?? `Untitled patch ${id}`);
-        const date = html("span",
+        let title = metadata.title ?? `Untitled patch ${id}`;
+        const titleSpan = html("span", {}, title);
+        titleSpan.contentEditable = true;
+        titleSpan.addEventListener("keydown", event => {
+            switch (event.key) {
+                case "Escape":
+                    titleSpan.textContent = title;
+                    titleSpan.blur();
+                    break;
+                case "Enter":
+                    event.preventDefault();
+                    notify(this, "title", { id, title: titleSpan.textContent });
+                    titleSpan.textContent = metadata.title;
+                    dateSpan.textContent = `(${new Date(metadata.modified).toLocaleString()})`;
+                    titleSpan.blur();
+            }
+        });
+        const dateSpan = html("span",
             { class: "date" },
             `(${new Date(metadata.modified ?? metadata.created).toLocaleString()})`
         );
-        const item = this.ul.appendChild(html("li", title, " ", date, " ", openButton, " ", deleteButton));
+        const item = this.ul.appendChild(
+            html("li", titleSpan, " ", dateSpan, " ", openButton, " ", deleteButton)
+        );
     }
 });
 
@@ -122,6 +160,7 @@ const PatchesController = assign(() => create().call(PatchesController), {
         this.view = PatchesView();
         on(this.view, "new", () => { this.createPatch(); });
         on(this.view, "remove", ({ id }) => { this.model.removePatchID(id); });
+        on(this.view, "title", ({ id, title }) => { this.model.setPatchTitle(id, title); });
 
         this.model.loadFromLocalStorage();
         for (const id of this.model.ids) {
