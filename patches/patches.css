@@ -8,3 +8,8 @@ body {
     background-color: #f8f9f0;
     color: #102040;
 }
+
+span.date {
+    font-size: smaller;
+    color: #204080;
+}
