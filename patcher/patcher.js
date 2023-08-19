@@ -149,6 +149,9 @@ const Patcher = assign(canvas => create({ canvas }).call(Patcher), {
                 this.patch.deserialize(this, patch);
                 if (patchMetadataKey) {
                     this.patchMetadata = JSON.parse(localStorage.getItem(patchMetadataKey));
+                    if ("title" in this.patchMetadata) {
+                        document.title = `${this.patchMetadata.title} | ${document.title}`;
+                    }
                 }
                 console.info("Loaded", patch, this.patchMetadata);
             }
