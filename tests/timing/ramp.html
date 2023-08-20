@@ -10,10 +10,44 @@ import { test } from "../test.js";
 import { html, K, timeout } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
-import { Animate } from "../../lib/timing.js";
+import { Instant, Ramp } from "../../lib/timing.js";
 import { dump } from "../../lib/timing/util.js";
 
-test("Tag", t => { t.equal(Animate.tag, "Ramp", "Ramp"); });
+test("Tag", t => { t.equal(Ramp.tag, "Ramp", "Ramp"); });
+
+test("Instantiation (no child)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const ramp = tape.instantiate(Ramp().dur(23), 17);
+    deck.now = 19;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <0> {o0@17,o1@19,o2@40}", "dump matches (begin)");
+    deck.now = 31;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <0.08695652173913043> {o0@17,o1@19,o2@31,o3@40}", "dump matches (middle)");
+    deck.now = 41;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <1> {o0@17,o1@19,o2@31,o3@40}", "dump matches (end)");
+});
+
+test("Instantiation (with child)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const ramp = tape.instantiate(Ramp(Instant(p => `${Math.round(p * 100)}%`)).dur(23), 17);
+    deck.now = 19;
+    t.equal(dump(ramp),
+`* Ramp-0 [17, 40[ <0>
+  * Instant-1 @17 <0%>`, "dump matches (begin)");
+    deck.now = 31;
+    t.equal(dump(ramp),
+`* Ramp-0 [17, 40[ <0.08695652173913043>
+  * Instant-1 @17 <0%>
+  * Instant-2 @19 <9%>`, "dump matches (middle)");
+    deck.now = 41;
+    t.equal(dump(ramp),
+`* Ramp-0 [17, 40[ <1>
+  * Instant-1 @17 <0%>
+  * Instant-2 @19 <9%>
+  * Instant-3 @31 <61%>
+  * Instant-4 @40 <100%>`, "dump matches (end)");
+});
 
         </script>
     </head>
