@@ -200,7 +200,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     inletAcceptsConnection(inlet, outlet) {
         return this.boxes.get(inlet.box).acceptFrom?.(
             this.boxes.get(outlet.box),
-            outlet.box.inlets.indexOf(inlet),
+            inlet.box.inlets.indexOf(inlet),
             outlet.box.outlets.indexOf(outlet)
         );
     }
@@ -336,10 +336,13 @@ const Parse = {
             const event = match[1];
             return {
                 label: `Event ${event}`,
-                inlets: 1,
+                inlets: 2,
                 isEvent: true,
-                acceptFrom: box => box.isElement || box.isWindow,
-                create: ([target]) => Event(target.element, event)
+                acceptFrom: (box, i) => {
+                    return (i === 0 && (box.isElement || box.isWindow)) ||
+                        (i === 1 && !(box.isElement || box.isWindow));
+                },
+                create: ([target, child]) => Event(target.element, event, child)
             };
         }
     },
