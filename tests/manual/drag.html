@@ -42,7 +42,7 @@ const drag = ([event, [x0, y0]]) => {
 };
 
 score.add(Repeat(Seq(
-    Event(box, "pointerdown"),
+    Event(box, "pointerdown", Effect(event => (event.preventDefault(), event))),
     first(
 
         // Tap
