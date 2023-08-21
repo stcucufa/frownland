@@ -78,7 +78,11 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
                 for (const [box, [input, element]] of this.elementBoxes.entries()) {
                     input.remove();
                     if (element) {
-                        box.foreignObject.appendChild(element);
+                        try {
+                            box.foreignObject.appendChild(element);
+                        } catch (error) {
+                            console.warn(error);
+                        }
                     }
                 }
                 notify(this, "score");
@@ -180,8 +184,7 @@ export const Patch = Object.assign(properties => create(properties).call(Patch),
     cordWasAdded(cord) {
         const source = this.boxes.get(cord.outlet.box);
         const target = this.boxes.get(cord.inlet.box);
-        cord.isReference = (target.isFunction) ||
-            ((source.isElement || source.isWindow) && (target.isEvent || target.isSet));
+        cord.isReference = (target.isFunction) || (source.isElement && (target.isEvent || target.isSet));
         if (target.isVariadic && cord.inlet === cord.inlet.box.inlets[0]) {
             cord.inlet.box.inlets[1].enabled = true;
         }
@@ -338,10 +341,7 @@ const Parse = {
                 label: `Event ${event}`,
                 inlets: 2,
                 isEvent: true,
-                acceptFrom: (box, i) => {
-                    return (i === 0 && (box.isElement || box.isWindow)) ||
-                        (i === 1 && !(box.isElement || box.isWindow));
-                },
+                acceptFrom: (box, i) => (i === 0 && box.isElement) || (i === 1 && !box.isElement),
                 create: ([target, child]) => Event(target.element, event, child)
             };
         }
@@ -360,7 +360,7 @@ const Parse = {
                 label: `Set ${name}`,
                 inlets: 1,
                 isSet: true,
-                acceptFrom: box => box.isElement || box.isWindow,
+                acceptFrom: box => box.isElement,
                 create: ([target]) => Set(target.element, name, value)
             }
         }
@@ -447,12 +447,22 @@ const Parse = {
         };
     },
 
+    Document: input => {
+        if (!/\S/.test(input)) {
+            return {
+                label: "Document",
+                create: K({ element: document }),
+                isElement: true,
+            }
+        }
+    },
+
     Window: input => {
         if (!/\S/.test(input)) {
             return {
                 label: "Window",
                 create: K({ element: window }),
-                isWindow: true
+                isElement: true,
             }
         }
     },
