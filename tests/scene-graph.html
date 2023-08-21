@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Scene Graph</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { View, Hstack, Vstack } from "../lib/scene-graph.js";
+
+test("Exports", t => {
+    t.ok(View(), "View");
+    t.ok(Hstack(), "Hstack");
+    t.ok(Vstack(), "Vstack");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>
