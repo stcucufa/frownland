@@ -90,14 +90,15 @@ test("notify(target, type, properties?)", t => {
 
 test("notifyAsync(target, type, properties?)", async t => {
     const target = {};
-    let args = null;
-    on(target, "ready", e => { args = e; });
-    await notifyAsync(target, "ready", { foo: 1, bar: 2 });
-    t.same(args.source, target, "event source");
-    t.equal(args.type, "ready", "event type");
-    t.atLeast(args.timestamp, 0, `timestamp (${args.timestamp})`);
-    t.equal(args.foo, 1, "event arg (foo)");
-    t.equal(args.bar, 2, "event arg (bar)");
+    const promise = notifyAsync(target, "ready", { foo: 1, bar: 2 });
+    let event = null;
+    on(target, "ready", e => { event = e; });
+    await promise;
+    t.same(event.source, target, "event source");
+    t.equal(event.type, "ready", "event type");
+    t.atLeast(event.timestamp, 0, `timestamp (${event.timestamp})`);
+    t.equal(event.foo, 1, "event arg (foo)");
+    t.equal(event.bar, 2, "event arg (bar)");
 });
 
 test("Several handlers", t => {
