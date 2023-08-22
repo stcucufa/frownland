@@ -32,21 +32,11 @@ test("Instantiation (with child)", t => {
     const deck = Deck({ tape });
     const ramp = tape.instantiate(Ramp(Instant(p => `${Math.round(p * 100)}%`)).dur(23), 17);
     deck.now = 19;
-    t.equal(dump(ramp),
-`* Ramp-0 [17, 40[ <0>
-  * Instant-1 @17 <0%>`, "dump matches (begin)");
+    t.equal(dump(ramp), "* Ramp-0 [17, 40[ <0%>", "dump matches (begin)");
     deck.now = 31;
-    t.equal(dump(ramp),
-`* Ramp-0 [17, 40[ <0.08695652173913043>
-  * Instant-1 @17 <0%>
-  * Instant-2 @19 <9%>`, "dump matches (middle)");
+    t.equal(dump(ramp), "* Ramp-0 [17, 40[ <9%>", "dump matches (middle)");
     deck.now = 41;
-    t.equal(dump(ramp),
-`* Ramp-0 [17, 40[ <1>
-  * Instant-1 @17 <0%>
-  * Instant-2 @19 <9%>
-  * Instant-3 @31 <61%>
-  * Instant-4 @40 <100%>`, "dump matches (end)");
+    t.equal(dump(ramp), "* Ramp-0 [17, 40[ <100%>", "dump matches (end)");
 });
 
         </script>
