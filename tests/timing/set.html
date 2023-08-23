@@ -21,6 +21,7 @@ test("Set(target, name)", t => {
     t.equal(set.show(), "Set<src>", "show");
     t.equal(set.duration, 0, "zero duration");
     t.equal(!set.fallible, true, "not fallible");
+    t.equal(set.hasEffect, true, "has effect");
 });
 
 test("Set(target, name).label(l)", t => {
