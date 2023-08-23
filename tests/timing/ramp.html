@@ -65,6 +65,42 @@ test("Instantiation (with child)", t => {
     t.equal(dump(ramp), "* Ramp-0 [17, 40[ <87%>", "dump matches (end)");
 });
 
+test("Instantiation (instantaneous child)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const ramp = tape.instantiate(Ramp(
+        Seq(Instant(p => Math.round(p * 100)), Instant(x => `${x}%`))
+    ).dur(23), 17);
+    deck.now = 19;
+    deck.now = 31;
+    deck.now = 37;
+    deck.now = 41;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <87%> {o0@17,o1@19,o2@31,o3@37,o4@40}", "dump matches");
+});
+
+test("Instantiation (non-instantaneous child)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const ramp = tape.instantiate(Ramp(Instant(p => `${Math.round(p * 100)}%`).dur(19)).dur(23), 17);
+    deck.now = 19;
+    deck.now = 31;
+    deck.now = 37;
+    deck.now = 41;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <0.8695652173913043> {o0@17,o1@19,o2@31,o3@37,o4@40}", "dump matches");
+});
+
+test("Instantiation (∞ dur)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const ramp = tape.instantiate(Ramp().dur(Infinity), 17);
+    deck.now = 19;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, ∞[ <0> {o0@17,o1@19}", "dump matches (begin)");
+    deck.now = 31;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, ∞[ <0> {o0@17,o1@19,o2@31}", "dump matches (progress)");
+    deck.now = 37;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, ∞[ <0> {o0@17,o1@19,o2@31,o3@37}", "dump matches (more progress)");
+});
+
 test("Cancel", t => {
     const object = { p: 31 };
     const tape = Tape();
