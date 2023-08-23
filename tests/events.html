@@ -18,6 +18,18 @@ test("on(target, type, handler)", t => {
     t.equal(ready, true, "ready event occurred");
 });
 
+test("on(target, type, handler); handleEvent", t => {
+    const target = {};
+    const listener = {
+        handleEvent() {
+            this.ready = true;
+        }
+    };
+    t.equal(on(target, "ready", listener), listener, "return the listener");
+    notify(target, "ready");
+    t.equal(listener.ready, true, "ready event occurred");
+});
+
 test("once(target, type, handler)", t => {
     const target = {};
     let notifications = 0;
@@ -27,6 +39,21 @@ test("once(target, type, handler)", t => {
     notify(target, "repeat");
     notify(target, "repeat");
     t.equal(notifications, 1, "repeat event was listened to only once");
+});
+
+test("once(target, type, handler); handleEvent", t => {
+    const target = {};
+    const handler = {
+        notifications: 0,
+        handleEvent() {
+            this.notifications += 1;
+        }
+    };
+    once(target, "repeat", handler);
+    notify(target, "repeat");
+    notify(target, "repeat");
+    notify(target, "repeat");
+    t.equal(handler.notifications, 1, "repeat event was listened to only once");
 });
 
 test("off(target, type, handler)", t => {
