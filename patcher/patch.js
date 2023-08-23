@@ -1,5 +1,5 @@
 import {
-    Await, Delay, Effect, Element, Event, Instant, Media, Par, Repeat, Score, Seq, Set, Try,
+    Await, Delay, Effect, Element, Event, Instant, Media, Par, Ramp, Repeat, Score, Seq, Set, Try,
     gate
 } from "../lib/timing.js";
 import { dump } from "../lib/timing/util.js";
@@ -347,6 +347,17 @@ const Parse = {
         }
     },
 
+    Ramp: input => {
+        if (!/\S/.test(input)) {
+            return {
+                label: Ramp.tag,
+                inlets: 1,
+                acceptFrom: box => !box.isElement,
+                create: ([child]) => Ramp(child)
+            };
+        }
+    },
+
     Set: input => {
         const match = input.match(/^\s+(\w+)\s*/);
         if (match) {
@@ -362,7 +373,7 @@ const Parse = {
                 isSet: true,
                 acceptFrom: box => box.isElement,
                 create: ([target]) => Set(target.element, name, value)
-            }
+            };
         }
     },
 
