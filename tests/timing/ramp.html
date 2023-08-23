@@ -44,9 +44,11 @@ test("Instantiation (no child)", t => {
     deck.now = 19;
     t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <0> {o0@17,o1@19,o2@40}", "dump matches (begin)");
     deck.now = 31;
-    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <0.08695652173913043> {o0@17,o1@19,o2@31,o3@40}", "dump matches (middle)");
+    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <0.08695652173913043> {o0@17,o1@19,o2@31,o3@40}", "dump matches (progress)");
+    deck.now = 37;
+    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <0.6086956521739131> {o0@17,o1@19,o2@31,o3@37,o4@40}", "dump matches (more progress)");
     deck.now = 41;
-    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <1> {o0@17,o1@19,o2@31,o3@40}", "dump matches (end)");
+    t.equal(dump(ramp, true), "* Ramp-0 [17, 40[ <0.8695652173913043> {o0@17,o1@19,o2@31,o3@37,o4@40}", "dump matches (end)");
 });
 
 test("Instantiation (with child)", t => {
@@ -56,9 +58,11 @@ test("Instantiation (with child)", t => {
     deck.now = 19;
     t.equal(dump(ramp), "* Ramp-0 [17, 40[ <0%>", "dump matches (begin)");
     deck.now = 31;
-    t.equal(dump(ramp), "* Ramp-0 [17, 40[ <9%>", "dump matches (middle)");
+    t.equal(dump(ramp), "* Ramp-0 [17, 40[ <9%>", "dump matches (progress)");
+    deck.now = 37;
+    t.equal(dump(ramp), "* Ramp-0 [17, 40[ <61%>", "dump matches (more progress)");
     deck.now = 41;
-    t.equal(dump(ramp), "* Ramp-0 [17, 40[ <100%>", "dump matches (end)");
+    t.equal(dump(ramp), "* Ramp-0 [17, 40[ <87%>", "dump matches (end)");
 });
 
 test("Cancel", t => {
