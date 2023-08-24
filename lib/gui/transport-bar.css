@@ -9,16 +9,16 @@ ul.transport-bar {
 }
 
 ul.transport-bar li {
-    display: inline;
+    display: inline-block;
+    margin: 0.25rem;
+}
+
+ul.transport-bar svg {
+    width: 1rem;
+    height: 1rem;
+    display: block;
 }
 
 ul.transport-bar .display {
     font-family: ui-monospace, monospace;
-}
-
-ul.transport-bar svg {
-    width: 1em;
-    height: 1em;
-    display: inline-block;
-    vertical-align: -.125em;
 }

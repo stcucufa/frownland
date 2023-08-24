@@ -11,7 +11,6 @@ import { html, K, range } from "../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
 import { Element, first, Instant, Repeat, Score, Seq, Set } from "../../lib/timing.js";
-import { dump } from "../../lib/timing/util.js";
 import { TransportBar } from "../../lib/gui/transport-bar.js";
 
 const FPS = 9;
@@ -23,7 +22,7 @@ const score = Score({ tape });
 const image = html("img");
 const frame = document.querySelector("span");
 
-const transportBar = TransportBar(deck);
+const transportBar = TransportBar(score);
 document.body.insertBefore(transportBar.element(), document.body.firstChild);
 
 score.add(Element(image).dur(Infinity));
@@ -37,8 +36,6 @@ score.add(Repeat(Seq(
         Set(frame, "textContent").dur(Infinity)
     ))
 )));
-
-window.$ = () => { console.log(dump(score.instance)); };
 
         </script>
     </head>
