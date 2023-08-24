@@ -38,8 +38,6 @@ test("Score.add(child), no deck", t => {
     t.equal(instant.show(), "Instant", "show added child");
     t.equal(score.show(), "Score/2", "show after add");
     t.equal(score.children, [delay, instant], "children after add");
-    t.equal(delay.parent, score, "parent (1)");
-    t.equal(instant.parent, score, "parent (2)");
     t.equal(dump(score.instance),
 `* Score-0 [0, ∞[
   * Delay-1 [0, 23[

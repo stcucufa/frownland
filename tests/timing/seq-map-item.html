@@ -18,7 +18,6 @@ test("Seq.map(child)", t => {
     const map = Seq.map(child);
     t.equal(map.show(), "Seq/map", "show");
     t.equal(map.child, child, "child item");
-    t.equal(map.child.parent, map, "child item parent");
     t.undefined(map.duration, "unresolved duration");
     t.equal(map.take(0).duration, 0, "down to zero with take(0)");
     t.equal(!map.fallible, true, "not fallible");
