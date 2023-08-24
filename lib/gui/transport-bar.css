@@ -1,5 +1,5 @@
 div.transport-bar {
-    padding: 0.25rem;
+    padding: 0.25rem 0;
     position: absolute;
     top: 0;
     left: 0;
@@ -17,6 +17,10 @@ div.transport-bar button {
 
 div.transport-bar svg {
     display: block;
+}
+
+div.transport-bar button:disabled {
+    opacity: 0.5;
 }
 
 div.transport-bar span {
