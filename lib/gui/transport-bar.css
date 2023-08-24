@@ -1,0 +1,24 @@
+ul.transport-bar {
+    width: 100%;
+    list-style-type: none;
+    display: inline-block;
+    text-align: center;
+    margin: 0;
+    padding: 0.5rem 0;
+    background-color: #ddd;
+}
+
+ul.transport-bar li {
+    display: inline;
+}
+
+ul.transport-bar .display {
+    font-family: ui-monospace, monospace;
+}
+
+ul.transport-bar svg {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: -.125em;
+}
