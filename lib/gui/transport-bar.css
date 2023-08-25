@@ -1,0 +1,32 @@
+div.transport-bar {
+    padding: 0.25rem 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    margin: 0;
+}
+
+div.transport-bar button {
+    width: 2rem;
+    height: 2rem;
+    padding: 0.25rem;
+    margin: 0.25rem;
+}
+
+div.transport-bar svg {
+    display: block;
+}
+
+div.transport-bar button:disabled {
+    opacity: 0.5;
+}
+
+div.transport-bar span {
+    font-family: ui-monospace, monospace;
+    font-size: 1.5rem;
+    margin: 0 0.5rem;
+    padding: 0.25rem;
+    background-color: #ffd;
+}
