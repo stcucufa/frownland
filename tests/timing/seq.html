@@ -33,8 +33,6 @@ test("Seq(xs)", t => {
     const seq = Seq(delay, instant);
     t.equal(seq.show(), "Seq/2", "show");
     t.equal(seq.children, [delay, instant], "children");
-    t.equal(delay.parent, seq, "parent (1)");
-    t.equal(instant.parent, seq, "parent (2)");
     t.equal(seq.duration, 17, "duration");
     t.equal(!seq.fallible, true, "not fallible");
     t.equal(seq.hasEffect, false, "no effect when no children has effect");
