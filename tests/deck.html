@@ -86,7 +86,10 @@ test("speed and updates: slowing down", async t => {
     const phi = performance.now();
     const target = deck.now + 53;
     deck.speed = 0.5;
-    await notifications(deck, "update", () => deck.now < target);
+    await notifications(deck, "update", interval => {
+        t.above(interval.to, interval.from);
+        return deck.now < target;
+    });
     t.atLeast(performance.now() - phi, 106, `moved slowly to ${deck.now} (${(performance.now() - phi) / 2})`);
 });
 
