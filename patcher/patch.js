@@ -423,12 +423,14 @@ const Parse = {
 
     Image: input => {
         const src = input.trim();
-        if (/\S/.test(src)) {
-            return {
-                label: `Image ${src}`,
-                isElement: true,
-                create: createElement("img", { src })
-            };
+        const attrs = {};
+        if (src) {
+            attrs.src = src;
+        }
+        return {
+            label: `Image${src ? ` ${src}` : ""}`,
+            isElement: true,
+            create: createElement("img", attrs)
         }
     },
 
