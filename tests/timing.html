@@ -12,7 +12,7 @@ import { Deck } from "../lib/deck.js";
 import { Tape } from "../lib/tape.js";
 import {
     Await, Delay, Effect, Element, Event, Instant, Media, Par, Repeat, Score, Seq, Set, Try,
-    first
+    first, gate
 } from "../lib/timing.js";
 
 test("Exports", t => {
@@ -31,6 +31,7 @@ test("Exports", t => {
     t.equal(Set(p, "textContent").show(), "Set<textContent>", "Set");
     t.equal(Try(Instant(() => { throw "!!!"; }), Instant(() => "ko")).show(), "Try", "Try");
     t.equal(first(Instant(), Instant()).show(), "Par/2", "first");
+    t.equal(gate(Instant(), Instant()).show(), "Seq/3", "gate");
 });
 
         </script>
