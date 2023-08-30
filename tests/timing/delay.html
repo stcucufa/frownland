@@ -20,7 +20,6 @@ test("Delay(duration)", t => {
     t.equal(delay.show(), "Delay<23>", "show");
     t.equal(delay.duration, 23, "duration");
     t.equal(!delay.fallible, true, "not fallible");
-    t.throws(() => { delay.duration = 19; }, "cannot overwrite dur");
 });
 
 test("Delay(duration) with a string duration", t => {

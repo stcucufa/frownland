@@ -268,7 +268,6 @@ test("Evaluation order check", t => {
     window.dispatchEvent(event);
     deck.now = 32;
     t.equal(instance.value, event, "Ended with the correct value");
-    console.log(dump(instance));
 });
 
 test("gate(x, y)", t => {
