@@ -13,7 +13,7 @@ import {
     isEmpty, isIterable, isNumber, isObject, K, mapit, mod, nop,
     normalizeWhitespace, parseTime, partition, push, range, remove,
     removeChildren, reverse, safe, shuffle, sign, single, snd, timecount,
-    timeout, todo, typeOf
+    timeout, todo, typeOf, zip, zipo
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -475,6 +475,22 @@ test("typeOf(x)", t => {
     t.equal(typeOf(new Set()), "set");
     t.equal(typeof({ foo: 1, bar: 2 }), "object");
     t.equal(typeOf(Object.create(x => x + 1)), "object/function", "function object");
+});
+
+test("zip(xs, ys)", t => {
+    t.equal(zip(["one", "two", "three"], [1, 2, 3]), [["one", 1], ["two", 2], ["three", 3]],
+        "arrays with the same length");
+    t.equal(zip(["one", "two", "three", "four"], [1, 2, 3]), [["one", 1], ["two", 2], ["three", 3]],
+        "arrays of different length");
+    t.equal(zip(["one", "two", "three", "four"], []), [], "arrays of different length (one empty)");
+});
+
+test("zipo(keys, values)", t => {
+    t.equal(zipo(["one", "two", "three"], [1, 2, 3]), { one: 1, two: 2, three: 3 },
+        "arrays with the same length");
+    t.equal(zipo(["one", "two", "three", "four"], [1, 2, 3]), { one: 1, two: 2, three: 3 },
+        "arrays of different length");
+    t.equal(zipo(["one", "two", "three", "four"], []), {}, "arrays of different length (one empty)");
 });
 
         </script>
