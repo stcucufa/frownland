@@ -1,3 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Arcs (SVG version)</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="demos.css"/>
+        <link rel="stylesheet" href="../lib/gui/transport-bar.css"/>
+        <style>
+
+body {
+    background-color: #222;
+}
+
+svg {
+    width: 100%;
+    height: 100%;
+}
+
+        </style>
+        <script type="module">
+
 import { svg } from "../lib/util.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
@@ -31,3 +52,12 @@ for (let i = 0; i < N; ++i) {
         })).dur(dur * (1 + i / (5 * N)))))
 }
 
+        </script>
+    </head>
+    <body>
+        <svg viewBox="0 0 128 128">
+            <g fill="none" class="arcs"/>
+            <g fill="#f8f9f0" class="balls"/>
+        </svg>
+    </body>
+</html>
