@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Arcs (canvas version)</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="demos.css"/>
+        <link rel="stylesheet" href="../lib/gui/transport-bar.css"/>
+        <style>
+
+body {
+    background-color: #222;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+}
+
+        </style>
+        <script type="module">
+
+import { mapit, range, svg } from "../lib/util.js";
+import { Tape } from "../lib/tape.js";
+import { Deck } from "../lib/deck.js";
+import { Effect, Instant, Ramp, Repeat, Score, Seq } from "../lib/timing.js";
+import { TransportBar } from "../lib/gui/transport-bar.js";
+
+const tape = Tape();
+const deck = Deck({ tape });
+const score = Score({ tape });
+
+const transportBar = TransportBar(score);
+document.body.insertBefore(transportBar.element(), document.body.firstChild);
+
+const N = 15;
+const dur = 4000;
+
+const arcs = mapit(range(0, N - 1), i => {
+    const r = (i + 1) * 4;
+    const arc = {
+        r,
+        stroke: `hsl(${(r - 4) * 6}deg, 100%, 50%)`,
+        dur: dur * (1 + i / (5 * N)),
+        th: 0
+    };
+    score.add(Repeat(Ramp(Effect(
+        p => { arc.th = 2 * (p > 0.5 ? 1 - p : p) * Math.PI; }
+    )).dur(dur * (1 + i / (5 * N)))));
+    return arc;
+});
+
+const canvas = document.querySelector("canvas");
+const context = canvas.getContext("2d");
+
+function draw() {
+    const width = canvas.width = window.devicePixelRatio * canvas.clientWidth;
+    const height = canvas.height = window.devicePixelRatio * canvas.clientHeight;
+    const scale = width / 128;
+    context.save();
+    context.translate(width / 2, height);
+    context.scale(scale, scale);
+    context.fillStyle = "#f8f9f0";
+    for (const arc of arcs) {
+        context.beginPath();
+        context.strokeStyle = arc.stroke;
+        context.arc(0, 0, arc.r, 0, Math.PI, true);
+        context.stroke();
+        context.beginPath();
+        context.arc(arc.r * Math.cos(arc.th), -arc.r * Math.sin(arc.th), 2, 0, 2 * Math.PI);
+        context.fill();
+    }
+    context.restore();
+}
+
+score.add(Ramp(Effect(draw)).dur(Infinity));
+
+
+        </script>
+    </head>
+    <body>
+        <canvas></canvas>
+    </body>
+</html>
