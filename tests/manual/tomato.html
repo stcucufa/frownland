@@ -23,7 +23,7 @@ const image = html("img");
 const frame = document.querySelector("span");
 
 const transportBar = TransportBar(score);
-document.body.insertBefore(transportBar.element(), document.body.firstChild);
+document.body.insertBefore(transportBar.element, document.body.firstChild);
 
 score.add(Element(image).dur(Infinity));
 score.add(Repeat(Seq(
