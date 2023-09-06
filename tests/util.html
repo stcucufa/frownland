@@ -8,10 +8,10 @@
 
 import { test } from "./test.js";
 import {
-    add, addBy, assign, assoc, clamp, clockTime, create, cycle, escapeMarkup,
-    extend, filterit, flip, foldit, fold1, get, html, I, imagePromise, isAsync,
-    isEmpty, isIterable, isNumber, isObject, K, mapit, mod, nop,
-    normalizeWhitespace, parseTime, partition, push, range, remove,
+    add, addBy, assign, assoc, assoco, clamp, clockTime, create, cycle,
+    escapeMarkup, extend, filterit, flip, foldit, fold1, get, html, I,
+    imagePromise, isAsync, isEmpty, isIterable, isNumber, isObject, K, mapit,
+    mod, nop, normalizeWhitespace, parseTime, partition, push, range, remove,
     removeChildren, reverse, safe, shuffle, sign, single, snd, timecount,
     timeout, todo, typeOf, zip, zipo
 } from "../lib/util.js";
@@ -58,7 +58,17 @@ test("assoc(xs, f?)", t => {
     map.set("one", 1);
     map.set("two", 2);
     map.set("three", 3);
-    t.equal(assoc(["one", "two", "three"], (x, i) => [x, i + 1]), map);
+    t.equal(assoc(["one", "two", "three"], (x, i) => [x, i + 1]), map, "f");
+});
+
+test("assoco(xs, f?)", t => {
+    t.empty(assoco([], nop), "empty list");
+
+    const simpleObject = { foo: 1, bar: 2 };
+    t.equal(assoco([["foo", 1], ["bar", 2]]), simpleObject, "I is the default for f");
+
+    const o = { one: 1, two: 2, three: 3 };
+    t.equal(assoco(["one", "two", "three"], (x, i) => [x, i + 1]), o, "f");
 });
 
 test("clamp(x, min, max)", t => {
