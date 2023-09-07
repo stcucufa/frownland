@@ -34,7 +34,7 @@ influenced by previous work such as SMIL and the synchronous programming languag
 primitives and modifiers, that can be extended to provide a practical toolkit for the application
 developer.
 
-## A Simple Example
+## A simple example
 
 As an introduction to the model and its API, consider the following snippet of code (this example is
 adapted from the “ABRO” example in Esterel):
@@ -71,7 +71,7 @@ wait for both A and B to be pressed once in any order, all further button presse
 ignored until the other is pressed. Going up,
 
 ```js
-Seq(Par(...), Set(O, textContent, "on").dur(Infinity)
+Seq(Par(...), Set(O, textContent, "on").dur(Infinity))
 ```
 
 introduces two new items. `Set` sets the value of an attribute or property of an element or object for a
@@ -102,6 +102,101 @@ it just restarts its child as soon as it ended; meaning that once R has been pre
 operational again and again, repeating forever.
 
 ## More complex examples
+
+The above example illustrates the main point of our approach: the model handles the state of the system for
+us, and adding new requirements should not make the complexity explode. While this example could be reduced
+to a simple state machine, just requiring an extra button C to be pressed would make the state machine
+greatly increase in size, while here it would only require updating the inner Par to:
+
+```js
+Par(Event(A, "click"), Event(B, "click"), Event(C, "click"))
+```
+
+Likewise, `dur` and `take` modifiers allow tweaking some parameters of the system. Instead of requiring the
+user to press the R button after all button presses have been registered, the Set could end on its own
+after a duration of 10 seconds:
+
+```js
+Seq(Par(...), Set(O, textContent, "on").dur("10s"))
+```
+
+We could also introduce a timeout, requiring the user to press the buttons in less than 3 seconds for the
+interaction to register:
+
+```js
+Par(
+    Seq(Par(...), Set(O, textContent, "on").dur("10s")),
+    Delay("3s")
+).take(1)
+```
+
+where `Delay` is an item that does nothing, only ending after the specified duration.
+
+### Rich user interactions
+
+But how would the model apply to a real world application? We will sketch some important features of a
+typical Web mapping application. Implementing such an application will be a test of the applicability of
+our approach in a complex and useful scenario.
+
+* The map is divided into millions and millions of tiles at different zoom levels (from showing entire
+continents to individual buildings) available from remote servers. The client application running in the
+browser only shows a few of these tiles at once and stitches them together to display a single map view to
+the user.
+    * A tile request can be encapsulated in an `Await` item, which wraps an asynchronous function call and
+    ends when the call ends.
+    * These requests can then be executed concurrently inside a Par, and any action that requires the whole
+    map to be displayed can follow within a Seq.
+    * Error handling becomes important here as tile requests may fail so a request may need to be retried a
+    certain number of times, and a timeout may be necessary to ensure that we don’t wait forever on tiles
+    that will never arrive.
+* The user should be able to pan the map by dragging the mouse or a finger, zooming by double-clicking or
+double-tapping, or select a marker on the map by clicking it or tapping it.
+    * A gesture can be represented as a sequence (Seq) of events (Event). A single tap can simply be
+    expressed as `Seq(Event(x, "pointerdown"), Event(x, "pointerup"))`, a double tap is the same sequence
+    repeated twice (`Repeat(Seq(...)).take(2)`) with a timeout (`Par(Repeat(...), Delay("150ms")`).
+    * The same initial event can be the starting point of several gestures happening in parallel, with the
+    first gesture to succeed ending and the sequence and cancelling the others
+    (`Seq(Event(x, "pointerdown"), Par(...).take(1))`.
+* The user should be able to lookup places and locations by querying a search service, returning
+coordinates for places to be shown on the map as well as additional information to be displayed in the
+graphical user interface (business name, address, opening hours, &c.)
+    * Again, a search is a sequence of waiting for a text input event, followed by a service request,
+    followed by setting a new location on the map according to the search results. Setting the new location
+    can be animated with the `Animate` item, which is similar to set but animates a property over time
+    instead of immediately setting it. The appearance of markers on the map to represent the search results
+    can also be animated in staggered fashion by introducing a delay of increasing duration before each
+    animation.
+    * In addition to simple search, an autocomplete service may also be provided. Autocompletion works by
+    sending requests and displaying suggestions while the user is typing. It also comes with additional
+    challenges: requests should be throttled or debounced to account to account for the speed at which the
+    user is typing, and stale suggestions should not replace fresher ones (results may become available out
+    of order).
+
+### Multimedia presentations
+
+Since our model deals with time and derives in great part from SMIL, it should be well suited to handle
+media with intrinsic duration like audio and video. Consider the case of a video training consisting of a
+sequence of text information, videos, and quizzes after a video has played to determine which chapter to
+play next. `Video` and `Audio` items can be combined with Par and Seq to provide a playlist, with Event
+and Set allowing the addition of interactivity.
+
+Because the model handles most of the state to implement this scenario, this also means that the runtime
+can automatically provide useful playback features such as pausing, rewinding, and fast-forwarding, not
+just through a single video, but through the whole presentation.
+
+### Other applications
+
+Games: Maybe not the tight loop of physics and graphic updates, but all the logic around it.
+
+Authoring tools: the declarative nature of the model makes it well suited for non-textual editing.
+
+## The model and its runtime
+
+### A directed acyclic graph of items
+
+### A flexible runtime for development and testing
+
+## Risks and Unknowns
 
 ## Testing
 
