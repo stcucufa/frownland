@@ -3,11 +3,11 @@
     <head>
         <title>VM</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="../../tests/test.css">
+        <link rel="stylesheet" href="test.css">
         <script type="module">
 
-import { test } from "../../tests/test.js";
-import { instant, delay, seq, par, Op, run } from "../vm.js";
+import { test } from "./test.js";
+import { instant, delay, seq, par, Op, run } from "../lib/vm.js";
 
 test("instant", t => {
     const ops = [Op.constant("ok"), Op.nop];
