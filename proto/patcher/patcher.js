@@ -1,5 +1,5 @@
-import { on } from "../lib/events.js";
-import { assign, create, svg } from "../lib/util.js";
+import { on } from "../../lib/events.js";
+import { assign, create, svg } from "../../lib/util.js";
 import { Tape } from "../lib/tape.js";
 import { Deck } from "../lib/deck.js";
 import { DragEventListener } from "./drag-event-listener.js";

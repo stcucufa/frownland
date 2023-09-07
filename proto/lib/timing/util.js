@@ -1,4 +1,4 @@
-import { assign, extend, I, isNumber, parseTime, safe, zipo } from "../util.js";
+import { assign, extend, I, isNumber, parseTime, safe, zipo } from "../../../lib/util.js";
 
 export const CancelError = window.Error("cancel");
 export const FailureError = window.Error("failed");

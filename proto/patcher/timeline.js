@@ -1,4 +1,4 @@
-import { assign, clockTime, create, removeChildren, svg } from "../lib/util.js";
+import { assign, clockTime, create, removeChildren, svg } from "../../lib/util.js";
 
 export const Timeline = Object.assign((container) => create({ container }).call(Timeline), {
     init() {

@@ -1,5 +1,5 @@
-import { assign, create, get, isNumber } from "./util.js";
-import { notify } from "./events.js";
+import { assign, create, get, isNumber } from "../../lib/util.js";
+import { notify } from "../../lib/events.js";
 
 // The deck records to and plays a tape.
 export const Deck = assign(properties => create(properties).call(Deck), {

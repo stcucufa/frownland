@@ -1,4 +1,4 @@
-import { assign, create, svg } from "../lib/util.js";
+import { assign, create, svg } from "../../lib/util.js";
 import { bringElementFrontward } from "./util.js";
 
 // A patch cord between an outlet and an inlet.

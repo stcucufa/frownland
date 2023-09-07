@@ -1,5 +1,5 @@
-import { assign, create, nop } from "../util.js";
-import { notify } from "../events.js";
+import { assign, create, nop } from "../../../lib/util.js";
+import { notify } from "../../../lib/events.js";
 import { Tape } from "../tape.js";
 import { endOf, show } from "./util.js";
 

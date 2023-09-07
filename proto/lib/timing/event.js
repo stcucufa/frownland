@@ -1,4 +1,4 @@
-import { extend, K } from "../util.js";
+import { extend, K } from "../../../lib/util.js";
 import { Tape } from "../tape.js";
 import {
     cancelled, dur, ended, failed, hasModifier, min,

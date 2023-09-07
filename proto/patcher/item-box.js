@@ -1,4 +1,4 @@
-import { assign, create, html, svg } from "../lib/util.js";
+import { assign, create, html, svg } from "../../lib/util.js";
 import { bringElementFrontward } from "./util.js";
 import { Box } from "./box.js";
 import { Editable } from "./editable.js";

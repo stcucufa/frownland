@@ -1,5 +1,5 @@
-import { on } from "../events.js";
-import { assoc, clockTime, create, html, push, svg } from "../util.js";
+import { on } from "../../../lib/events.js";
+import { assoc, clockTime, create, html, push, svg } from "../../../lib/util.js";
 import { dump } from "../timing/util.js";
 
 // Transport bar controlling the deck for a given score (can also dump said score).

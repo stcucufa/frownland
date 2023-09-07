@@ -1,4 +1,4 @@
-import { extend, fold1, isNumber, partition, push, remove, single } from "../util.js";
+import { extend, fold1, isNumber, partition, push, remove, single } from "../../../lib/util.js";
 import {
     dur, cancelled, ended, endOf, failed, forward, hasModifier, max, min, take, pruned,
     Container, Item, _Item, CancelError, InputError, FailureError

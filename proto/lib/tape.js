@@ -1,5 +1,5 @@
-import { addBy, create } from "./util.js";
-import { notify } from "./events.js";
+import { addBy, create } from "../../lib/util.js";
+import { notify } from "../../lib/events.js";
 
 // Create a new tape with Tape(), then call its instantiate() method to
 // create new instances from score items and add new occurrences to the tape.

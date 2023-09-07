@@ -1,5 +1,5 @@
+import { extend, nop } from "../../../lib/util.js";
 import { Tape } from "../tape.js";
-import { extend, nop } from "../util.js";
 import { cancelled, dur, Item, _Item } from "./util.js";
 
 // Ramp goes from 0 to 1 over a duration, then back to zero instantly at the

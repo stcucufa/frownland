@@ -1,4 +1,4 @@
-import { extend, isNumber, push } from "../util.js";
+import { extend, isNumber, push } from "../../../lib/util.js";
 import { Instant } from "./instant.js";
 import {
     dur, ended, endOf, failed, forward, hasModifier, min, pruned, take,

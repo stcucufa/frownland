@@ -1,4 +1,4 @@
-import { extend, I, isNumber, nop, parseTime, safe } from "../util.js";
+import { extend, I, isNumber, nop, parseTime, safe } from "../../../lib/util.js";
 import { Delay } from "./delay.js";
 import { Seq } from "./seq.js";
 import { forward, varModifier, Item, _Item } from "./util.js";

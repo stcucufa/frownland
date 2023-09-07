@@ -1,4 +1,4 @@
-import { extend } from "../util.js";
+import { extend } from "../../../lib/util.js";
 import { cancelled, dur, forward, Item, _Item } from "./util.js";
 
 // Set a value for a property or attribute with a given name on a target for a

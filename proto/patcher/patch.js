@@ -5,8 +5,8 @@ import {
 import { dump } from "../lib/timing/util.js";
 import {
     assoc, create, html, I, K, normalizeWhitespace, parseTime, removeChildren, safe
-} from "../lib/util.js";
-import { notify } from "../lib/events.js";
+} from "../../lib/util.js";
+import { notify } from "../../lib/events.js";
 import { ItemBox } from "./item-box.js";
 import { Comment } from "./comment.js";
 

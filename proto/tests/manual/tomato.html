@@ -3,11 +3,11 @@
     <head>
         <title>Tomato</title>
         <meta charset="utf8">
-        <link rel="stylesheet" href="../test.css">
+        <link rel="stylesheet" href="../../../tests/test.css">
         <link rel="stylesheet" href="../../lib/gui/transport-bar.css">
         <script type="module">
 
-import { html, K, range } from "../../lib/util.js";
+import { html, K, range } from "../../../lib/util.js";
 import { Tape } from "../../lib/tape.js";
 import { Deck } from "../../lib/deck.js";
 import { Element, first, Instant, Repeat, Score, Seq, Set } from "../../lib/timing.js";
@@ -22,7 +22,7 @@ const score = Score({ tape });
 const image = html("img");
 const frame = document.querySelector("span");
 
-const transportBar = TransportBar(score);
+const transportBar = TransportBar(score, { autoplay: true });
 document.body.insertBefore(transportBar.element, document.body.firstChild);
 
 score.add(Element(image).dur(Infinity));

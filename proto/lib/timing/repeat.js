@@ -1,4 +1,4 @@
-import { extend, nop } from "../util.js";
+import { extend, nop } from "../../../lib/util.js";
 import { first } from "./par.js";
 import {
     dur, ended, endOf, failed, hasModifier, min, take,

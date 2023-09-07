@@ -1,5 +1,5 @@
-import { notify, on } from "../lib/events.js";
-import { assoc, create, nop } from "../lib/util.js";
+import { notify, on } from "../../lib/events.js";
+import { assoc, create, nop } from "../../lib/util.js";
 
 const stop = ["stopped", function() {
     this.deck.stop();

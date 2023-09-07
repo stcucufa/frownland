@@ -1,4 +1,4 @@
-import { assign, create, nop, svg } from "../lib/util.js";
+import { assign, create, nop, svg } from "../../lib/util.js";
 import { bringElementFrontward } from "./util.js";
 
 // A draggable box that serves as a basis for all boxes (items, comments, ...)

@@ -1,5 +1,5 @@
-import { assign, create, html, remove } from "../lib/util.js";
-import { notify, on } from "../lib/events.js";
+import { assign, create, html, remove } from "../../lib/util.js";
+import { notify, on } from "../../lib/events.js";
 import { button } from "./util.js";
 
 // Metadata is: created (date), modified (date), title (string), thumbnail (SVG)

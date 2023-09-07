@@ -1,4 +1,4 @@
-import { html } from "../lib/util.js";
+import { html } from "../../lib/util.js";
 
 // Create a button with a label and an action on click.
 export function button(label, f) {

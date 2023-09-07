@@ -1,4 +1,4 @@
-import { extend, isNumber, nop } from "../util.js";
+import { extend, isNumber, nop } from "../../../lib/util.js";
 import { ended, endOf, failed, Item, _Item, CancelError, FailureError } from "./util.js";
 
 // Try wraps a child with an error child that gets instantiated with the error

@@ -1,4 +1,4 @@
-import { add, assign, create, svg } from "../lib/util.js";
+import { add, assign, create, svg } from "../../lib/util.js";
 import { Cord } from "./cord.js";
 
 // Ports are inlets and outlets. Inlets and outlets from different boxes can

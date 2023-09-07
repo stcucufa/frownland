@@ -1,6 +1,6 @@
-import { extend } from "../util.js";
+import { extend } from "../../../lib/util.js";
+import { notify } from "../../../lib/events.js";
 import { failed, Item } from "./util.js";
-import { notify } from "../events.js";
 import { _Element } from "./element.js";
 
 // Media is a kind of Element but with an intrinsic duration (video, audio).

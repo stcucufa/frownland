@@ -1,4 +1,4 @@
-import { create } from "../lib/util.js";
+import { create } from "../../lib/util.js";
 
 // Drag event listener for canvas, boxes and cords.
 export const DragEventListener = Object.assign(elements => create({ elements }).call(DragEventListener), {

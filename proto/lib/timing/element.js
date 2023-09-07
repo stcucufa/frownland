@@ -1,4 +1,4 @@
-import { extend } from "../util.js";
+import { extend } from "../../../lib/util.js";
 import { cancelled, dur, forward, Item, _Item } from "./util.js";
 
 // Specialized effect: add/remove a DOM element.

@@ -1,4 +1,4 @@
-import { assign, extend, isNumber, parseTime, safe } from "../util.js";
+import { assign, extend, isNumber, parseTime, safe } from "../../../lib/util.js";
 import { Instant } from "./instant.js";
 import { beginOf, forward, min, pruned, Item, _Item } from "./util.js";
 
