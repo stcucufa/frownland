@@ -34,6 +34,8 @@ influenced by previous work such as SMIL and the synchronous programming languag
 primitives and modifiers, that can be extended to provide a practical toolkit for the application
 developer.
 
+The timing and synchronization model is derived from SMIL.
+
 ## A simple example
 
 As an introduction to the model and its API, consider the following snippet of code (this example is
@@ -186,15 +188,33 @@ just through a single video, but through the whole presentation.
 
 ### Other applications
 
-Games: Maybe not the tight loop of physics and graphic updates, but all the logic around it.
-
-Authoring tools: the declarative nature of the model makes it well suited for non-textual editing.
+* Games: maybe not the tight loop of physics and graphic updates, but all the logic around it.
+* Authoring tools: the declarative nature of the model makes it well suited for non-textual editing.
 
 ## The model and its runtime
 
-### A directed acyclic graph of items
+### Deterministic timing
+
+The timing model provides a simple and deterministic view of time by definining a logical time.
+
+### A directed acyclic graph of timing items
+
+Working with the model means creating a graph of timing items describing the behaviour of the application.
+Core timing items:
+
+* `Instant` wraps a synchronous function which is not expected to have any effect (_i.e._, does not mutate
+an object or the DOM, does not output to the console, does not randomize its output, &c.)
+* `Effect` wraps a synchronous function which may have effects (as mentioned above).
+* `Await` wraps an asynchronous function.
+* `Delay` does nothing but waits for some amount of time. (as mentioned above).
+* `Ramp`
+* `Par`
+* `Seq`
+* `Repeat`
 
 ### A flexible runtime for development and testing
+
+
 
 ## Risks and Unknowns
 
