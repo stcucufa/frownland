@@ -41,12 +41,12 @@ const arcs = mapit(range(0, N - 1), i => {
     const r = (i + 1) * 4;
     const arc = {
         r,
-        stroke: `hsl(${(r - 4) * 6}deg, 100%, 50%)`,
+        h: (r - 4) * 6,
         dur: dur * (1 + i / (5 * N)),
         th: 0
     };
     score.add(Repeat(Ramp(Effect(
-        p => { arc.th = 2 * (p > 0.5 ? 1 - p : p) * Math.PI; }
+        p => { arc.th = 2 * p * Math.PI; }
     )).dur(dur * (1 + i / (5 * N)))));
     return arc;
 });
@@ -62,14 +62,13 @@ function draw() {
     context.translate(width / 2, height);
     context.scale(scale, scale);
     context.fillStyle = "#f8f9f0";
+    context.lineWidth = 3;
+    context.lineCap = "round";
     for (const arc of arcs) {
         context.beginPath();
-        context.strokeStyle = arc.stroke;
-        context.arc(0, 0, arc.r, 0, Math.PI, true);
+        context.strokeStyle = `hsl(${arc.h}deg 100% ${50 + 10 * Math.min(1, Math.max(-1, Math.tan(arc.th)))}%`;
+        context.arc(0, 0, arc.r, 0, 2 * Math.PI - arc.th, true);
         context.stroke();
-        context.beginPath();
-        context.arc(arc.r * Math.cos(arc.th), -arc.r * Math.sin(arc.th), 2, 0, 2 * Math.PI);
-        context.fill();
     }
     context.restore();
 }
