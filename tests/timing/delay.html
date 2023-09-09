@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Delay</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { Delay } from "../../lib/timing.js";
+
+test("Delay(dur)", t => {
+    const instant = Delay(23);
+    t.equal(instant.tag, "Delay", "tag");
+    t.equal(instant.dur, 23, "dur");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

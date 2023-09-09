@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Par</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Instant, Delay, Par } from "../../lib/timing.js";
+
+test("Par(...children)", t => {
+    const i = Instant(K("ok"));
+    const d = Delay(23);
+    const par = Par(i, d);
+    t.equal(par.tag, "Par", "tag");
+    t.equal(par.children, [i, d], "children");
+
+    const thread = { stack: [], ops: [[17]] };
+    par.generate(thread.ops);
+    console.log(thread);
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Seq</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Instant, Delay, Seq } from "../../lib/timing.js";
+
+test("Seq(...children)", t => {
+    const i = Instant(K("ok"));
+    const d = Delay(23);
+    const seq = Seq(i, d);
+    t.equal(seq.tag, "Seq", "tag");
+    t.equal(seq.children, [i, d], "children");
+
+    const thread = { stack: [], ops: [[17]] };
+    seq.generate(thread.ops);
+    console.log(thread);
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
