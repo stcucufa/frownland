@@ -9,10 +9,12 @@
 import { test } from "../test.js";
 import { Delay } from "../../lib/timing.js";
 
-test("Delay(dur)", t => {
+test("Delay(duration)", t => {
     const instant = Delay(23);
     t.equal(instant.tag, "Delay", "tag");
-    t.equal(instant.dur, 23, "dur");
+    t.equal(instant.duration, 23, "duration");
+    t.equal(Delay("1mn30s").duration, 90000, "duration string");
+    t.equal(Delay("long").duration, 0, "invalid duration (0)");
 });
 
 test("Code generation", t => {
@@ -26,6 +28,13 @@ test("Code generation", t => {
     t.equal(thread.ops[1][0], 40, "End time");
     t.equal(thread.ops[1][1](thread), delay, "Op for end");
     t.equal(thread.stack, [null], "Stack is untouched");
+});
+
+test("Code generation (zero duration)", t => {
+    const delay = Delay("zero");
+    const thread = { stack: [null], ops: [[17]] };
+    delay.generate(thread);
+    t.equal(thread.ops, [[17]], "No new instruction");
 });
 
         </script>
