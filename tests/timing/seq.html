@@ -24,14 +24,14 @@ test("Code generation", t => {
     seq.generate(thread.ops);
     t.equal(thread.ops.length, 2, "Execution with duration");
     t.equal(thread.ops[0].length, 4, "Begin seq, instant, begin delay");
-    t.equal(thread.ops[0][1].call(thread), seq, "Op for begin seq");
+    t.equal(thread.ops[0][1](thread), seq, "Op for begin seq");
     t.equal(thread.ops[1].length, 3, "End delay, end seq");
     t.equal(thread.ops[1][0], 40, "End time");
-    t.equal(thread.ops[1][2].call(thread), seq, "Op for end seq");
+    t.equal(thread.ops[1][2](thread), seq, "Op for end seq");
 
     for (const [_, ...ops] of thread.ops) {
         for (const op of ops) {
-            op.call(thread);
+            op(thread);
         }
     }
     t.equal(thread.stack, ["ok"], "Seq value");

@@ -21,10 +21,10 @@ test("Code generation", t => {
     delay.generate(thread.ops);
     t.equal(thread.ops.length, 2, "Execution with duration");
     t.equal(thread.ops[0].length, 2, "Begin instruction");
-    t.equal(thread.ops[0][1].call(thread), delay, "Op for begin");
+    t.equal(thread.ops[0][1](thread), delay, "Op for begin");
     t.equal(thread.ops[1].length, 2, "End instruction");
     t.equal(thread.ops[1][0], 40, "End time");
-    t.equal(thread.ops[1][1].call(thread), delay, "Op for end");
+    t.equal(thread.ops[1][1](thread), delay, "Op for end");
     t.equal(thread.stack, [null], "Stack is untouched");
 });
 

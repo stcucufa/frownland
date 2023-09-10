@@ -24,7 +24,7 @@ test("Code generation", t => {
     par.generate(thread.ops);
     t.equal(thread.ops.length, 2, "Execution with duration");
     t.equal(thread.ops[0].length, 4, "Begin par and two new threads");
-    t.equal(thread.ops[0][1].call(thread), par, "Op for begin par");
+    t.equal(thread.ops[0][1](thread), par, "Op for begin par");
     t.equal(typeOf(thread.ops[0][2].ops), "array", "Ops for first thread");
     t.equal(typeOf(thread.ops[0][3].ops), "array", "Ops for second thread");
     t.equal(thread.ops[1].length, 2, "End par");
@@ -34,7 +34,7 @@ test("Code generation", t => {
         for (const [_, ...ops] of thread.ops) {
             for (const op of ops) {
                 if (typeof op === "function") {
-                    op.call(thread);
+                    op(thread);
                 } else {
                     op.stack = thread.stack.slice();
                     op.parent = thread;
