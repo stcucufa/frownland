@@ -37,9 +37,9 @@ test("Code generation", t => {
                     op(thread);
                 } else {
                     op.stack = thread.stack.slice();
-                    op.parent = thread;
                     evaluate(op);
                     thread.scope.push(op.stack.at(-1));
+                    delete op.stack;
                 }
             }
         }
