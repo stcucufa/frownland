@@ -21,7 +21,7 @@ test("Par(...children)", t => {
 test("Code generation", t => {
     const par = Par(Instant(K("ok")), Delay(23));
     const thread = { stack: [null], ops: [[17]] };
-    par.generate(thread.ops);
+    par.generate(thread);
     t.equal(thread.ops.length, 2, "Execution with duration");
     t.equal(thread.ops[0].length, 4, "Begin par and two new threads");
     t.equal(thread.ops[0][1](thread), par, "Op for begin par");

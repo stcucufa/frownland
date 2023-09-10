@@ -18,7 +18,7 @@ test("Delay(dur)", t => {
 test("Code generation", t => {
     const delay = Delay(23);
     const thread = { stack: [null], ops: [[17]] };
-    delay.generate(thread.ops);
+    delay.generate(thread);
     t.equal(thread.ops.length, 2, "Execution with duration");
     t.equal(thread.ops[0].length, 2, "Begin instruction");
     t.equal(thread.ops[0][1](thread), delay, "Op for begin");
