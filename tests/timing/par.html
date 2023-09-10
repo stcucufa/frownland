@@ -7,7 +7,7 @@
         <script type="module">
 
 import { test } from "../test.js";
-import { K } from "../../lib/util.js";
+import { K, typeOf } from "../../lib/util.js";
 import { Instant, Delay, Par } from "../../lib/timing.js";
 
 test("Par(...children)", t => {
@@ -16,10 +16,38 @@ test("Par(...children)", t => {
     const par = Par(i, d);
     t.equal(par.tag, "Par", "tag");
     t.equal(par.children, [i, d], "children");
+});
 
-    const thread = { stack: [], ops: [[17]] };
+test("Code generation", t => {
+    const par = Par(Instant(K("ok")), Delay(23));
+    const thread = { stack: [null], ops: [[17]] };
     par.generate(thread.ops);
+    t.equal(thread.ops.length, 2, "Execution with duration");
+    t.equal(thread.ops[0].length, 4, "Begin par and two new threads");
+    t.equal(thread.ops[0][1].call(thread), par, "Op for begin par");
+    t.equal(typeOf(thread.ops[0][2].ops), "array", "Ops for first thread");
+    t.equal(typeOf(thread.ops[0][3].ops), "array", "Ops for second thread");
+    t.equal(thread.ops[1].length, 2, "End par");
+    t.equal(thread.ops[1][0], 40, "End time");
+
+    const evaluate = thread => {
+        for (const [_, ...ops] of thread.ops) {
+            for (const op of ops) {
+                if (typeof op === "function") {
+                    op.call(thread);
+                } else {
+                    op.stack = thread.stack.slice();
+                    op.parent = thread;
+                    evaluate(op);
+                    thread.scope.push(op.stack.at(-1));
+                }
+            }
+        }
+    };
+
+    evaluate(thread);
     console.log(thread);
+    t.equal(thread.stack, [["ok", null]], "Par value");
 });
 
         </script>
