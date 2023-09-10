@@ -328,16 +328,15 @@ function initFrame(tests) {
                     ["skips", this.skips],
                     ["missing", missing]
                 ].filter(([_, n]) => n > 0).map(xs => xs.join(": "));
-                const failure = this.failures > 0 || this.timeouts > 0 || missing > 0;
                 if (done) {
                     status.innerHTML = `${icon(
-                        this.failures > 0 ? "fail" :
+                        this.failures > 0 || missing > 0 ? "fail" :
                         this.timeouts > 0 ? "timeout" :
                         this.skips > 0 ? "skip" : "pass"
                     )} Done, ${escapeMarkup(reports.join(", "))}.`;
                 } else {
                     status.querySelector("span.results").innerHTML = `${icon(
-                        this.failures > 0 ? "fail" :
+                        this.failures > 0 || missing > 0 ? "fail" :
                         this.timeouts > 0 ? "timeout" :
                         this.skips > 0 ? "skip" : "pass"
                     )} ${escapeMarkup(reports.join(", "))}.`;
