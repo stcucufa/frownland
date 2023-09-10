@@ -46,7 +46,6 @@ test("Code generation", t => {
     };
 
     evaluate(thread);
-    console.log(thread);
     t.equal(thread.stack, [["ok", null]], "Par value");
 });
 
