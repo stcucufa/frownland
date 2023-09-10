@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>VM</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="test.css">
+        <script type="module">
+
+import { test } from "./test.js";
+import { instant, delay, seq, par, Op, run } from "../lib/vm.js";
+
+test("instant", t => {
+    const ops = [Op.constant("ok"), Op.nop];
+    const i = instant(ops);
+    t.equal(i.f, ops, "f is set");
+    t.equal(i.schedule([17, 3]), [
+        [[17, 3], ops[0]],
+        [[17, 4], ops[1]],
+        [[17, 5]]
+    ], "schedule");
+    t.equal(run(i), [["ok"], [0, 2]], "run");
+});
+
+test("delay", t => {
+    const d = delay(23);
+    t.equal(d.dur, 23, "dur is set");
+    t.equal(d.schedule([17, 3]), [[[40, 0]]], "schedule");
+    t.equal(run(d), [[null], [23, 0]], "run");
+});
+
+test("seq", t => {
+    const ops = [Op.constant("ok"), Op.nop];
+    const s = seq(instant(ops), delay(23));
+    t.typeof(s.x.schedule, "function", "first child");
+    t.typeof(s.y.schedule, "function", "second child");
+    t.equal(s.schedule([17, 3]), [
+        [[17, 3], ops[0]],
+        [[17, 4], ops[1]],
+        [[40, 0]]
+    ], "schedule");
+    t.equal(run(s), [["ok"], [23, 0]], "run");
+});
+
+test("par", t => {
+    const ops = [Op.constant("ok"), Op.nop];
+    const p = par(instant(ops), delay(23));
+    t.typeof(p.x.schedule, "function", "first child");
+    t.typeof(p.y.schedule, "function", "second child");
+    t.equal(p.schedule([17, 3]), [
+        [
+            [17, 3],
+            [[[17, 3], ops[0]], [[17, 4], ops[1]]],
+            []
+        ],
+        [[40, 0]]
+    ], "schedule");
+    t.equal(run(p), [[["ok", null]], [23, 0]], "run");
+});
+
+test("Program", t => {
+    const program = seq(
+        instant([Op.constant("ok?")]),
+        par(
+            delay(23),
+            instant([Op.replace(/\?/, "!")])
+        )
+    );
+    t.equal(run(program), [[["ok?", "ok!"]], [23, 0]], "run");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

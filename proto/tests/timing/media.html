@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Media</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../../../tests/test.css">
+        <script type="module">
+
+import { test } from "../../../tests/test.js";
+import { html, K } from "../../../lib/util.js";
+import { notification } from "../../../lib/events.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay, Instant, Media, Par, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
+
+const src = "../media/animtest.m4v";
+const dur = 5338;
+
+test("Tag", t => { t.equal(Media.tag, "Media", "Media"); });
+
+test("Media(element, parent, context)", t => {
+    const media = Media(html("video", { src }));
+    t.equal(media.show(), "Media<VIDEO>", "show");
+    t.undefined(media.duration, "intrinsic duration not resolved yet");
+    t.equal(!media.fallible, true, "not fallible");
+});
+
+test("Media(element, parent, context).label(l)", t => {
+    const tape = Tape();
+    const media = tape.instantiate(Media(html("video", { src })).label("anim"), 17);
+    t.equal(dump(media), `* Media-0 "anim" [17, ∞[`, "dump matches");
+});
+
+test("Intrinsic duration", async t => {
+    const media = Media(html("video", { src }));
+    const event = await notification(media, "dur");
+    t.equal(event.source, media, "dur event from media");
+    t.approximately(media.duration, dur, 1, "intrinsic duration");
+});
+
+test("Intrinsic duration (available immediately)", async t => {
+    const video = html("video", { src });
+    await new Promise(resolve => {
+        video.addEventListener("loadedmetadata", function wait() {
+            video.removeEventListener("loadedmetadata", wait);
+            resolve();
+        });
+    });
+    const media = Media(video);
+    t.approximately(media.duration, dur, 1, "intrinsic duration");
+});
+
+test("Instantiation (video)", async t => {
+    const tape = Tape();
+    const media = Media(html("video", { src }));
+    const i = tape.instantiate(media, 17);
+    Deck({ tape }).start();
+    const { instance, error } = await notification(media, "play");
+    t.equal(instance, i, "play notification");
+    const effectiveDur = instance.end - instance.begin;
+    const min = error ? 0 : dur;
+    t.above(effectiveDur, min, `playing takes some time (${effectiveDur - min}, ${
+        error?.message ?? "no error"
+    })`);
+    if (error) {
+        t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ error<[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    } else {
+        t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ <[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    }
+});
+
+test("Instantiation (audio)", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const media = Media(html("audio", { src: "../media/arpeggio.aif" }));
+    const i = tape.instantiate(media, 17);
+    deck.start();
+    const { instance, error } = await notification(media, "play");
+    t.equal(instance, i, "play notification");
+    const effectiveDur = instance.end - instance.begin;
+    const min = error ? 0 : media.duration;
+    t.above(effectiveDur, min, `playing takes some time (${effectiveDur - min}, ${
+        error?.message ?? "no error"
+    })`);
+    if (error) {
+        t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ error<[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    } else {
+        t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ <[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    }
+    deck.stop();
+    deck.now = instance.end + 1;
+});
+
+test("Instantiation, dur < intrinsic duration", async t => {
+    const tape = Tape();
+    const media = Media(html("video", { src })).dur(1300);
+    t.equal(media.duration, 1300, "duration was set");
+    tape.instantiate(media, 17);
+    Deck({ tape }).start();
+    const { instance, error } = await notification(media, "play");
+    const effectiveDur = instance.end - instance.begin;
+    const min = error ? 0 : 1300;
+    t.above(effectiveDur, min, `playing takes some time (${effectiveDur - min}, ${
+        error?.message ?? "no error"
+    })`);
+    if (error) {
+        t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ error<[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    } else {
+        t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ <[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    }
+});
+
+test("Instantiation, dur > intrinsic duration", async t => {
+    const tape = Tape();
+    const media = Media(html("video", { src })).dur(7300);
+    t.equal(media.duration, 7300, "duration was set");
+    tape.instantiate(media, 17);
+    Deck({ tape }).start();
+    const { instance, error } = await notification(media, "play");
+    const effectiveDur = instance.end - instance.begin;
+    const min = error ? 0 : 7300;
+    t.above(effectiveDur, min, `playing takes some time (${effectiveDur - min}, ${
+        error?.message ?? "no error"
+    })`);
+    if (error) {
+        t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ error<[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    } else {
+        t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ <[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    }
+});
+
+test("Instantiation, error", async t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const media = Media(html("video", { src: "missing.m4v" }));
+    tape.instantiate(media, 17);
+    deck.start();
+    const { instance, error } = await notification(media, "play");
+    t.typeof(error.message, "string", `got an error (${error?.message})`);
+    t.match(dump(instance, true), /^\* Media-0 \[17, (\d+(?:\.\d+)?)\[ error<[^>]+> {o0@17,o1@\1}$/, "dump matches");
+    deck.stop();
+    deck.now = instance.end + 1;
+    t.equal(media.element.parentElement, null, "element was removed");
+});
+
+test("Cancel", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const media = Media(html("video", { src }));
+    const instance = tape.instantiate(Par(Delay(23), media).take(1), 17);
+    deck.now = 31;
+    t.equal(media.element.parentElement, document.body, "Media element was added");
+    deck.now = 41;
+    t.equal(media.element.parentElement, null, "element was removed");
+    t.equal(dump(instance, true),
+`* Par-0 [17, 40[ <>
+  * Delay-1 [17, 40[ <undefined> {o0@40}
+  * Media-2 [17, 40[ (cancelled) {o1@40}`, "dump matches");
+});
+
+test("Prune", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par(
+        Seq(Instant(K([23])), Par.map(Delay)),
+        Seq(Delay(31), Media(html("video", { src })))
+    ).take(1), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance, true),
+`* Par-0 [17, 40[ <23>
+  * Seq-1 [17, 40[ <23>
+    * Instant-2 @17 <23> {o0@17}
+    * Par/map-3 [17, 40[ <23> {o1@17}
+      * Delay-7 [17, 40[ <23> {o2@40}
+  * Seq-4 [17, 40[ (cancelled)
+    * Delay-5 [17, 40[ (cancelled)`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

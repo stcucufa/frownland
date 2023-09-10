@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Element</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../../../tests/test.css">
+        <script type="module">
+
+import { test } from "../../../tests/test.js";
+import { html, K } from "../../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay, Element, Event, Instant, Par, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
+
+test("Tag", t => { t.equal(Element.tag, "Element", "Element"); });
+
+test("Element(element, parent, context)", t => {
+    const element = Element(html("p", "Hello"));
+    t.equal(element.show(), "Element<P>", "show");
+    t.equal(element.duration, 0, "zero duration");
+    t.equal(!element.fallible, true, "not fallible");
+});
+
+test("Element(element, parent, durration).label(l)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Element(html("p", "Hello")).label("hello"), 17);
+    Deck({ tape }).now = 18;
+    t.match(dump(instance), /^\* Element-0 "hello" @17 <[^>]+>$/, "dump matches");
+});
+
+test("Instantiation (zero duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Element(html("p", "Hello")), 17);
+    Deck({ tape }).now = 18;
+    t.match(dump(instance), /^\* Element-0 @17 <[^>]+>$/, "dump matches");
+});
+
+test("Instantiation (non-zero duration)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Element(html("p", "Hello")).dur(23), 17);
+    Deck({ tape }).now = 41;
+    t.match(dump(instance), /^\* Element-0 \[17, 40\[ <[^>]+>$/, "dump matches");
+});
+
+test("Element().dur()", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Element(html("p", "ok")).dur(23),
+        Instant(element => element.textContent)
+    ), 17);
+    Deck({ tape }).now = 41;
+    t.match(dump(instance), /^\* Seq-0 \[17, 40\[ <ok>\n  \* Element-1 \[17, 40\[ <[^>]+>\n  \* Instant-2 @40 <ok>$/, "dump matches");
+});
+
+test("Cancel", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const wait = html("p", "wait");
+    const instance = tape.instantiate(Par(
+        Element(wait).dur(Infinity),
+        Delay(23),
+    ).take(1), 17);
+    deck.now = 41;
+    t.equal(dump(instance, true),
+`* Par-0 [17, 40[ <>
+  * Element-1 [17, 40[ (cancelled) {o0@40}
+  * Delay-2 [17, 40[ <undefined> {o1@40}`, "dump matches");
+    t.equal(wait.parentElement, null, "element was removed");
+});
+
+test("Prune", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par(
+        Seq(Instant(K([23])), Par.map(Delay)),
+        Seq(Delay(31), Element(html("p", "ok")).dur(Infinity))
+    ).take(1), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance, true),
+`* Par-0 [17, 40[ <23>
+  * Seq-1 [17, 40[ <23>
+    * Instant-2 @17 <23> {o0@17}
+    * Par/map-3 [17, 40[ <23> {o1@17}
+      * Delay-7 [17, 40[ <23> {o2@40}
+  * Seq-4 [17, 40[ (cancelled)
+    * Delay-5 [17, 40[ (cancelled)`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

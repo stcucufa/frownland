@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Instant &amp; Effect</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../../../tests/test.css">
+        <script type="module">
+
+import { test } from "../../../tests/test.js";
+import { K } from "../../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay, Instant, Effect, Par, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
+
+test("Tags", t => {
+    t.equal(Instant.tag, "Instant", "Instant");
+    t.equal(Effect.tag, "Effect", "Effect");
+});
+
+test("Instant()", t => {
+    const instant = Instant();
+    t.equal(instant.show(), "Instant", "show");
+    t.equal(instant.valueForInstance(17), 17, "valueForInstance defaults to I");
+    t.equal(instant.duration, 0, "zero duration");
+    t.equal(!instant.fallible, true, "infallible (at instantiation)");
+    t.equal(!instant.hasEffect, true, "has no effect");
+});
+
+test("Instant(f)", t => {
+    const instant = Instant(x => x * 2);
+    t.equal(instant.valueForInstance(17), 34, "valueForInstance is set");
+});
+
+test("Instantiatiation", t => {
+    const tape = Tape();
+    const instant = Instant(K("ok"));
+    const instance = tape.instantiate(instant, 17);
+    t.equal(instance.tape, tape, "instance.tape is set");
+    t.equal(instance.item, instant, "instance.item is set");
+    t.equal(instance.t, 17, "instance.t is set");
+    Deck({ tape }).now = 18;
+    t.equal(instance.value, "ok", "instance value");
+});
+
+test("Instant(f).dur(d), number", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Instant(K("ok")).dur(23), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <ok>
+  * Delay-1 [17, 40[ <undefined>
+  * Instant-2 @40 <ok>`, "dump matches");
+});
+
+test("Instant(f).dur(d), string", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Instant(K("ok")).dur("0.023s"), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <ok>
+  * Delay-1 [17, 40[ <undefined>
+  * Instant-2 @40 <ok>`, "dump matches");
+});
+
+test("Instant(f).dur(0) has no effect", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Instant(K("ok")).dur(0), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance), "* Instant-0 @17 <ok>", "dump matches");
+});
+
+test("Instantiation with parent duration", t => {
+    t.equal(dump(Tape().instantiate(Instant(), 17, 31)), "* Instant-0 @17", "cap is always high enough");
+});
+
+test("Instant(f).label(l)", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Instant(K("!")).label("bang"), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq), `* Instant-0 "bang" @17 <!>`, "dump matches");
+});
+
+test("Instant(f).var(v)", t => {
+    const tape = Tape();
+    const bang = Instant(K("!"));
+    const seq = tape.instantiate(Seq(bang, Instant(K("ok")), Instant(([x, y]) => x + y).var(bang)), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 <ok!>
+  * Instant-1 @17 <!>
+  * Instant-2 @17 <ok>
+  * Instant-3 @17 <ok!>`, "dump matches");
+});
+
+test("Instant(f).var(v) matching label", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq(
+        Instant(K("!")).label("bang"), Instant(K("ok")), Instant(([x, y]) => x + y).var("bang")
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 <ok!>
+  * Instant-1 "bang" @17 <!>
+  * Instant-2 @17 <ok>
+  * Instant-3 @17 <ok!>`, "dump matches");
+});
+
+test("Instant(f).var(v), double Seq", t => {
+    const tape = Tape();
+    const bang = Instant(K("!"));
+    const seq = tape.instantiate(
+        Seq(Seq(bang, Instant(K("ok"))), Instant(([x, y]) => x + y).var(bang)), 17
+    );
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 <ok!>
+  * Seq-1 @17 <ok>
+    * Instant-2 @17 <!>
+    * Instant-3 @17 <ok>
+  * Instant-4 @17 <ok!>`, "dump matches");
+});
+
+test("Instant(f).var(v).var(w)", t => {
+    const tape = Tape();
+    const ok = Instant(K("ok"));
+    const bang = Instant(K("!"));
+    const seq = tape.instantiate(Seq(ok, bang, Instant(([_, x, y]) => x + y).var(ok).var(bang)), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 <ok!>
+  * Instant-1 @17 <ok>
+  * Instant-2 @17 <!>
+  * Instant-3 @17 <ok!>`, "dump matches");
+});
+
+test("Instant(f).var(v).var(w), triple Seq", t => {
+    const tape = Tape();
+    const seq = tape.instantiate(Seq(
+        Seq(Seq(Instant(K(2)).label(2), Instant(K(3)).label(3)), Instant(K(1))),
+        Instant(([x, y, z], t) => [x, y, z, t]).var(2).var(3)
+    ), 17)
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 <1,2,3,17>
+  * Seq-1 @17 <1>
+    * Seq-2 @17 <3>
+      * Instant-3 "2" @17 <2>
+      * Instant-4 "3" @17 <3>
+    * Instant-5 @17 <1>
+  * Instant-6 @17 <1,2,3,17>`, "dump matches");
+});
+
+test("Instant(f).var(v); error if v has no instance", t => {
+    const tape = Tape();
+    const bang = Instant(K("!"));
+    const seq = tape.instantiate(Seq(Instant(K("ok")), Instant(([x, y]) => x + y).var(bang)), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(seq),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <ok>
+  * Instant-2 @17 error<no value for var>`, "dump matches");
+});
+
+test("Cancel instant", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par(
+        Instant(K("ok")), Instant(() => { throw Error("not cancelled?!"); })
+    ).take(1), 17);
+    Deck({ tape }).now = 18;
+    t.equal(choice.value, ["ok"], "expected value");
+});
+
+test("Prune instant", t => {
+    const tape = Tape();
+    t.undefined(tape.instantiate(Seq(
+        Instant(() => { throw Error("not pruned?!"); }),
+        Par().take(1)
+    ), 17), "instantiation failed");
+    Deck({ tape }).now = 18;
+    t.equal(tape.occurrences, [], "no occurrence on tape");
+});
+
+test("Effect(f)", t => {
+    const effect = Effect(() => {
+        console.warn("Some effect");
+        return "ok";
+    });
+    t.equal(effect.show(), "Effect", "show");
+    t.equal(effect.duration, 0, "zero duration");
+    t.equal(!effect.fallible, true, "infallible (at instantiation)");
+    t.equal(effect.hasEffect, true, "has effect");
+
+    const tape = Tape();
+    const instance = tape.instantiate(effect, 17);
+    t.warns(() => { Deck({ tape }).now = 18; }, "has effect when running");
+    t.equal(dump(instance), "* Effect-0 @17 <ok>", "dump matches");
+});
+
+test("Effect(f).dur(d), number", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Effect(() => {
+        console.warn("Some effect");
+        return "ok";
+    }).dur(23), 17);
+    t.warns(() => { Deck({ tape }).now = 41; }, "has effect when running");
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <ok>
+  * Delay-1 [17, 40[ <undefined>
+  * Effect-2 @40 <ok>`, "dump matches");
+});
+
+test("Effect(f).dur(d), string", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Effect(() => {
+        console.warn("Some effect");
+        return "ok";
+    }).dur("0.023s"), 17);
+    t.warns(() => { Deck({ tape }).now = 41; }, "has effect when running");
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <ok>
+  * Delay-1 [17, 40[ <undefined>
+  * Effect-2 @40 <ok>`, "dump matches");
+});
+
+test("Effect(f).label(l)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Effect(() => {
+        console.warn("Some effect");
+        return "ok";
+    }).label("warning"), 17);
+    t.warns(() => { Deck({ tape }).now = 18; }, "has effect when running");
+    t.equal(dump(instance), `* Effect-0 "warning" @17 <ok>`, "dump matches");
+});
+
+test("Effect(f).var(v)", t => {
+    const tape = Tape();
+    const bang = Instant(K("!"));
+    const log = [];
+    const seq = tape.instantiate(Seq(
+        bang, Instant(K("ok")), Effect(([x, y], t) => { log.push([t, x + y]); }).var(bang)
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(log, [[17, "ok!"]], "effect with the right inputs");
+});
+
+test("Runtime error (Instant)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Instant(() => { throw window.Error("Augh!"); }), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance), "* Instant-0 @17 error<Augh!>", "dump matches");
+});
+
+test("Runtime error (Effect)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Effect(() => { throw window.Error("Augh!"); }), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance), "* Effect-0 @17 error<Augh!>", "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

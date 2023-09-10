@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Transport Bar</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../../tests/test.css">
+        <script type="module">
+
+import { test } from "../../tests/test.js";
+import { html, K, timeout } from "../../lib/util.js";
+import { on, notification, notifications } from "../../lib/events.js";
+import { Deck } from "../lib/deck.js";
+import { Tape } from "../lib/tape.js";
+import { Delay, Instant, Media, Par, Score, Seq } from "../lib/timing.js";
+import { TransportBar } from "../lib/gui/transport-bar.js";
+
+test("TransportBar(score)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const transportBar = TransportBar(score);
+    t.equal(transportBar.score, score, "score");
+    t.equal(transportBar.state, "init", "initial state");
+    t.instanceof(transportBar.element, window.Element, "element");
+});
+
+test("TransportBar(score, { autoplay })", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const transportBar = TransportBar(score, { autoplay: true });
+    t.equal(transportBar.score, score, "score");
+    t.equal(transportBar.state, "playing", "autoplay");
+});
+
+test("remove()", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const transportBar = TransportBar(score, { autoplay: true });
+    document.body.insertBefore(transportBar.element, document.body.firstChild);
+    t.equal(transportBar.element.parentElement, document.body, "added");
+    transportBar.remove();
+    t.equal(transportBar.state, "stopped", "stopped");
+    t.equal(transportBar.element.parentElement, null, "removed");
+});
+
+test("play()", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const transportBar = TransportBar(score);
+    t.equal(transportBar.score, score, "score");
+    transportBar.play();
+    t.equal(transportBar.state, "playing", "playing");
+    transportBar.play();
+    t.equal(transportBar.state, "playing", "still playing");
+});
+
+test("stop()", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const transportBar = TransportBar(score);
+    t.equal(transportBar.score, score, "score");
+    transportBar.stop();
+    t.equal(transportBar.state, "init", "already stopped");
+    transportBar.play();
+    transportBar.stop();
+    t.equal(transportBar.state, "stopped", "stopped");
+    transportBar.stop();
+    t.equal(transportBar.state, "stopped", "still stopped");
+    transportBar.play();
+    t.equal(transportBar.state, "playing", "playing");
+});
+
+test("pause()", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const transportBar = TransportBar(score);
+    t.equal(transportBar.score, score, "score");
+    transportBar.pause();
+    t.equal(transportBar.state, "init", "stopped");
+    transportBar.play();
+    transportBar.pause();
+    t.equal(transportBar.state, "paused", "paused");
+    transportBar.pause();
+    t.equal(transportBar.state, "paused", "still paused");
+    transportBar.play();
+    t.equal(transportBar.state, "playing", "resumed");
+});
+
+test("fastForward()", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const transportBar = TransportBar(score);
+    t.equal(transportBar.score, score, "score");
+    transportBar.fastForward();
+    t.equal(transportBar.state, "init", "stopped");
+    transportBar.play();
+    transportBar.fastForward();
+    t.equal(transportBar.state, "playing", "playing");
+    t.equal(deck.speed, 2, "at double speed");
+    transportBar.fastForward();
+    t.equal(transportBar.state, "playing", "playing");
+    t.equal(deck.speed, 4, "at quadruple speed");
+    transportBar.fastForward();
+    t.equal(transportBar.state, "playing", "playing");
+    t.equal(deck.speed, 8, "at octuple speed");
+
+    transportBar.pause();
+    transportBar.fastForward();
+    t.equal(transportBar.state, "paused", "paused");
+    transportBar.play();
+    t.equal(transportBar.state, "playing", "resumed");
+    t.equal(deck.speed, 8, "at octuple speed");
+
+    transportBar.fastForward();
+    t.equal(transportBar.state, "playing", "playing");
+    t.equal(deck.speed, 0.25, "at quarter speed");
+    transportBar.fastForward();
+    t.equal(transportBar.state, "playing", "playing");
+    t.equal(deck.speed, 0.5, "at half speed");
+
+    transportBar.stop();
+    transportBar.play();
+    t.equal(transportBar.state, "playing", "restarted");
+    t.equal(deck.speed, 1, "at normal speed");
+
+    deck.speed = 3;
+    transportBar.fastForward();
+    t.equal(deck.speed, 1, "back to normal speed");
+});
+
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+    </body>
+</html>

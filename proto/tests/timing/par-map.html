@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Par.map</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../../../tests/test.css">
+        <script type="module">
+
+import { test } from "../../../tests/test.js";
+import { K } from "../../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay, Instant, Par, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
+
+test("Par.map(g)", t => {
+    const par = Par.map(Delay);
+    t.equal(par.show(), "Par/map", "show");
+    t.typeof(par.g, "function", "g function");
+    t.undefined(par.duration, "unresolved duration");
+    t.equal(!par.fallible, true, "not fallible");
+    t.equal(par.take(0).duration, 0, "down to zero with take(0)");
+});
+
+test("Par.map(g).label(l)", t => {
+    const par = Tape().instantiate(Par.map(Delay).label("delays"), 17);
+    t.equal(dump(par), `* Par/map-0 "delays" [17, ∞[`, "dump matches");
+});
+
+test("Instantiation", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31])),
+        Par.map(Delay),
+        Instant(xs => xs.length)
+    ), 17);
+    Deck({ tape }).now = 55;
+    t.equal(dump(instance),
+`* Seq-0 [17, 54[ <3>
+  * Instant-1 @17 <19,37,31>
+  * Par/map-2 [17, 54[ <19,37,31>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+  * Instant-6 @54 <3>`, "dump matches");
+});
+
+test("Instantiation, empty input array", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([])),
+        Par.map(Delay)
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(instance.value, [], "empty list");
+});
+
+test("Par.map(g).take(n = ∞)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map((x, i) => Par(Instant(K(i)), Delay(x))).take(),
+        Instant(xs => xs.map(([i]) => i))
+    ), 17);
+    Deck({ tape }).now = 69;
+    t.equal(instance.value, [0, 3, 2, 1, 4], "value");
+});
+
+test("Par.map(g).take(n); fails at runtime when n > input length", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map((x, i) => Par(Instant(K(i)), Delay(x))).take(7),
+        Instant(xs => xs.map(([i]) => i))
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(instance.error.message, "failed", "failed to instantiate map");
+});
+
+test("Par.map(g).take(n); n < input length", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(x => Par(Instant(K(x)), Delay(x))).take(3),
+        Instant(xs => xs.map(([i]) => i))
+    ), 17);
+    Deck({ tape }).now = 69;
+    t.equal(instance.value, [19, 19, 31], "value");
+});
+
+test("Par.map(g).take(0)", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map((x, i) => Par(Instant(K(i)), Delay(x))).take(0)
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(instance.value, [], "empty list");
+});
+
+test("Par.map(g).dur(d); extending duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).dur(71)
+    ), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <19,37,31,19,51>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 88[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 68[ <51>`, "dump matches");
+});
+
+test("Par.map(g).dur(d); extending duration, no children", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([])),
+        Par.map(Delay).dur(71)
+    ), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <>
+  * Instant-1 @17 <>
+  * Par/map-2 [17, 88[ <>`, "dump matches");
+});
+
+test("Par.map(g).dur(d); cutting off duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).dur(41)
+    ), 17);
+    Deck({ tape }).now = 59;
+    t.equal(dump(instance),
+`* Seq-0 [17, 58[ <19,37,31,19,51>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 58[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 58[ <51>`, "dump matches");
+});
+
+test("Par.map(g).dur(d); cutting off instantiation duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay)
+    ), 17, 41);
+    Deck({ tape }).now = 59;
+    t.equal(dump(instance),
+`* Seq-0 [17, 58[ <19,37,31,19,51>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 58[ <19,37,31,19,51>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 54[ <37>
+    * Delay-5 [17, 48[ <31>
+    * Delay-6 [17, 36[ <19>
+    * Delay-7 [17, 58[ <51>`, "dump matches");
+});
+
+test("Par.map(g).take(n).dur(d); extending duration", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([19, 37, 31, 19, 51])),
+        Par.map(Delay).take(3).dur(71)
+    ), 17);
+    Deck({ tape }).now = 89;
+    t.equal(dump(instance),
+`* Seq-0 [17, 88[ <19,19,31>
+  * Instant-1 @17 <19,37,31,19,51>
+  * Par/map-2 [17, 88[ <19,19,31>
+    * Delay-3 [17, 36[ <19>
+    * Delay-4 [17, 48[ <31>
+    * Delay-5 [17, 36[ <19>`, "dump matches");
+});
+
+test("Par.map(g) failure: input is not an array", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K("oops")),
+        Par.map(Delay)
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <oops>
+  * Par/map-2 @17 (input error)`, "dump matches");
+});
+
+test("Par.map(g) failure: could not instantiate input", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([1, 2, 3])),
+        Par.map(() => { throw window.Error("Augh!"); })
+    ), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance),
+`* Seq-0 @17 (failed)
+  * Instant-1 @17 <1,2,3>
+  * Par/map-2 @17 (input error)`, "dump matches");
+});
+
+test("Par may recover from failing child", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Seq(
+        Instant(K([23, 19])),
+        Par(
+            Par().take(1),
+            Par.map(Delay)
+        ).take(1)
+    ), 17)
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <23,19>
+  * Instant-1 @17 <23,19>
+  * Par-2 [17, 40[ <23,19>
+    * Par/map-3 [17, 40[ <23,19>
+      * Delay-4 [17, 40[ <23>
+      * Delay-5 [17, 36[ <19>`, "dump matches");
+});
+
+test("Cancel Par.map", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par(
+        Seq(Instant(K([19])), Par.map(Delay)),
+        Seq(Instant(K([23, 31])), Par.map(Delay)),
+    ).take(1), 17);
+    Deck({ tape }).now = 37;
+    t.equal(dump(choice, true),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19> {o0@17}
+    * Par/map-3 [17, 36[ <19> {o1@17}
+      * Delay-7 [17, 36[ <19> {o4@36}
+  * Seq-4 [17, 36[ (cancelled)
+    * Instant-5 @17 <23,31> {o2@17}
+    * Par/map-6 [17, 36[ (cancelled) {o3@17}
+      * Delay-8 [17, 36[ (cancelled)
+      * Delay-9 [17, 36[ (cancelled)`, "dump matches");
+});
+
+test("Prune Par.map", t => {
+    const tape = Tape();
+    const choice = tape.instantiate(Par(
+        Seq(Instant(K([19])), Par.map(Delay)),
+        Seq(Delay(23), Par.map(Delay))
+    ).take(1), 17);
+    Deck({ tape }).now = 37;
+    t.equal(dump(choice, true),
+`* Par-0 [17, 36[ <19>
+  * Seq-1 [17, 36[ <19>
+    * Instant-2 @17 <19> {o0@17}
+    * Par/map-3 [17, 36[ <19> {o1@17}
+      * Delay-7 [17, 36[ <19> {o2@36}
+  * Seq-4 [17, 36[ (cancelled)
+    * Delay-5 [17, 36[ (cancelled)`, "dump matches");
+});
+
+test("Input error", t => {
+    const tape = Tape();
+    const instance = tape.instantiate(Par.map(Delay), 17);
+    Deck({ tape }).now = 18;
+    t.equal(dump(instance), "* Par/map-0 @17 (input error)", "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

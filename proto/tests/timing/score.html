@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Score</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../../../tests/test.css">
+        <script type="module">
+
+import { test } from "../../../tests/test.js";
+import { K } from "../../../lib/util.js";
+import { on } from "../../../lib/events.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay, Event, Instant, Score, Seq } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
+
+test("Score()", t => {
+    const score = Score();
+    t.equal(score.show(), "Score/0", "show");
+    t.equal(score.children, [], "no children");
+    t.equal(score.tape.show(), "Tape<>", "default tape");
+    t.equal(dump(score.instance), "* Score-0 [0, ∞[", "dump matches");
+});
+
+test("Score({ tape })", t => {
+    const tape = Tape();
+    const score = Score({ tape });
+    t.equal(score.show(), "Score/0", "show");
+    t.equal(score.children, [], "no children");
+    t.equal(score.tape, tape, "tape");
+    t.equal(dump(score.instance), "* Score-0 [0, ∞[", "dump matches");
+});
+
+test("Score.add(child), no deck", t => {
+    const score = Score();
+    const delay = score.add(Delay(23));
+    const instant = score.add(Instant());
+    t.equal(instant.show(), "Instant", "show added child");
+    t.equal(score.show(), "Score/2", "show after add");
+    t.equal(score.children, [delay, instant], "children after add");
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Delay-1 [0, 23[
+  * Instant-2 @0`, "children are instantiated");
+});
+
+test("Score.add(child), with deck", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const instant = score.add(Instant(K("ok")));
+    deck.now = 17;
+    const delay = score.add(Delay(23));
+    deck.now = 41;
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Instant-1 @0 <ok>
+  * Delay-2 [17, 40[ <undefined>`, "dump matches");
+});
+
+test("Score.add(child, at)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const instant = score.add(Instant(K("ok")));
+    const delay = score.add(Delay(23), 17);
+    deck.now = 41;
+    t.equal(dump(score.instance),
+`* Score-0 [0, ∞[
+  * Instant-1 @0 <ok>
+  * Delay-2 [17, 40[ <undefined>`, "dump matches");
+});
+
+test("Notification when a child instance ends (with value)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const seq = score.add(Seq(Instant(K("ok")), Delay(23)), 17);
+    let event;
+    on(tape, "end", e => { event = e; });
+    deck.now = 41;
+    t.equal(event.item, seq, "Notification from item");
+    t.equal(event.value, "ok", "Value");
+});
+
+test("Notification when a child instance ends (with failure)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const score = Score({ tape });
+    const seq = score.add(Seq(Instant(K("ok")), Event(window, "synth").dur(23)), 17);
+    let event;
+    on(tape, "end", e => { event = e; });
+    deck.now = 41;
+    t.equal(event.item, seq, "Notification from item");
+    t.ok(event.error, "Error (timeout)");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

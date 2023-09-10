@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Tomato</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../../../tests/test.css">
+        <link rel="stylesheet" href="../../lib/gui/transport-bar.css">
+        <script type="module">
+
+import { html, K, range } from "../../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Element, first, Instant, Repeat, Score, Seq, Set } from "../../lib/timing.js";
+import { TransportBar } from "../../lib/gui/transport-bar.js";
+
+const FPS = 9;
+
+const tape = Tape();
+const deck = Deck({ tape });
+const score = Score({ tape });
+
+const image = html("img");
+const frame = document.querySelector("span");
+
+const transportBar = TransportBar(score, { autoplay: true });
+document.body.insertBefore(transportBar.element, document.body.firstChild);
+
+score.add(Element(image).dur(Infinity));
+score.add(Repeat(Seq(
+    Instant(K([...range(1, 18)])),
+    Seq.map(first(
+        Seq(
+            Instant(i => `tomato${i.toString().padStart(2, "0")}.png`),
+            Set(image, "src").dur(1000 / FPS)
+        ),
+        Set(frame, "textContent").dur(Infinity)
+    ))
+)));
+
+        </script>
+    </head>
+    <body>
+        <p>Frame #<span>0</span></p>
+    </body>
+</html>

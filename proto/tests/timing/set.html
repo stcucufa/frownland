@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Set</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../../../tests/test.css">
+        <script type="module">
+
+import { test } from "../../../tests/test.js";
+import { html, K, timeout } from "../../../lib/util.js";
+import { Tape } from "../../lib/tape.js";
+import { Deck } from "../../lib/deck.js";
+import { Delay, Event, Instant, Par, Seq, Set } from "../../lib/timing.js";
+import { dump } from "../../lib/timing/util.js";
+
+test("Tag", t => { t.equal(Set.tag, "Set", "Set"); });
+
+test("Set(target, name)", t => {
+    const object = {};
+    const set = Set(object, "src");
+    t.equal(set.show(), "Set<src>", "show");
+    t.equal(set.duration, 0, "zero duration");
+    t.equal(!set.fallible, true, "not fallible");
+    t.equal(set.hasEffect, true, "has effect");
+});
+
+test("Set(target, name).label(l)", t => {
+    const object = {};
+    const set = Tape().instantiate(Set(object, "src").label("object.src"), 17);
+    t.equal(dump(set), `* Set-0 "object.src" @17`, "dump matches");
+});
+
+test("Instantiation (zero dur)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const div = html("div", { class: "foo" });
+    const instance = tape.instantiate(Seq(Instant(K("bar")), Set(div, "class")), 17);
+    deck.now = 18;
+    t.equal(div.getAttribute("class"), "bar", "attribute was set");
+    t.equal(dump(instance, true),
+`* Seq-0 @17 <bar>
+  * Instant-1 @17 <bar> {o0@17}
+  * Set-2 @17 <bar> {o1@17}`, "dump matches");
+    t.equal(tape.show(), "Tape<17,17>", "no other occurrence");
+});
+
+test("Instantiation (Element target, attribute)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const div = html("div", { class: "foo" });
+    const instance = tape.instantiate(Seq(
+        Instant(K("bar")),
+        Set(div, "class").dur(23)
+    ), 17);
+    deck.now = 18;
+    t.equal(div.getAttribute("class"), "bar", "attribute was set");
+    deck.now = 41;
+    t.equal(div.getAttribute("class"), "foo", "attribute was reset");
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <bar>
+  * Instant-1 @17 <bar>
+  * Set-2 [17, 40[ <bar>`, "dump matches");
+});
+
+test("Instantiation (Element target, property)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const p = html("p", "Before");
+    const instance = tape.instantiate(Seq(
+        Instant(K("After")),
+        Set(p, "textContent").dur(23)
+    ), 17);
+    deck.now = 18;
+    t.equal(p.textContent, "After", "property was set");
+    deck.now = 41;
+    t.equal(p.textContent, "Before", "property was reset");
+    t.equal(dump(instance),
+`* Seq-0 [17, 40[ <After>
+  * Instant-1 @17 <After>
+  * Set-2 [17, 40[ <After>`, "dump matches");
+});
+
+test("Instantiation (Element target, static value)", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const div = html("div", { class: "foo" });
+    const instance = tape.instantiate(Set(div, "class", "bar").dur(23), 17);
+    deck.now = 18;
+    t.equal(div.getAttribute("class"), "bar", "attribute was set");
+    deck.now = 41;
+    t.equal(div.getAttribute("class"), "foo", "attribute was reset");
+    t.equal(dump(instance), "* Set-0 [17, 40[ <bar>", "dump matches");
+});
+
+test("Cancel", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const p = html("p", "ok");
+    const instance = tape.instantiate(Par(
+        Delay(23),
+        Set(p, "textContent", "ko").dur(Infinity)
+    ).take(1), 17);
+    deck.now = 31;
+    t.equal(p.textContent, "ko", "textContent was set");
+    deck.now = 41;
+    t.equal(p.textContent, "ok", "textContent was reset");
+    t.equal(dump(instance, true),
+`* Par-0 [17, 40[ <>
+  * Delay-1 [17, 40[ <undefined> {o0@40}
+  * Set-2 [17, 40[ (cancelled) {o1@40}`, "dump matches");
+});
+
+test("Cancel and set again", t => {
+    const tape = Tape();
+    const deck = Deck({ tape });
+    const object = {
+        values: [1],
+        get value() {
+            return this.values.at(-1);
+        },
+        set value(x) {
+            this.values.push(x);
+        }
+    };
+    const instance = tape.instantiate(Seq(
+        Par(Delay(23), Set(object, "value", 2).dur(Infinity)).take(1),
+        Par(Delay(31), Set(object, "value", 3).dur(Infinity)).take(1)
+    ), 17);
+    Deck({ tape }).now = 73;
+    t.equal(dump(instance, true),
+`* Seq-0 [17, 71[ <>
+  * Par-1 [17, 40[ <>
+    * Delay-2 [17, 40[ <undefined> {o0@40}
+    * Set-3 [17, 40[ (cancelled) {o1@40}
+  * Par-4 [40, 71[ <>
+    * Delay-5 [40, 71[ <> {o2@71}
+    * Set-6 [40, 71[ (cancelled) {o3@71}`, "dump matches");
+    t.equal(object.values, [1, 2, 1, 3, 1], "value was set and unset");
+});
+
+test("Prune", t => {
+    const tape = Tape();
+    const p = html("p", "ok");
+    const instance = tape.instantiate(Par(
+        Seq(Instant(K([23])), Par.map(Delay)),
+        Seq(Delay(31), Set(p, "textContent", "ko").dur(Infinity))
+    ).take(1), 17);
+    Deck({ tape }).now = 41;
+    t.equal(dump(instance, true),
+`* Par-0 [17, 40[ <23>
+  * Seq-1 [17, 40[ <23>
+    * Instant-2 @17 <23> {o0@17}
+    * Par/map-3 [17, 40[ <23> {o1@17}
+      * Delay-7 [17, 40[ <23> {o2@40}
+  * Seq-4 [17, 40[ (cancelled)
+    * Delay-5 [17, 40[ (cancelled)`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
