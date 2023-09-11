@@ -19,12 +19,12 @@ test("Delay(duration)", t => {
 
 test("Code generation", t => {
     const delay = Delay(23);
-    const thread = { stack: [null], ops: [], t: 17 };
+    const thread = { ops: [], t: 17 };
     t.equal(delay.generate(thread, 17), 40, "duration");
     t.equal(thread.ops[0].length, 1, "single instruction");
     t.equal(thread.ops[0](thread), delay, "op for delay");
     t.equal(thread.t, 40, "end time after execution");
-    t.equal(thread.stack, [null], "stack is untouched");
+    t.undefined(thread.value, "no end value");
 });
 
 test("Code generation (zero duration)", t => {

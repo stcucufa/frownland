@@ -20,12 +20,7 @@ test("Seq(...children)", t => {
 });
 
 test("Code generation", t => {
-    const seq = Seq(Delay(23), Instant((x, t) => {
-        if (x === null) {
-            return t * 2;
-        }
-    }));
-
+    const seq = Seq(Delay(23), Instant((x, t) => t * (x ?? 2)));
     const vm = VM();
     const thread = vm.add(seq, 17);
     t.equal(thread.ops.length, 4, "begin seq, delay, instant, end seq");
@@ -33,7 +28,17 @@ test("Code generation", t => {
     t.equal(thread.ops[3](thread), seq, "op for end seq");
     vm.run(thread);
     t.equal(thread.t, thread.end, `end time (${thread.t})`);
-    t.equal(thread.stack, [80], "seq value");
+    t.equal(thread.value, 80, "end value");
+});
+
+test("Code generation (empty seq)", t => {
+    const seq = Seq();
+    const vm = VM();
+    const thread = vm.add(seq, 17);
+    t.equal(thread.ops.length, 2, "begin seq, end seq");
+    vm.run(thread);
+    t.equal(thread.end, 17, "end time");
+    t.undefined(thread.value, "end value");
 });
 
         </script>
