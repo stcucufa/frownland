@@ -24,22 +24,17 @@ test("Code generation", t => {
             return t * 2;
         }
     }));
-    const thread = { stack: [null], ops: [[17]] };
-    seq.generate(thread);
-    t.equal(thread.ops.length, 2, "Execution with duration");
-    t.equal(thread.ops[0].length, 3, "Begin seq, begin delay");
-    t.equal(thread.ops[0][1](thread), seq, "Op for begin seq");
-    t.equal(thread.ops[1].length, 4, "End delay, instant, end seq");
-    t.equal(thread.ops[1][0], 40, "End time");
-    t.equal(thread.ops[1][3](thread), seq, "Op for end seq");
+    const thread = { stack: [null], ops: [], t: 17 };
+    t.equal(seq.generate(thread, 17), 40, "duration");
+    t.equal(thread.ops.length, 4, "begin seq, delay, instant, end seq");
+    t.equal(thread.ops[0](thread), seq, "op for begin seq");
+    t.equal(thread.ops[3](thread), seq, "op for end seq");
 
-    for (const [t, ...ops] of thread.ops) {
-        thread.t = t;
-        for (const op of ops) {
-            op(thread);
-        }
+    for (const op of thread.ops) {
+        op(thread);
     }
-    t.equal(thread.stack, [80], "Seq value");
+    t.equal(thread.t, 40, "end time");
+    t.equal(thread.stack, [80], "seq value");
 });
 
         </script>

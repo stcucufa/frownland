@@ -20,27 +20,23 @@ test("Par(...children)", t => {
 
 test("Code generation", t => {
     const par = Par(Instant(K("ok")), Delay(23));
-    const thread = { stack: [null], ops: [[17]] };
-    par.generate(thread);
-    t.equal(thread.ops.length, 2, "Execution with duration");
-    t.equal(thread.ops[0].length, 4, "Begin par and two new threads");
-    t.equal(thread.ops[0][1](thread), par, "Op for begin par");
-    t.equal(typeOf(thread.ops[0][2].ops), "array", "Ops for first thread");
-    t.equal(typeOf(thread.ops[0][3].ops), "array", "Ops for second thread");
-    t.equal(thread.ops[1].length, 2, "End par");
-    t.equal(thread.ops[1][0], 40, "End time");
+    const thread = { stack: [null], ops: [], t: 17 };
+    t.equal(par.generate(thread, 17), 40, "duration");
+    t.equal(thread.ops.length, 4, "begin par, two new threads, end par");
+    t.equal(typeOf(thread.ops[1].ops), "array", "ops for first thread");
+    t.equal(typeOf(thread.ops[2].ops), "array", "ops for second thread");
 
     const evaluate = thread => {
-        for (const [_, ...ops] of thread.ops) {
-            for (const op of ops) {
-                if (typeof op === "function") {
-                    op(thread);
-                } else {
-                    op.stack = thread.stack.slice();
-                    evaluate(op);
-                    thread.scope.push(op.stack.at(-1));
-                    delete op.stack;
-                }
+        for (const op of thread.ops) {
+            if (typeof op === "function") {
+                op(thread);
+            } else {
+                op.stack = thread.stack.slice();
+                op.t = thread.t;
+                evaluate(op);
+                thread.scope.push(op.stack.at(-1));
+                delete op.stack;
+                delete op.t;
             }
         }
     };
