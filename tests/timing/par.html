@@ -9,7 +9,7 @@
 import { test } from "../test.js";
 import { K, typeOf } from "../../lib/util.js";
 import { Instant, Delay, Par } from "../../lib/timing.js";
-import { VM } from "../../lib/runtime.js";
+import { Thread, VM } from "../../lib/runtime.js";
 
 test("Par(...children)", t => {
     const i = Instant(K("ok"));
@@ -39,6 +39,15 @@ test("Code generation (empty par)", t => {
     vm.run(thread);
     t.equal(thread.end, 17, "end time");
     t.equal(thread.value, [], "end value");
+});
+
+test("Code generation (constrained duration)", t => {
+    const par = Par(Instant(K("ok")), Delay(23));
+    const thread = Thread();
+    t.equal(par.generate(thread, 17, 19), 36, "constrained end");
+    t.equal(thread.ops.length, 4, "begin par, two new threads, end par");
+    t.equal(thread.ops[1].ops.length, 1, "ops for first thread (instant)");
+    t.equal(thread.ops[2].ops.length, 0, "no ops for second thread (cut off delay)");
 });
 
         </script>

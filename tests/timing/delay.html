@@ -20,7 +20,7 @@ test("Delay(duration)", t => {
 test("Code generation", t => {
     const delay = Delay(23);
     const thread = { ops: [], t: 17 };
-    t.equal(delay.generate(thread, 17), 40, "duration");
+    t.equal(delay.generate(thread, 17, Infinity), 40, "duration");
     t.equal(thread.ops[0].length, 1, "single instruction");
     t.equal(thread.ops[0](thread), delay, "op for delay");
     t.equal(thread.t, 40, "end time after execution");
@@ -30,8 +30,15 @@ test("Code generation", t => {
 test("Code generation (zero duration)", t => {
     const delay = Delay("zero");
     const thread = { ops: [] };
-    t.equal(delay.generate(thread, 17), 17, "zero duration");
+    t.equal(delay.generate(thread, 17, Infinity), 17, "zero duration");
     t.equal(thread.ops, [], "no new instruction");
+});
+
+test("Code generation (constrained duration)", t => {
+    const delay = Delay(23);
+    const thread = { ops: [] };
+    t.equal(delay.generate(thread, 17, 19), 40, "full duration");
+    t.equal(thread.ops, [], "but no instruction");
 });
 
         </script>
