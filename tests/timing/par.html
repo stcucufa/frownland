@@ -9,6 +9,7 @@
 import { test } from "../test.js";
 import { K, typeOf } from "../../lib/util.js";
 import { Instant, Delay, Par } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
 
 test("Par(...children)", t => {
     const i = Instant(K("ok"));
@@ -20,28 +21,13 @@ test("Par(...children)", t => {
 
 test("Code generation", t => {
     const par = Par(Instant(K("ok")), Delay(23));
-    const thread = { stack: [null], ops: [], t: 17 };
-    t.equal(par.generate(thread, 17), 40, "duration");
+    const vm = VM();
+    const thread = vm.add(par, 17);
     t.equal(thread.ops.length, 4, "begin par, two new threads, end par");
     t.equal(typeOf(thread.ops[1].ops), "array", "ops for first thread");
     t.equal(typeOf(thread.ops[2].ops), "array", "ops for second thread");
-
-    const evaluate = thread => {
-        for (const op of thread.ops) {
-            if (typeof op === "function") {
-                op(thread);
-            } else {
-                op.stack = thread.stack.slice();
-                op.t = thread.t;
-                evaluate(op);
-                thread.scope.push(op.stack.at(-1));
-                delete op.stack;
-                delete op.t;
-            }
-        }
-    };
-
-    evaluate(thread);
+    vm.run(thread);
+    t.equal(thread.t, thread.end, `end time (${thread.t})`);
     t.equal(thread.stack, [["ok", null]], "Par value");
 });
 

@@ -9,6 +9,7 @@
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { Instant, Delay, Seq } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
 
 test("Seq(...children)", t => {
     const i = Instant(K("ok"));
@@ -24,16 +25,14 @@ test("Code generation", t => {
             return t * 2;
         }
     }));
-    const thread = { stack: [null], ops: [], t: 17 };
-    t.equal(seq.generate(thread, 17), 40, "duration");
+
+    const vm = VM();
+    const thread = vm.add(seq, 17);
     t.equal(thread.ops.length, 4, "begin seq, delay, instant, end seq");
     t.equal(thread.ops[0](thread), seq, "op for begin seq");
     t.equal(thread.ops[3](thread), seq, "op for end seq");
-
-    for (const op of thread.ops) {
-        op(thread);
-    }
-    t.equal(thread.t, 40, "end time");
+    vm.run(thread);
+    t.equal(thread.t, thread.end, `end time (${thread.t})`);
     t.equal(thread.stack, [80], "seq value");
 });
 
