@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Instant</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Instant } from "../../lib/timing.js";
+
+test("Instant(f)", t => {
+    const f = K("ok");
+    const instant = Instant(f);
+    t.equal(instant.tag, "Instant", "tag");
+    t.equal(instant.f, f, "f");
+});
+
+test("Code generation", t => {
+    const instant = Instant((x, t) => {
+        if (x === null) {
+            return t * 2;
+        }
+    });
+    const thread = { stack: [null], ops: [[17]], t: 17 };
+    instant.generate(thread);
+    t.equal(thread.ops.length, 1, "Instant execution");
+    t.equal(thread.ops[0].length, 2, "Single instruction");
+    t.equal(thread.ops[0][1](thread), instant, "Op for instant");
+    t.equal(thread.stack, [34], "Return value pushed to the stack");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

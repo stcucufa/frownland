@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Par</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K, typeOf } from "../../lib/util.js";
+import { Instant, Delay, Par } from "../../lib/timing.js";
+
+test("Par(...children)", t => {
+    const i = Instant(K("ok"));
+    const d = Delay(23);
+    const par = Par(i, d);
+    t.equal(par.tag, "Par", "tag");
+    t.equal(par.children, [i, d], "children");
+});
+
+test("Code generation", t => {
+    const par = Par(Instant(K("ok")), Delay(23));
+    const thread = { stack: [null], ops: [[17]] };
+    par.generate(thread);
+    t.equal(thread.ops.length, 2, "Execution with duration");
+    t.equal(thread.ops[0].length, 4, "Begin par and two new threads");
+    t.equal(thread.ops[0][1](thread), par, "Op for begin par");
+    t.equal(typeOf(thread.ops[0][2].ops), "array", "Ops for first thread");
+    t.equal(typeOf(thread.ops[0][3].ops), "array", "Ops for second thread");
+    t.equal(thread.ops[1].length, 2, "End par");
+    t.equal(thread.ops[1][0], 40, "End time");
+
+    const evaluate = thread => {
+        for (const [_, ...ops] of thread.ops) {
+            for (const op of ops) {
+                if (typeof op === "function") {
+                    op(thread);
+                } else {
+                    op.stack = thread.stack.slice();
+                    evaluate(op);
+                    thread.scope.push(op.stack.at(-1));
+                    delete op.stack;
+                }
+            }
+        }
+    };
+
+    evaluate(thread);
+    t.equal(thread.stack, [["ok", null]], "Par value");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
