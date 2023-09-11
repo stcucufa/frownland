@@ -53,6 +53,24 @@ test("Code generation (constrained duration)", t => {
     t.equal(thread.ops.length, 2, "begin seq, end seq");
 });
 
+test("dur (shorter)", t => {
+    const seq = Seq(Delay(23), Instant(K("ok"))).dur(19);
+    const vm = VM();
+    const thread = vm.add(seq, 17);
+    t.equal(thread.end, 36, "end time constrained by dur");
+    vm.run(thread);
+    t.equal(thread.stack, [null], "seq value");
+});
+
+test("dur (longer)", t => {
+    const seq = Seq(Delay(23), Instant(K("ok"))).dur(29);
+    const vm = VM();
+    const thread = vm.add(seq, 17);
+    t.equal(thread.end, 46, "end time set by dur");
+    vm.run(thread);
+    t.equal(thread.stack, ["ok"], "seq value");
+});
+
         </script>
     </head>
     <body>

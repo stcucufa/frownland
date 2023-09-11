@@ -50,6 +50,13 @@ test("Code generation (constrained duration)", t => {
     t.equal(thread.ops[2].ops.length, 0, "no ops for second thread (cut off delay)");
 });
 
+test("dur", t => {
+    const par = Par(Instant(K("ok")), Delay(23)).dur(19);
+    const vm = VM();
+    const thread = vm.add(par, 17);
+    t.equal(thread.end, 36, "end time constrained by dur");
+});
+
         </script>
     </head>
     <body>
