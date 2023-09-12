@@ -8,6 +8,7 @@
 
 import { test } from "../test.js";
 import { Delay } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
 
 test("Delay(duration)", t => {
     const instant = Delay(23);
@@ -36,9 +37,10 @@ test("Code generation (zero duration)", t => {
 
 test("Code generation (constrained duration)", t => {
     const delay = Delay(23);
-    const thread = { ops: [] };
+    const thread = { ops: [], t: 17 };
     t.equal(delay.generate(thread, 17, 19), 40, "full duration");
-    t.equal(thread.ops, [], "but no instruction");
+    VM().run(thread);
+    t.equal(thread.t, 36, "end time");
 });
 
         </script>

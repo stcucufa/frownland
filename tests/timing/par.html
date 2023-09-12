@@ -8,7 +8,7 @@
 
 import { test } from "../test.js";
 import { K, typeOf } from "../../lib/util.js";
-import { Instant, Delay, Par } from "../../lib/timing.js";
+import { Instant, Delay, Seq, Par } from "../../lib/timing.js";
 import { Thread, VM } from "../../lib/runtime.js";
 
 test("Par(...children)", t => {
@@ -47,14 +47,37 @@ test("Code generation (constrained duration)", t => {
     t.equal(par.generate(thread, 17, 19), 36, "constrained end");
     t.equal(thread.ops.length, 4, "begin par, two new threads, end par");
     t.equal(thread.ops[1].ops.length, 1, "ops for first thread (instant)");
-    t.equal(thread.ops[2].ops.length, 0, "no ops for second thread (cut off delay)");
+    t.equal(thread.ops[2].ops.length, 1, "ops for second thread (cut off delay)");
 });
 
-test("dur", t => {
+test("Code generation (constrained inner duration)", t => {
+    const par = Par(Seq(Delay(23), Instant(K("ok")))).dur(19);
+    const vm = VM();
+    const thread = vm.add(par, 17);
+    t.equal(thread.end, 36, "end time constrained by dur");
+    vm.run(thread);
+    t.equal(thread.t, 36, "end time");
+    t.equal(thread.value, [undefined], "end value");
+});
+
+test("dur (shorter)", t => {
     const par = Par(Instant(K("ok")), Delay(23)).dur(19);
     const vm = VM();
     const thread = vm.add(par, 17);
     t.equal(thread.end, 36, "end time constrained by dur");
+    vm.run(thread);
+    t.equal(thread.t, 36, "end time");
+    t.equal(thread.value, ["ok", undefined], "end value");
+});
+
+test("dur (longer)", t => {
+    const par = Par(Instant(K("ok")), Delay(23)).dur(29);
+    const vm = VM();
+    const thread = vm.add(par, 17);
+    t.equal(thread.end, 46, "end time set by dur");
+    vm.run(thread);
+    t.equal(thread.t, 46, "end time");
+    t.equal(thread.value, ["ok", undefined], "par value");
 });
 
         </script>
