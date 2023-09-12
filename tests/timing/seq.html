@@ -88,6 +88,12 @@ test("minimum duration", t => {
     t.equal(thread.value, "ok", "seq value");
 });
 
+test("minimum duration, constrained", t => {
+    const par = Seq(Delay(23), Instant(K("ok"))).durMin(31);
+    const thread = Thread();
+    t.equal(par.generate(thread, 17, 29), 46, "constrained end");
+});
+
 test("duration between", t => {
     const seq = Seq(Delay(23), Instant((x, t) => t * (x ?? 2))).durBetween(19, 29);
     const vm = VM();

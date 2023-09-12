@@ -80,6 +80,42 @@ test("dur (longer)", t => {
     t.equal(thread.value, ["ok", undefined], "par value");
 });
 
+test("maximum duration", t => {
+    const par = Par(Instant(K("ok")), Delay(23)).durMax(19);
+    const vm = VM();
+    const thread = vm.add(par, 17);
+    t.equal(thread.end, 36, "end time constrained by dur");
+    vm.run(thread);
+    t.equal(thread.t, 36, "end time");
+    t.equal(thread.value, ["ok", undefined], "end value");
+});
+
+test("minimum duration", t => {
+    const par = Par(Instant(K("ok")), Delay(23)).durMin(29);
+    const vm = VM();
+    const thread = vm.add(par, 17);
+    t.equal(thread.end, 46, "end time set by dur");
+    vm.run(thread);
+    t.equal(thread.t, 46, "end time");
+    t.equal(thread.value, ["ok", undefined], "par value");
+});
+
+test("minimum duration, constrained", t => {
+    const par = Par(Instant(K("ok")), Delay(23)).durMin(31);
+    const thread = Thread();
+    t.equal(par.generate(thread, 17, 29), 46, "constrained end");
+});
+
+test("duration between", t => {
+    const par = Par(Instant(K("ok")), Delay(23)).durBetween(19, 29);
+    const vm = VM();
+    const thread = vm.add(par, 17);
+    t.equal(thread.end, 40, "end time as set by dur");
+    vm.run(thread);
+    t.equal(thread.end, 40, "end time");
+    t.equal(thread.value, ["ok", undefined], "end value");
+});
+
         </script>
     </head>
     <body>
