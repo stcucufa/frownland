@@ -42,12 +42,7 @@ test("Code generation (empty seq)", t => {
 });
 
 test("Code generation (constrained duration)", t => {
-    const seq = Seq(Delay(23), Instant((x, t) => {
-        if (x === null) {
-            return t * 2;
-        }
-    }));
-
+    const seq = Seq(Delay(23), Instant((x, t) => t * (x ?? 2)));
     const thread = Thread();
     t.equal(seq.generate(thread, 17, 19), 40, "cutoff");
     t.equal(thread.ops.length, 3, "begin seq, delay (padding), end seq");
@@ -72,6 +67,35 @@ test("dur (longer)", t => {
     vm.run(thread);
     t.equal(thread.t, 46, "end time");
     t.equal(thread.value, "ok", "seq value");
+});
+
+test("maximum duration", t => {
+    const seq = Seq(Delay(23), Instant(K("ok"))).durMax(19);
+    const vm = VM();
+    const thread = vm.add(seq, 17);
+    t.equal(thread.end, 36, "end time constrained by dur");
+    vm.run(thread);
+    t.undefined(thread.value, "seq value");
+});
+
+test("minimum duration", t => {
+    const seq = Seq(Delay(23), Instant(K("ok"))).durMin(29);
+    const vm = VM();
+    const thread = vm.add(seq, 17);
+    t.equal(thread.end, 46, "end time set by dur");
+    vm.run(thread);
+    t.equal(thread.t, 46, "end time");
+    t.equal(thread.value, "ok", "seq value");
+});
+
+test("duration between", t => {
+    const seq = Seq(Delay(23), Instant((x, t) => t * (x ?? 2))).durBetween(19, 29);
+    const vm = VM();
+    const thread = vm.add(seq, 17);
+    t.equal(thread.end, 40, "end time as set by dur");
+    vm.run(thread);
+    t.equal(thread.t, 40, "end time");
+    t.equal(thread.value, 80, "end value");
 });
 
         </script>
