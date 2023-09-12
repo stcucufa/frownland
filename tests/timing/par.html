@@ -9,6 +9,7 @@
 import { test } from "../test.js";
 import { K, typeOf } from "../../lib/util.js";
 import { Instant, Delay, Par } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
 
 test("Par(...children)", t => {
     const i = Instant(K("ok"));
@@ -20,33 +21,24 @@ test("Par(...children)", t => {
 
 test("Code generation", t => {
     const par = Par(Instant(K("ok")), Delay(23));
-    const thread = { stack: [null], ops: [[17]] };
-    par.generate(thread);
-    t.equal(thread.ops.length, 2, "Execution with duration");
-    t.equal(thread.ops[0].length, 4, "Begin par and two new threads");
-    t.equal(thread.ops[0][1](thread), par, "Op for begin par");
-    t.equal(typeOf(thread.ops[0][2].ops), "array", "Ops for first thread");
-    t.equal(typeOf(thread.ops[0][3].ops), "array", "Ops for second thread");
-    t.equal(thread.ops[1].length, 2, "End par");
-    t.equal(thread.ops[1][0], 40, "End time");
+    const vm = VM();
+    const thread = vm.add(par, 17);
+    t.equal(thread.ops.length, 4, "begin par, two new threads, end par");
+    t.equal(typeOf(thread.ops[1].ops), "array", "ops for first thread");
+    t.equal(typeOf(thread.ops[2].ops), "array", "ops for second thread");
+    vm.run(thread);
+    t.equal(thread.t, thread.end, `end time (${thread.t})`);
+    t.equal(thread.value, ["ok", undefined], "end value");
+});
 
-    const evaluate = thread => {
-        for (const [_, ...ops] of thread.ops) {
-            for (const op of ops) {
-                if (typeof op === "function") {
-                    op(thread);
-                } else {
-                    op.stack = thread.stack.slice();
-                    evaluate(op);
-                    thread.scope.push(op.stack.at(-1));
-                    delete op.stack;
-                }
-            }
-        }
-    };
-
-    evaluate(thread);
-    t.equal(thread.stack, [["ok", null]], "Par value");
+test("Code generation (empty par)", t => {
+    const par = Par();
+    const vm = VM();
+    const thread = vm.add(par, 17);
+    t.equal(thread.ops.length, 2, "begin par, end par");
+    vm.run(thread);
+    t.equal(thread.end, 17, "end time");
+    t.equal(thread.value, [], "end value");
 });
 
         </script>

@@ -9,6 +9,7 @@
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { Instant, Delay, Seq } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
 
 test("Seq(...children)", t => {
     const i = Instant(K("ok"));
@@ -19,27 +20,25 @@ test("Seq(...children)", t => {
 });
 
 test("Code generation", t => {
-    const seq = Seq(Delay(23), Instant((x, t) => {
-        if (x === null) {
-            return t * 2;
-        }
-    }));
-    const thread = { stack: [null], ops: [[17]] };
-    seq.generate(thread);
-    t.equal(thread.ops.length, 2, "Execution with duration");
-    t.equal(thread.ops[0].length, 3, "Begin seq, begin delay");
-    t.equal(thread.ops[0][1](thread), seq, "Op for begin seq");
-    t.equal(thread.ops[1].length, 4, "End delay, instant, end seq");
-    t.equal(thread.ops[1][0], 40, "End time");
-    t.equal(thread.ops[1][3](thread), seq, "Op for end seq");
+    const seq = Seq(Delay(23), Instant((x, t) => t * (x ?? 2)));
+    const vm = VM();
+    const thread = vm.add(seq, 17);
+    t.equal(thread.ops.length, 4, "begin seq, delay, instant, end seq");
+    t.equal(thread.ops[0](thread), seq, "op for begin seq");
+    t.equal(thread.ops[3](thread), seq, "op for end seq");
+    vm.run(thread);
+    t.equal(thread.t, thread.end, `end time (${thread.t})`);
+    t.equal(thread.value, 80, "end value");
+});
 
-    for (const [t, ...ops] of thread.ops) {
-        thread.t = t;
-        for (const op of ops) {
-            op(thread);
-        }
-    }
-    t.equal(thread.stack, [80], "Seq value");
+test("Code generation (empty seq)", t => {
+    const seq = Seq();
+    const vm = VM();
+    const thread = vm.add(seq, 17);
+    t.equal(thread.ops.length, 2, "begin seq, end seq");
+    vm.run(thread);
+    t.equal(thread.end, 17, "end time");
+    t.undefined(thread.value, "end value");
 });
 
         </script>

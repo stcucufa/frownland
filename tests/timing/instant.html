@@ -18,17 +18,12 @@ test("Instant(f)", t => {
 });
 
 test("Code generation", t => {
-    const instant = Instant((x, t) => {
-        if (x === null) {
-            return t * 2;
-        }
-    });
-    const thread = { stack: [null], ops: [[17]], t: 17 };
-    instant.generate(thread);
-    t.equal(thread.ops.length, 1, "Instant execution");
-    t.equal(thread.ops[0].length, 2, "Single instruction");
-    t.equal(thread.ops[0][1](thread), instant, "Op for instant");
-    t.equal(thread.stack, [34], "Return value pushed to the stack");
+    const instant = Instant((x, t) => t * (x ?? 2));
+    const thread = { ops: [], t: 17 };
+    t.equal(instant.generate(thread, 17), 17, "zero duration");
+    t.equal(thread.ops.length, 1, "single instruction");
+    t.equal(thread.ops[0](thread), instant, "op for instant");
+    t.equal(thread.value, 34, "end value");
 });
 
         </script>
