@@ -8,7 +8,7 @@
 
 import { test } from "../test.js";
 import { K, typeOf } from "../../lib/util.js";
-import { Instant, Delay, Par } from "../../lib/timing.js";
+import { Instant, Delay, Seq, Par } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Par(...children)", t => {
@@ -19,26 +19,53 @@ test("Par(...children)", t => {
     t.equal(par.children, [i, d], "children");
 });
 
-test("Code generation", t => {
-    const par = Par(Instant(K("ok")), Delay(23));
+test("Empty par", t => {
     const vm = VM();
-    const thread = vm.add(par, 17);
-    t.equal(thread.ops.length, 4, "begin par, two new threads, end par");
-    t.equal(typeOf(thread.ops[1].ops), "array", "ops for first thread");
-    t.equal(typeOf(thread.ops[2].ops), "array", "ops for second thread");
-    vm.run(thread);
-    t.equal(thread.t, thread.end, `end time (${thread.t})`);
-    t.equal(thread.value, ["ok", undefined], "end value");
+    const par = vm.add(Par(), 17);
+    vm.clock.seek(18);
+    t.equal(par.t, 17, "end time");
+    t.equal(par.value, [], "end value");
 });
 
-test("Code generation (empty par)", t => {
-    const par = Par();
+test("Non-empty, zero duration par", t => {
     const vm = VM();
-    const thread = vm.add(par, 17);
-    t.equal(thread.ops.length, 2, "begin par, end par");
-    vm.run(thread);
-    t.equal(thread.end, 17, "end time");
-    t.equal(thread.value, [], "end value");
+    const par = vm.add(Par(Instant((x, t) => t * (x ?? 2)), Instant((x, t) => t + (x ?? 3))), 17);
+    vm.clock.seek(18);
+    t.equal(par.t, 17, "end time");
+    t.equal(par.value, [34, 20], "end value");
+});
+
+test("Non-empty, non-zero duration par", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Seq(Delay(23), Instant((x, t) => t * (x ?? 2))),
+        Instant((x, t) => t + (x ?? 3))
+    ), 17);
+    vm.clock.seek(41);
+    t.equal(par.t, 40, "end time");
+    t.equal(par.value, [80, 20], "end value");
+});
+
+test("Input value", t => {
+    const vm = VM();
+    const par = vm.add(Seq(
+        Instant(K(7)),
+        Par(
+            Seq(Delay(23), Instant((x, t) => t * (x ?? 2))),
+            Instant((x, t) => t + (x ?? 3))
+        )
+    ), 17);
+    vm.clock.seek(41);
+    t.equal(par.t, 40, "end time");
+    t.equal(par.value, [280, 24], "end value");
+});
+
+test("Nesting", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), Par(Delay(31), Delay(19))), 17);
+    vm.clock.seek(49);
+    t.equal(par.t, 48, "end time");
+    t.equal(par.value, [undefined, [undefined, undefined]], "end value");
 });
 
         </script>
