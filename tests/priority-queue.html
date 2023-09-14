@@ -76,22 +76,22 @@ test("Queue.remove(), max heap", t => {
 });
 
 test("Queue.remove(), randomized", t => {
-    const queue = Queue((a, b) => a - b);
-    const N = 7777;
+    let ops = 0;
+    const queue = Queue((a, b) => (++ops, a - b));
+    const N = 77777;
     const items = [];
     for (let i = 0; i < N; ++i) {
         const n = Math.floor(Math.random() * N);
         items.push(n);
         queue.insert(n);
     }
-    console.log(items);
-    console.log(queue);
     items.sort((a, b) => a - b);
     const dequeued = [];
     for (let i = 0; i < N; ++i) {
         dequeued.push(queue.remove());
     }
     t.equal(items, dequeued, "items removed in order");
+    t.atMost(ops, 3 * N * Math.log2(N), "O(log n) ops");
 });
 
         </script>
