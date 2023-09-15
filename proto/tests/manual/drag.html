@@ -57,7 +57,7 @@ score.add(Repeat(Seq(
 
         // Drag
         Seq(
-            Effect(event => {
+            Instant(event => {
                 const rect = box.getBoundingClientRect();
                 return [event.clientX - rect.x, event.clientY - rect.y];
             }).label("origin"),
