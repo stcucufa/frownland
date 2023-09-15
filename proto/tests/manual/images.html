@@ -4,6 +4,7 @@
         <title>Images</title>
         <meta charset="utf8">
         <link rel="stylesheet" href="../../../tests/test.css">
+        <link rel="stylesheet" href="source.css">
         <style>
 
 img {
@@ -16,6 +17,10 @@ div.placeholder {
     background-color: #999966;
     display: inline-block;
     margin: 4px;
+}
+
+div.kittens {
+    height: 200px;
 }
 
         </style>
@@ -32,6 +37,9 @@ import { dump } from "../../lib/timing/util.js";
 const tape = Tape();
 const deck = Deck({ tape });
 const score = Score({ tape });
+
+// ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
+
 const button = html("button", { type: "button" }, "Begin");
 
 score.add(Seq(
@@ -39,7 +47,8 @@ score.add(Seq(
         Element(button, document.querySelector("span")).dur(Infinity),
         Repeat(Event(button, "click")).take(3)
     ),
-    Await(async () => await (await fetch("images.json")).json()),
+    Await(async () => await fetch("images.json")),
+    Await(async response => await response.json()),
     Seq.map(([w, h]) => Seq(
         Try(
             Await(async () => await imagePromise(`https://placekitten.com/${w}/${h}`)).dur(500),
@@ -47,23 +56,21 @@ score.add(Seq(
                 class: "placeholder", style: `width: ${w * 200 / h}px; height: 200px`
             }))
         ),
-        Effect(element => { document.body.appendChild(element); })
-    )),
-    Effect(() => {
-        setTimeout(() => { console.log(dump(score.instance)); });
-        return "ok";
-    })
+        Effect(element => { document.querySelector(".kittens").appendChild(element); })
+    ))
 ));
+
+// ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
 
 deck.start();
 
-window.$ = () => { console.log(dump(score.instance)); };
-
         </script>
     </head>
+    <script type="module" src="source.js"></script>
     <body>
         <p><a href="../">Back</a></p>
         <p>Fetch images of increasing size, waiting a bit after each one. One image has a wrong URL though!</p>
         <p>Press three times: <span></span></p>
+        <div class="kittens"></div>
     </body>
 </html>

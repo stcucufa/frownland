@@ -5,6 +5,7 @@
         <meta charset="utf8">
         <link rel="stylesheet" href="../../../tests/test.css">
         <link rel="stylesheet" href="../../lib/gui/transport-bar.css">
+        <link rel="stylesheet" href="source.css">
         <script type="module">
 
 import { html, K, range } from "../../../lib/util.js";
@@ -19,13 +20,14 @@ const tape = Tape();
 const deck = Deck({ tape });
 const score = Score({ tape });
 
-const image = html("img");
+const image = document.querySelector("img");
 const frame = document.querySelector("span");
 
-const transportBar = TransportBar(score, { autoplay: true });
+const transportBar = TransportBar(score);
 document.body.insertBefore(transportBar.element, document.body.firstChild);
 
-score.add(Element(image).dur(Infinity));
+// ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
+
 score.add(Repeat(Seq(
     Instant(K([...range(1, 18)])),
     Seq.map(first(
@@ -37,9 +39,13 @@ score.add(Repeat(Seq(
     ))
 )));
 
+// ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
+
         </script>
     </head>
+    <script type="module" src="source.js"></script>
     <body>
         <p>Frame #<span>0</span></p>
+        <p><img src="tomato01.png"></p>
     </body>
 </html>
