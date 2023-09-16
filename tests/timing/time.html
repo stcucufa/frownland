@@ -35,6 +35,20 @@ test("time.cmp(x, y)", t => {
     t.equal(time.cmp(Infinity, Infinity), 0, "x indefinite = y indefinite");
 });
 
+test("time.max(x, y)", t => {
+    t.equal(time.max(17, 23), 23, "x resolved < y resolved");
+    t.equal(time.max(17, 17), 17, "x resolved = y resolved");
+    t.equal(time.max(23, 17), 23, "x resolved > y resolved");
+    t.undefined(time.max(17), "x resolved < y unresolved");
+    t.equal(time.max(17, Infinity), Infinity, "x resolved < y indefinite");
+    t.undefined(time.max(undefined, 23), "x unresolved > y resolved");
+    t.undefined(time.max(), "x unresolved = y unresolved");
+    t.undefined(time.max(undefined, Infinity), "x unresolved = y indefinite");
+    t.equal(time.max(Infinity, 23), Infinity, "x indefinite > y resolved");
+    t.undefined(time.max(Infinity), "x indefinite = y unresolved");
+    t.equal(time.max(Infinity, Infinity), Infinity, "x indefinite = y indefinite");
+});
+
         </script>
     </head>
     <body>
