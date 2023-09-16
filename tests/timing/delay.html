@@ -10,12 +10,13 @@ import { test } from "../test.js";
 import { Delay } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
-test("Delay(duration)", t => {
+test("Delay(duration?)", t => {
     const instant = Delay(23);
     t.equal(instant.tag, "Delay", "tag");
     t.equal(instant.duration, 23, "duration");
     t.equal(Delay("1mn30s").duration, 90000, "duration string");
     t.equal(Delay("long").duration, 0, "invalid duration (0)");
+    t.undefined(Delay().duration, "variable delay");
 });
 
 test("Non-zero delay", t => {
@@ -31,6 +32,10 @@ test("Zero delay = nop", t => {
     const thread = { ops: [] };
     t.equal(delay.generate(thread, 17), 17, "zero duration");
     t.equal(thread.ops, [], "no new instruction");
+});
+
+test("Variable delay", t => {
+    const delay = Delay();
 });
 
         </script>

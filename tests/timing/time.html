@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Time</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import * as time from "../../lib/timing/time.js";
+
+test("time.add(x, y)", t => {
+    t.equal(time.add(17, 23), 40, "x resolved, y resolved");
+    t.undefined(time.add(17), "x resolved, y unresolved");
+    t.equal(time.add(17, Infinity), Infinity, "x resolved, y indefinite");
+    t.undefined(time.add(undefined, 23), "x unresolved, y resolved");
+    t.undefined(time.add(), "x unresolved, y unresolved");
+    t.undefined(time.add(), "x unresolved, y indefinite (?)");
+    t.equal(time.add(Infinity, 23), Infinity, "x indefinite, y resolved");
+    t.undefined(time.add(Infinity), "x indefinite, y unresolved (?)");
+    t.equal(time.add(Infinity, Infinity), Infinity, "x indefinite, y indefinite");
+});
+
+test("time.cmp(x, y)", t => {
+    t.below(time.cmp(17, 23), 0, "x resolved < y resolved");
+    t.equal(time.cmp(17, 17), 0, "x resolved = y resolved");
+    t.above(time.cmp(23, 17), 0, "x resolved > y resolved");
+    t.below(time.cmp(17), 0, "x resolved < y unresolved");
+    t.below(time.cmp(17, Infinity), 0, "x resolved < y indefinite");
+    t.above(time.cmp(undefined, 23), 0, "x unresolved > y resolved");
+    t.equal(time.cmp(), 0, "x unresolved = y unresolved");
+    t.equal(time.cmp(undefined, Infinity), 0, "x unresolved = y indefinite");
+    t.above(time.cmp(Infinity, 23), 0, "x indefinite > y resolved");
+    t.equal(time.cmp(Infinity), 0, "x indefinite = y unresolved");
+    t.equal(time.cmp(Infinity, Infinity), 0, "x indefinite = y indefinite");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
