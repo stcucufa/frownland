@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Clock</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { notification, on, once } from "../../lib/events.js";
+import { Clock } from "../../lib/runtime/clock.js";
+
+let pendingRequest = null;
+let requests = 0;
+let now = 0;
+
+window.requestAnimationFrame = function(k) {
+    pendingRequest = k;
+    return ++requests;
+};
+
+window.cancelAnimationFrame = function(i) {
+    if (i === requests) {
+        pendingRequest = null;
+    }
+}
+
+window.performance.now = () => now;
+
+async function advanceTime(t) {
+    now = t;
+    return Promise.resolve().then(function() {
+        if (pendingRequest) {
+            pendingRequest();
+        }
+    });
+}
+
+test("Clock()", t => {
+    const clock = Clock();
+    t.equal(clock.now, 0, "starts at 0");
+});
+
+test("Start and stop", async t => {
+    const clock = Clock();
+    const begin = 17;
+    now = begin;
+    clock.start();
+    t.equal(clock.now, 0, "start time");
+    await advanceTime(begin + 23);
+    t.equal(clock.now, 23, "time advanced");
+    clock.stop();
+    await advanceTime(begin + 31);
+    t.equal(clock.now, 23, "time did not advance after stopping");
+});
+
+test("Updates", async t => {
+    const clock = Clock();
+    const begin = 17;
+    now = begin;
+    clock.start();
+    advanceTime(begin + 23);
+    let update = await notification(clock, "update");
+    t.equal(update.from, 0, "first update (from)");
+    t.equal(update.to, 23, "first update (to)");
+    advanceTime(begin + 31);
+    update = await notification(clock, "update");
+    t.equal(update.from, 23, "second update (from)");
+    t.equal(update.to, 31, "second update (to)");
+    on(clock, "update", () => { throw "unexpected update" });
+    await advanceTime(now);
+    t.ok(true, "no update when time does not move forward");
+    clock.stop();
+    await advanceTime(begin + 41);
+    t.ok(true, "no update when clock is stopped");
+});
+
+test("Updates (seek)", t => {
+    const clock = Clock();
+    now = 17;
+    let updates = 0;
+    once(clock, "update", ({ from, to }) => {
+        t.equal(from, 0, "first update (from)");
+        t.equal(to, 23, "first update (to)");
+        updates++;
+    });
+    clock.seek(23);
+    once(clock, "update", ({ from, to }) => {
+        t.equal(from, 23, "second update (from)");
+        t.equal(to, 31, "second update (to)");
+        updates++;
+    });
+    clock.seek(31);
+    t.equal(updates, 2, "received updates");
+});
+
+test("Play after seek", async t => {
+    const clock = Clock();
+    const begin = 17;
+    now = begin;
+    clock.seek(23);
+    t.equal(clock.now, 23, "clock advanced synchronously");
+    clock.start();
+    await advanceTime(begin + 31);
+    t.equal(clock.now, 31, "clock advanced asynchronously");
+});
+
+test("Seek after stop", async t => {
+    const clock = Clock();
+    const begin = 17;
+    now = begin;
+    clock.start();
+    await advanceTime(begin + 23);
+    clock.stop();
+    await advanceTime(begin + 31);
+    clock.seek(41);
+    t.equal(clock.now, 41, "clock advanced synchronously");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
