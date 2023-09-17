@@ -11,13 +11,18 @@ import * as time from "../../lib/timing/time.js";
 
 test("time.add(x, y)", t => {
     t.equal(time.add(17, 23), 40, "x resolved, y resolved");
-    t.undefined(time.add(17), "x resolved, y unresolved");
+    const u = time.unresolved();
+    const v = time.unresolved();
+    const dv = time.add(17, v);
+    t.equal(time.isUnresolved(dv) && dv !== v, true, "x resolved, y unresolved");
     t.equal(time.add(17, Infinity), Infinity, "x resolved, y indefinite");
-    t.undefined(time.add(undefined, 23), "x unresolved, y resolved");
-    t.undefined(time.add(), "x unresolved, y unresolved");
-    t.undefined(time.add(), "x unresolved, y indefinite (?)");
+    const ud = time.add(u, 23);
+    t.equal(time.isUnresolved(ud) && ud !== u, true, "x unresolved, y resolved");
+    const uv = time.add(u, v);
+    t.equal(time.isUnresolved(uv) && uv !== u && uv !== v, true, "x unresolved, y unresolved");
+    t.equal(time.add(u, Infinity), Infinity, "x unresolved, y indefinite");
     t.equal(time.add(Infinity, 23), Infinity, "x indefinite, y resolved");
-    t.undefined(time.add(Infinity), "x indefinite, y unresolved (?)");
+    t.equal(time.add(Infinity, v), Infinity, "x indefinite, y unresolved");
     t.equal(time.add(Infinity, Infinity), Infinity, "x indefinite, y indefinite");
 });
 
@@ -25,28 +30,53 @@ test("time.cmp(x, y)", t => {
     t.below(time.cmp(17, 23), 0, "x resolved < y resolved");
     t.equal(time.cmp(17, 17), 0, "x resolved = y resolved");
     t.above(time.cmp(23, 17), 0, "x resolved > y resolved");
-    t.below(time.cmp(17), 0, "x resolved < y unresolved");
+    t.below(time.cmp(17, time.unresolved()), 0, "x resolved < y unresolved");
     t.below(time.cmp(17, Infinity), 0, "x resolved < y indefinite");
-    t.above(time.cmp(undefined, 23), 0, "x unresolved > y resolved");
-    t.equal(time.cmp(), 0, "x unresolved = y unresolved");
-    t.equal(time.cmp(undefined, Infinity), 0, "x unresolved = y indefinite");
+    t.above(time.cmp(time.unresolved(), 23), 0, "x unresolved > y resolved");
+    t.equal(time.cmp(time.unresolved(), time.unresolved()), 0, "x unresolved = y unresolved");
+    t.equal(time.cmp(time.unresolved(), Infinity), 0, "x unresolved = y indefinite");
     t.above(time.cmp(Infinity, 23), 0, "x indefinite > y resolved");
-    t.equal(time.cmp(Infinity), 0, "x indefinite = y unresolved");
+    t.equal(time.cmp(Infinity, time.unresolved()), 0, "x indefinite = y unresolved");
     t.equal(time.cmp(Infinity, Infinity), 0, "x indefinite = y indefinite");
 });
 
+test("time.isUnresolved(t)", t => {
+    t.equal(time.isUnresolved(time.unresolved()), true, "unresolved time");
+    t.equal(time.isUnresolved(17), false, "definite time");
+    t.equal(time.isUnresolved(Infinity), false, "indefinite time");
+});
+
+test("time.isDefinite(t)", t => {
+    t.equal(time.isDefinite(time.unresolved()), false, "unresolved time");
+    t.equal(time.isDefinite(17), true, "definite time");
+    t.equal(time.isDefinite(Infinity), false, "indefinite time");
+});
+
+test("time.isIndefinite(t)", t => {
+    t.equal(time.isIndefinite(time.unresolved()), false, "unresolved time");
+    t.equal(time.isIndefinite(17), false, "definite time");
+    t.equal(time.isIndefinite(Infinity), true, "indefinite time");
+});
+
 test("time.max(x, y)", t => {
+    const u = time.unresolved();
+    const v = time.unresolved();
+
     t.equal(time.max(17, 23), 23, "x resolved < y resolved");
     t.equal(time.max(17, 17), 17, "x resolved = y resolved");
     t.equal(time.max(23, 17), 23, "x resolved > y resolved");
-    t.undefined(time.max(17), "x resolved < y unresolved");
+    t.equal(time.max(17, v), v, "x resolved < y unresolved");
     t.equal(time.max(17, Infinity), Infinity, "x resolved < y indefinite");
-    t.undefined(time.max(undefined, 23), "x unresolved > y resolved");
-    t.undefined(time.max(), "x unresolved = y unresolved");
-    t.undefined(time.max(undefined, Infinity), "x unresolved = y indefinite");
+    t.equal(time.max(u, 23), u, "x unresolved > y resolved");
+    t.equal(time.max(u, v), u, "x unresolved = y unresolved");
+    t.equal(time.max(u, Infinity), u, "x unresolved = y indefinite");
     t.equal(time.max(Infinity, 23), Infinity, "x indefinite > y resolved");
-    t.undefined(time.max(Infinity), "x indefinite = y unresolved");
+    t.equal(time.max(Infinity, v), v, "x indefinite = y unresolved");
     t.equal(time.max(Infinity, Infinity), Infinity, "x indefinite = y indefinite");
+});
+
+test("time.unresolved()", t => {
+    t.equal(time.unresolved() === time.unresolved(), false, "generate a unique unresolved time");
 });
 
         </script>
