@@ -12,33 +12,43 @@ import { Instant, Delay, Seq } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Seq(...children)", t => {
-    const i = Instant(K("ok"));
     const d = Delay(23);
-    const seq = Seq(i, d);
+    const i = Instant(K("ok"));
+    const seq = Seq(d, i);
     t.equal(seq.tag, "Seq", "tag");
-    t.equal(seq.children, [i, d], "children");
+    t.equal(seq.children, [d, i], "children");
 });
 
-test("Code generation", t => {
-    const seq = Seq(Delay(23), Instant((x, t) => t * (x ?? 2)));
+test("Empty seq", t => {
     const vm = VM();
-    const thread = vm.add(seq, 17);
-    t.equal(thread.ops.length, 4, "begin seq, delay, instant, end seq");
-    t.equal(thread.ops[0](thread), seq, "op for begin seq");
-    t.equal(thread.ops[3](thread), seq, "op for end seq");
-    vm.run(thread);
-    t.equal(thread.t, thread.end, `end time (${thread.t})`);
-    t.equal(thread.value, 80, "end value");
+    const seq = vm.add(Seq(), 17);
+    vm.clock.seek(18);
+    t.equal(seq.t, 17, "end time");
+    t.undefined(seq.value, "end value");
 });
 
-test("Code generation (empty seq)", t => {
-    const seq = Seq();
+test("Non-empty, zero duration seq", t => {
     const vm = VM();
-    const thread = vm.add(seq, 17);
-    t.equal(thread.ops.length, 2, "begin seq, end seq");
-    vm.run(thread);
-    t.equal(thread.end, 17, "end time");
-    t.undefined(thread.value, "end value");
+    const seq = vm.add(Seq(Instant((x, t) => t * (x ?? 2)), Instant(x => x + 3)), 17);
+    vm.clock.seek(18);
+    t.equal(seq.t, 17, "end time");
+    t.equal(seq.value, 37, "end value");
+});
+
+test("Non-empty, non-zero duration seq", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Delay(23), Instant((x, t) => t * (x ?? 2))), 17);
+    vm.clock.seek(41);
+    t.equal(seq.t, 40, "end time");
+    t.equal(seq.value, 80, "end value");
+});
+
+test("Nesting", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Delay(23), Seq(Instant((x, t) => t * (x ?? 2)), Delay(19))), 17);
+    vm.clock.seek(60);
+    t.equal(seq.t, 59, "end time");
+    t.equal(seq.value, 80, "end value");
 });
 
         </script>
