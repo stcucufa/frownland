@@ -78,6 +78,9 @@ fail("t.equal", t => { t.equal("foo", null, "null"); });
 fail("t.equal", t => { t.equal(/foo/, Symbol.for("foo"), "regex !== symbol"); });
 
 pass("t.equal", t => { t.equal(new Set([1, 2, 3]), new Set([3, 2, 1]), "sets"); });
+pass("t.equal", t => { t.equal(new Set(), new Set(), "empty sets"); });
+fail("t.equal", t => { t.equal(new Set([1, 2, 3]), new Set(), "non-empty vs. empty set"); });
+fail("t.equal", t => { t.equal(new Set(), new Set([3, 2, 1]), "empty vs. non-empty"); });
 fail("t.equal", t => { t.equal(new Set([1, 2]), new Set([3, 2, 1]), "sets (different length)"); });
 fail("t.equal", t => { t.equal(new Set([1, 2, 3, 4]), new Set([3, 2, 1]), "sets (different length)"); });
 fail("t.equal", t => { t.equal(new Set([1, 2, 4]), new Set([3, 2, 1]), "sets (different elements)"); });
