@@ -10,14 +10,6 @@ const message = (msg, context) => () => (context ? `${context}: ` : "") + msg();
 // Deep equality test, using special comparisons by type.
 const equal = (x, y) => (x === y) || (typeOf(x) === typeOf(y) && !!Equal[typeOf(x)]?.(x, y));
 
-// Compare x and y depending on their type (despite x !== y).
-const Equal = {
-    "array": (x, y) => x.length === y.length && x.every((xi, i) => equal(xi, y[i])),
-    "map": equal_map,
-    "number": (x, y) => isNaN(x) && isNaN(y),
-    "object": equal_object
-}
-
 function equal_map(x, y) {
     const keys = [...x.keys()];
     return keys.length === [...y.keys()].length &&
@@ -28,6 +20,17 @@ function equal_object(x, y) {
     const keys = Object.keys(x);
     return keys.length === Object.keys(y).length &&
         keys.every(key => key in y && equal(x[key], y[key]));
+}
+
+const equal_set = (x, y) => x.size === y.size && [...x].every(v => y.has(v));
+
+// Compare x and y depending on their type (despite x !== y).
+const Equal = {
+    "array": (x, y) => x.length === y.length && x.every((xi, i) => equal(xi, y[i])),
+    "map": equal_map,
+    "number": (x, y) => isNaN(x) && isNaN(y),
+    "object": equal_object,
+    "set": equal_set
 }
 
 const TestCase = assign(properties => create(properties).call(TestCase), {

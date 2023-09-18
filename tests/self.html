@@ -77,6 +77,11 @@ fail("t.equal", t => { t.equal("foo", null, "null"); });
 
 fail("t.equal", t => { t.equal(/foo/, Symbol.for("foo"), "regex !== symbol"); });
 
+pass("t.equal", t => { t.equal(new Set([1, 2, 3]), new Set([3, 2, 1]), "sets"); });
+fail("t.equal", t => { t.equal(new Set([1, 2]), new Set([3, 2, 1]), "sets (different length)"); });
+fail("t.equal", t => { t.equal(new Set([1, 2, 3, 4]), new Set([3, 2, 1]), "sets (different length)"); });
+fail("t.equal", t => { t.equal(new Set([1, 2, 4]), new Set([3, 2, 1]), "sets (different elements)"); });
+
 pass("t.match", t => { t.match("foo", /^fo+$/, "Regex match"); });
 fail("t.match", t => { t.match("bar", /^fo+$/, "Regex does not match"); });
 
