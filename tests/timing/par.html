@@ -76,6 +76,17 @@ test("Unresolved duration within Par", t => {
     t.equal(seq.value, [23, 391], "end value");
 });
 
+test("Unresolved durations within Par", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Seq(Instant(K(23)), Delay()),
+        Seq(Instant(K(31)), Delay())
+    ), 17);
+    vm.clock.seek(49);
+    t.equal(par.t, 48, "end time");
+    t.equal(par.value, [23, 31], "end value");
+});
+
         </script>
     </head>
     <body>
