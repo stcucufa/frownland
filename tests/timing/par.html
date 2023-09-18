@@ -25,6 +25,7 @@ test("Empty par", t => {
     vm.clock.seek(18);
     t.equal(par.t, 17, "end time");
     t.equal(par.value, [], "end value");
+    t.equal(par.dump(), "+ 17/0 [begin] Par\n* 17/0 [end] Par", "dump matches");
 });
 
 test("Non-empty, zero duration par", t => {
@@ -33,6 +34,11 @@ test("Non-empty, zero duration par", t => {
     vm.clock.seek(18);
     t.equal(par.t, 17, "end time");
     t.equal(par.value, [34, 20], "end value");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 Instant
+    + 17/0 Instant
+* 17/2 [end] Par`, "dump matches");
 });
 
 test("Non-empty, non-zero duration par", t => {
@@ -44,6 +50,14 @@ test("Non-empty, non-zero duration par", t => {
     vm.clock.seek(41);
     t.equal(par.t, 40, "end time");
     t.equal(par.value, [80, 20], "end value");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 [begin] Seq
+    * 17/0 Delay(23)
+    * 40/1 Instant
+    * 40/2 [end] Seq
+    + 17/0 Instant
+* 40/2 [end] Par`, "dump matches");
 });
 
 test("Input value", t => {
@@ -66,6 +80,14 @@ test("Nesting", t => {
     vm.clock.seek(49);
     t.equal(par.t, 48, "end time");
     t.equal(par.value, [undefined, [undefined, undefined]], "end value");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 Delay(23)
+    + 17/0 [begin] Par
+        + 17/0 Delay(31)
+        + 17/0 Delay(19)
+    * 48/2 [end] Par
+* 48/2 [end] Par`, "dump matches");
 });
 
 test("Unresolved duration within Par", t => {
@@ -74,6 +96,14 @@ test("Unresolved duration within Par", t => {
     vm.clock.seek(41);
     t.equal(seq.t, 40, "end time");
     t.equal(seq.value, [23, 391], "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Par
+    + 17/0 Delay()
+    + 17/0 Instant
+* #/3 [end] Par
+* #/5 [end] Seq`, "dump matches");
 });
 
 test("Unresolved durations within Par", t => {
@@ -85,6 +115,17 @@ test("Unresolved durations within Par", t => {
     vm.clock.seek(49);
     t.equal(par.t, 48, "end time");
     t.equal(par.value, [23, 31], "end value");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 [begin] Seq
+    * 17/0 Instant
+    * 17/1 Delay()
+    * #/2 [end] Seq
+    + 17/0 [begin] Seq
+    * 17/0 Instant
+    * 17/1 Delay()
+    * #/2 [end] Seq
+* #/2 [end] Par`, "dump matches");
 });
 
 test("Unresolved durations within Par (other way around)", t => {
@@ -96,6 +137,17 @@ test("Unresolved durations within Par (other way around)", t => {
     vm.clock.seek(49);
     t.equal(par.t, 48, "end time");
     t.equal(par.value, [31, 23], "end value");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 [begin] Seq
+    * 17/0 Instant
+    * 17/1 Delay()
+    * #/2 [end] Seq
+    + 17/0 [begin] Seq
+    * 17/0 Instant
+    * 17/1 Delay()
+    * #/2 [end] Seq
+* #/2 [end] Par`, "dump matches");
 });
 
         </script>

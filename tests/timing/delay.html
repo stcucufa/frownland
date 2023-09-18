@@ -26,13 +26,14 @@ test("Non-zero delay", t => {
     vm.clock.seek(41);
     t.equal(delay.t, 40, "end time after execution");
     t.undefined(delay.value, "no end value");
+    t.equal(delay.dump(), "+ 17/0 Delay(23)", "dump matches");
 });
 
 test("Zero delay = nop", t => {
     const delay = Delay("zero");
-    const thread = { ops: [] };
-    t.equal(delay.generate(thread, 17), 17, "zero duration");
+    const thread = VM().add(delay, 17);
     t.equal(thread.ops, [], "no new instruction");
+    t.equal(thread.dump(), "+ 17/0 Delay(0)", "dump matches");
 });
 
 test("Variable delay", t => {
@@ -41,6 +42,11 @@ test("Variable delay", t => {
     vm.clock.seek(41);
     t.equal(seq.t, 40, "end time after execution");
     t.equal(seq.value, 23, "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 Delay()
+* #/2 [end] Seq`, "dump matches");
 });
 
 test("Variable delay (errors)", t => {
