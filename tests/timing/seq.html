@@ -25,6 +25,7 @@ test("Empty seq", t => {
     vm.clock.seek(18);
     t.equal(seq.t, 17, "end time");
     t.undefined(seq.value, "end value");
+    t.equal(seq.dump(), "+ 17/0 [begin] Seq\n* 17/0 [end] Seq", "dump matches");
 });
 
 test("Non-empty, zero duration seq", t => {
@@ -33,6 +34,11 @@ test("Non-empty, zero duration seq", t => {
     vm.clock.seek(18);
     t.equal(seq.t, 17, "end time");
     t.equal(seq.value, 37, "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 Instant
+* 17/2 [end] Seq`, "dump matches");
 });
 
 test("Non-empty, non-zero duration seq", t => {
@@ -41,6 +47,11 @@ test("Non-empty, non-zero duration seq", t => {
     vm.clock.seek(41);
     t.equal(seq.t, 40, "end time");
     t.equal(seq.value, 80, "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Delay(23)
+* 40/1 Instant
+* 40/2 [end] Seq`, "dump matches");
 });
 
 test("Nesting", t => {
@@ -49,6 +60,14 @@ test("Nesting", t => {
     vm.clock.seek(60);
     t.equal(seq.t, 59, "end time");
     t.equal(seq.value, 80, "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Delay(23)
+* 40/1 [begin] Seq
+* 40/1 Instant
+* 40/2 Delay(19)
+* 59/3 [end] Seq
+* 59/3 [end] Seq`, "dump matches");
 });
 
 test("Unresolved duration within Seq", t => {
@@ -57,6 +76,12 @@ test("Unresolved duration within Seq", t => {
     vm.clock.seek(41);
     t.equal(seq.t, 40, "end time");
     t.equal(seq.value, 920, "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 Delay()
+* #/2 Instant
+* #/3 [end] Seq`, "dump matches");
 });
 
         </script>

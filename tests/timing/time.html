@@ -83,6 +83,12 @@ test("time.max(x, y)", t => {
     t.equal(time.max(Infinity, Infinity), Infinity, "max(x indefinite = y indefinite) = x");
 });
 
+test("time.show(t)", t => {
+    t.equal(time.show(17), "17", "definite time");
+    t.equal(time.show(Infinity), "∞", "indefinite time");
+    t.equal(time.show(time.unresolved()), "#", "unresolved time");
+});
+
 test("time.unresolved()", t => {
     t.equal(time.unresolved() === time.unresolved(), false, "generate a unique unresolved time");
 });

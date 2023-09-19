@@ -7,7 +7,7 @@
         <script type="module">
 
 import { test } from "../test.js";
-import { K } from "../../lib/util.js";
+import { K, single } from "../../lib/util.js";
 import { Instant } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
@@ -24,6 +24,7 @@ test("Code generation", t => {
     vm.clock.seek(18);
     t.equal(instant.t, 17, "end time after execution");
     t.equal(instant.value, 34, "end value");
+    t.equal(instant.dump(), "+ 17/0 Instant", "dump matches");
 });
 
         </script>
