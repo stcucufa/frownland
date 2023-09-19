@@ -24,6 +24,22 @@ test("Seq.dur(), cutoff", t => {
 * 36/3 [end] Seq`, "dump matches");
 });
 
+test("Seq.dur(), extended", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => t + x), 17);
+    vm.clock.seek(49);
+    t.equal(seq.value, 128, "end value");
+    t.equal(seq.t, 48, "end time");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 [begin] Seq
+* 17/1 Delay(23)
+* 40/2 Instant
+* 48/4 [end] Seq
+* 48/4 Instant
+* 48/5 [end] Seq`, "dump matches");
+});
+
 test("Par.dur(), cutoff", t => {
     const vm = VM();
     const par = vm.add(Seq(
