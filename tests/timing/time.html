@@ -41,18 +41,21 @@ test("time.cmp(x, y)", t => {
 });
 
 test("time.isUnresolved(t)", t => {
+    t.equal(time.isUnresolved(), true, "no time");
     t.equal(time.isUnresolved(time.unresolved()), true, "unresolved time");
     t.equal(time.isUnresolved(17), false, "definite time");
     t.equal(time.isUnresolved(Infinity), false, "indefinite time");
 });
 
 test("time.isDefinite(t)", t => {
+    t.equal(time.isDefinite(), false, "no time");
     t.equal(time.isDefinite(time.unresolved()), false, "unresolved time");
     t.equal(time.isDefinite(17), true, "definite time");
     t.equal(time.isDefinite(Infinity), false, "indefinite time");
 });
 
 test("time.isIndefinite(t)", t => {
+    t.equal(time.isIndefinite(), false, "no time");
     t.equal(time.isIndefinite(time.unresolved()), false, "unresolved time");
     t.equal(time.isIndefinite(17), false, "definite time");
     t.equal(time.isIndefinite(Infinity), true, "indefinite time");
