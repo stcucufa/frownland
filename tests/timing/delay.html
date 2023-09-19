@@ -8,7 +8,7 @@
 
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
-import { Instant, Delay, Seq } from "../../lib/timing.js";
+import { Delay, Seq } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Delay(duration?)", t => {
@@ -37,7 +37,7 @@ test("Zero delay = nop", t => {
 
 test("Variable delay", t => {
     const vm = VM();
-    const seq = vm.add(Seq(Instant(K(23)), Delay()), 17);
+    const seq = vm.add(Seq(K(23), Delay()), 17);
     vm.clock.seek(41);
     t.equal(seq.t, 40, "end time after execution");
     t.equal(seq.value, 23, "end value");
@@ -47,7 +47,7 @@ test("Variable delay (errors)", t => {
     const vm = VM();
     const delay = vm.add(Delay(), 17);
     t.warns(() => vm.clock.seek(41), "No value for delay");
-    const seq = vm.add(Seq(Instant(K("not a duration")), Delay()), 51);
+    const seq = vm.add(Seq(K("not a duration"), Delay()), 51);
     t.warns(() => vm.clock.seek(52), "Invalid value for delay");
 });
 
