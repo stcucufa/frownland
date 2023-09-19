@@ -65,6 +65,31 @@ test("Par.dur(), cutoff", t => {
 * 36/6 [end] Seq`, "dump matches");
 });
 
+test("Par.dur(), extended", t => {
+    const vm = VM();
+    const par = vm.add(Seq(
+        K(7),
+        Par(
+            Seq(Delay(23), (x, t) => t * (x ?? 2)),
+            (x, t) => t + (x ?? 3)
+        ).dur(31)
+    ), 17);
+    vm.clock.seek(49);
+    t.equal(par.value, [280, 24], "end value");
+    t.equal(par.end, 48, "end time");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Par
+    + 17/0 [begin] Seq
+    * 17/0 Delay(23)
+    * 40/1 Instant
+    * 40/2 [end] Seq
+    + 17/0 Instant
+* 48/6 [end] Par
+* 48/6 [end] Seq`, "dump matches");
+});
+
 test("Repeat.dur()", t => {
     const vm = VM();
     const repeat = vm.add(Repeat(Seq(Delay(23), (x = 0) => x + 1)).dur(79), 17);
