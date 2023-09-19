@@ -35,8 +35,22 @@ test("Repeat", t => {
 });
 
 test("Zero duration repeat error", t => {
+    t.throws(() => VM().add(Repeat((x = 0) => x + 1), 17), "caught infinite loop");
+});
+
+test("After repeat", t => {
     const vm = VM();
-    t.throws(() => vm.add(Repeat((x = 0) => x + 1), 17), "caught infinite loop");
+    const repeat = vm.add(Seq(Repeat(Seq(Delay(23), (x = 0) => x + 1)), x => x * 2), 17);
+    t.equal(repeat.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 [begin] Repeat
+* 17/0 [begin] Seq
+* 17/0 Delay(23)
+* 40/1 Instant
+* 40/2 [end] Seq
+* ∞/2 [end] Repeat
+* ∞/3 Instant
+* ∞/4 [end] Seq`, "dump matches");
 });
 
         </script>
