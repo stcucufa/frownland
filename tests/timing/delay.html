@@ -7,15 +7,17 @@
         <script type="module">
 
 import { test } from "../test.js";
-import { Delay } from "../../lib/timing.js";
+import { K } from "../../lib/util.js";
+import { Instant, Delay, Seq } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
-test("Delay(duration)", t => {
+test("Delay(duration?)", t => {
     const instant = Delay(23);
     t.equal(instant.tag, "Delay", "tag");
     t.equal(instant.duration, 23, "duration");
     t.equal(Delay("1mn30s").duration, 90000, "duration string");
     t.equal(Delay("long").duration, 0, "invalid duration (0)");
+    t.undefined(Delay().duration, "variable delay");
 });
 
 test("Non-zero delay", t => {
@@ -31,6 +33,22 @@ test("Zero delay = nop", t => {
     const thread = { ops: [] };
     t.equal(delay.generate(thread, 17), 17, "zero duration");
     t.equal(thread.ops, [], "no new instruction");
+});
+
+test("Variable delay", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Instant(K(23)), Delay()), 17);
+    vm.clock.seek(41);
+    t.equal(seq.t, 40, "end time after execution");
+    t.equal(seq.value, 23, "end value");
+});
+
+test("Variable delay (errors)", t => {
+    const vm = VM();
+    const delay = vm.add(Delay(), 17);
+    t.warns(() => vm.clock.seek(41), "No value for delay");
+    const seq = vm.add(Seq(Instant(K("not a duration")), Delay()), 51);
+    t.warns(() => vm.clock.seek(52), "Invalid value for delay");
 });
 
         </script>

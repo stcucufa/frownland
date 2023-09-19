@@ -51,6 +51,14 @@ test("Nesting", t => {
     t.equal(seq.value, 80, "end value");
 });
 
+test("Unresolved duration within Seq", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Instant(K(23)), Delay(), Instant((x, t) => t * (x ?? 2))), 17);
+    vm.clock.seek(41);
+    t.equal(seq.t, 40, "end time");
+    t.equal(seq.value, 920, "end value");
+});
+
         </script>
     </head>
     <body>
