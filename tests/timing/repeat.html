@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Repeat</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Instant, Delay, Seq, Par, Repeat } from "../../lib/timing.js";
+import * as time from "../../lib/timing/time.js";
+import { VM } from "../../lib/runtime.js";
+
+test("Repeat(child)", t => {
+    const d = Delay(23);
+    const repeat = Repeat(d);
+    t.equal(repeat.tag, "Repeat", "tag");
+    t.equal(repeat.children, [d], "children (just one)");
+});
+
+test("Repeat", t => {
+    const vm = VM();
+    const repeat = vm.add(Repeat(Seq(Delay(23), (x = 0) => x + 1)), 17);
+    vm.clock.seek(97);
+    t.equal(repeat.t, 109, "thread time (next iteration)");
+    t.equal(repeat.value, 3, "thread value");
+    t.equal(repeat.dump(),
+`+ 17/0 [begin] Repeat
+* 17/0 [begin] Seq
+* 17/0 Delay(23)
+* 40/1 Instant
+* 40/2 [end] Seq
+* ∞/2 [end] Repeat`, "dump matches");
+});
+
+test("Zero duration repeat error", t => {
+    const vm = VM();
+    t.throws(() => vm.add(Repeat((x = 0) => x + 1), 17), "caught infinite loop");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
