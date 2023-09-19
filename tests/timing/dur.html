@@ -105,6 +105,18 @@ test("Repeat.dur()", t => {
 * 96/3 [end] Repeat`, "dump matches");
 });
 
+test("dur(0) still allows instants", t => {
+    const vm = VM();
+    const seq = vm.add(Seq((x, t) => t * (x ?? 2), Delay(23)).dur(0), 17);
+    vm.clock.seek(18);
+    t.equal(seq.value, 34, "seq value");
+    t.equal(seq.timeout, 17, "timed out");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/1 Instant
+* 17/2 Delay(23)
+* 17/3 [end] Seq`, "dump matches");
+});
 
         </script>
     </head>
