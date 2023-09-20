@@ -1,4 +1,6 @@
-import { assign, create, escapeMarkup, I, isEmpty, isObject, nop, shuffle, typeOf } from "../lib/util.js";
+import {
+    assign, create, escapeMarkup, extend, I, isEmpty, isObject, nop, shuffle, typeOf
+} from "../lib/util.js";
 import { notify } from "../lib/events.js";
 import { show } from "../lib/show.js";
 
@@ -545,7 +547,11 @@ const handler = (function () {
     const handler = tests.length > 0 ? initFrame(tests) : initTest();
     window.addEventListener("message", e => {
         const data = JSON.parse(e.data);
-        handler[data.type](e, data);
+        try {
+            handler[data.type](e, data);
+        } catch (_) {
+            handler.failure(e, extend(data, { error: "ill-formed expectation" }));
+        }
     });
     return handler;
 })();
