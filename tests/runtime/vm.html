@@ -14,6 +14,16 @@ test("VM()", t => {
     t.equal(vm.clock.now, 0, "clock starts at 0");
 });
 
+test("Thread priority queue", t => {
+    const vm = VM();
+    vm.schedule({ name: "B" }, 40);
+    vm.schedule({ name: "C" }, 48);
+    vm.schedule({ name: "A" }, 36);
+    t.equal(vm.futureQueue.remove().name, "A", "A first");
+    t.equal(vm.futureQueue.remove().name, "B", "B second");
+    t.equal(vm.futureQueue.remove().name, "C", "C last");
+});
+
         </script>
     </head>
     <body>
