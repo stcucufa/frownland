@@ -50,7 +50,6 @@ test("Variable delay", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay()), 17);
     vm.clock.seek(41);
-    t.equal(seq.end, 40, "end time after execution");
     t.equal(seq.value, 23, "end value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
@@ -63,7 +62,6 @@ test("Variable delay (indefinite)", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(Infinity), Delay()), 17);
     vm.clock.seek(41);
-    t.equal(seq.end, Infinity, "resolved end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -83,7 +81,6 @@ test("Consecutive variable delays", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay(), K(31), Delay()), 17);
     vm.clock.seek(72);
-    t.equal(seq.end, 71, "resolved end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant

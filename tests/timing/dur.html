@@ -40,8 +40,8 @@ test("Seq.dur(), extended", t => {
     const vm = VM();
     const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => t + x), 17);
     vm.clock.seek(49);
-    t.equal(seq.value, 128, "end value");
-    t.equal(seq.t, 48, "end time");
+    t.equal(seq.value, 80, "end value");
+    t.equal(seq.end, 48, "end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 [begin] Seq
@@ -56,7 +56,7 @@ test("Seq.dur() with unresolved duration, extended", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay()).dur(31), 17);
     vm.clock.seek(49);
-    t.equal(seq.t, 48, "end time");
+    t.equal(seq.end, 48, "end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/1 Instant

@@ -23,8 +23,10 @@ test("Repeat", t => {
     const vm = VM();
     const repeat = vm.add(Repeat(Seq(Delay(23), (x = 0) => x + 1)), 17);
     vm.clock.seek(97);
-    t.equal(repeat.t, 109, "thread time (next iteration)");
     t.equal(repeat.value, 3, "thread value");
+    vm.clock.seek(111);
+    t.equal(vm.t, 109, "thread time for fourth iteration");
+    t.equal(repeat.value, 4, "thread value after one more iteration");
     t.equal(repeat.dump(),
 `+ 17/0 [begin] Repeat
 * 17/0 [begin] Seq

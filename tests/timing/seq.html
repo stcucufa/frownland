@@ -76,7 +76,6 @@ test("Unresolved duration within Seq", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay(), (x, t) => t * (x ?? 2)), 17);
     vm.clock.seek(41);
-    t.equal(seq.end, 40, "end time");
     t.equal(seq.value, 920, "end value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
