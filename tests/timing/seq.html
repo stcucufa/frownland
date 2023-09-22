@@ -23,7 +23,8 @@ test("Empty seq", t => {
     const vm = VM();
     const seq = vm.add(Seq(), 17);
     vm.clock.seek(18);
-    t.equal(seq.t, 17, "end time");
+    t.equal(seq.begin, 17, "begin time");
+    t.equal(seq.end, 17, "end time");
     t.undefined(seq.value, "end value");
     t.equal(seq.dump(), "+ 17/0 [begin] Seq\n* 17/0 [end] Seq", "dump matches");
 });
@@ -32,7 +33,8 @@ test("Non-empty, zero duration seq", t => {
     const vm = VM();
     const seq = vm.add(Seq((x, t) => t * (x ?? 2), x => x + 3), 17);
     vm.clock.seek(18);
-    t.equal(seq.t, 17, "end time");
+    t.equal(seq.begin, 17, "begin time");
+    t.equal(seq.end, 17, "end time");
     t.equal(seq.value, 37, "end value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
@@ -45,7 +47,7 @@ test("Non-empty, non-zero duration seq", t => {
     const vm = VM();
     const seq = vm.add(Seq(Delay(23), (x, t) => t * (x ?? 2)), 17);
     vm.clock.seek(41);
-    t.equal(seq.t, 40, "end time");
+    t.equal(seq.end, 40, "end time");
     t.equal(seq.value, 80, "end value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
@@ -58,7 +60,7 @@ test("Nesting", t => {
     const vm = VM();
     const seq = vm.add(Seq(Delay(23), Seq((x, t) => t * (x ?? 2), Delay(19))), 17);
     vm.clock.seek(60);
-    t.equal(seq.t, 59, "end time");
+    t.equal(seq.end, 59, "end time");
     t.equal(seq.value, 80, "end value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
@@ -74,7 +76,7 @@ test("Unresolved duration within Seq", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay(), (x, t) => t * (x ?? 2)), 17);
     vm.clock.seek(41);
-    t.equal(seq.t, 40, "end time");
+    t.equal(seq.end, 40, "end time");
     t.equal(seq.value, 920, "end value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
