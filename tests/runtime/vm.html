@@ -19,9 +19,9 @@ test("Thread priority queue", t => {
     vm.schedule({ name: "B" }, 40);
     vm.schedule({ name: "C" }, 48);
     vm.schedule({ name: "A" }, 36);
-    t.equal(vm.futureQueue.remove().name, "A", "A first");
-    t.equal(vm.futureQueue.remove().name, "B", "B second");
-    t.equal(vm.futureQueue.remove().name, "C", "C last");
+    t.equal(vm.threads.scheduledForward[0].name, "A", "A first");
+    t.equal(vm.threads.scheduledForward[0].name, "B", "B second");
+    t.equal(vm.threads.scheduledForward[0].name, "C", "C last");
 });
 
         </script>
