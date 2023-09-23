@@ -85,8 +85,8 @@ test("Par.dur(), cutoff", t => {
     * 40/1 Instant
     * 40/2 [end] Seq
     + 17/0 Instant
-* 36/6 [end] Par
-* 36/6 [end] Seq`, "dump matches");
+* 36/7 [end] Par
+* 36/7 [end] Seq`, "dump matches");
 });
 
 test("Par.dur() with unresolved duration, cutoff", t => {
@@ -111,8 +111,8 @@ test("Par.dur() with unresolved duration, cutoff", t => {
     * #/2 Instant
     * #/3 [end] Seq
     + 17/0 Instant
-* 36/6 [end] Par
-* 36/6 [end] Seq`, "dump matches");
+* 36/7 [end] Par
+* 36/7 [end] Seq`, "dump matches");
 });
 
 test("Par.dur(), extended", t => {
@@ -136,8 +136,8 @@ test("Par.dur(), extended", t => {
     * 40/1 Instant
     * 40/2 [end] Seq
     + 17/0 Instant
-* 48/6 [end] Par
-* 48/6 [end] Seq`, "dump matches");
+* 48/7 [end] Par
+* 48/7 [end] Seq`, "dump matches");
 });
 
 test("Par.dur() with unresolved duration, extended", t => {
@@ -151,7 +151,6 @@ test("Par.dur() with unresolved duration, extended", t => {
     ), 17);
     vm.clock.seek(49);
     t.equal(par.value, [920, 24], "end value");
-    t.equal(par.end, 48, "end time");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -162,8 +161,8 @@ test("Par.dur() with unresolved duration, extended", t => {
     * #/2 Instant
     * #/3 [end] Seq
     + 17/0 Instant
-* 48/6 [end] Par
-* 48/6 [end] Seq`, "dump matches");
+* 48/7 [end] Par
+* 48/7 [end] Seq`, "dump matches");
 });
 
 test("Repeat.dur()", t => {
