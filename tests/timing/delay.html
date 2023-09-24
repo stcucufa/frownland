@@ -24,7 +24,9 @@ test("Non-zero delay", t => {
     const vm = VM();
     const delay = vm.add(Delay(23), 17);
     vm.clock.seek(41);
-    t.equal(delay.t, 40, "end time after execution");
+    t.equal(vm.t, 40, "vm time after execution");
+    t.equal(delay.begin, 17, "begin time");
+    t.equal(delay.end, 40, "end time");
     t.undefined(delay.value, "no end value");
     t.equal(delay.dump(), "+ 17/0 Delay(23)", "dump matches");
 });
@@ -33,7 +35,7 @@ test("Infinite delay", t => {
     const vm = VM();
     const delay = vm.add(Delay(Infinity), 17);
     vm.clock.seek(41);
-    t.equal(delay.t, Infinity, "indefinite end time");
+    t.equal(delay.end, Infinity, "indefinite end time");
     t.equal(delay.dump(), "+ 17/0 Delay(∞)", "dump matches");
 });
 
@@ -48,7 +50,6 @@ test("Variable delay", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay()), 17);
     vm.clock.seek(41);
-    t.equal(seq.t, 40, "end time after execution");
     t.equal(seq.value, 23, "end value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
@@ -61,7 +62,6 @@ test("Variable delay (indefinite)", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(Infinity), Delay()), 17);
     vm.clock.seek(41);
-    t.equal(seq.t, Infinity, "resolved end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -75,6 +75,19 @@ test("Variable delay (errors)", t => {
     t.warns(() => vm.clock.seek(41), "No value for delay");
     const seq = vm.add(Seq(K("not a duration"), Delay()), 51);
     t.warns(() => vm.clock.seek(52), "Invalid value for delay");
+});
+
+test("Consecutive variable delays", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Delay(), K(31), Delay()), 17);
+    vm.clock.seek(72);
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 Delay()
+* #/2 Instant
+* #/3 Delay()
+* #/4 [end] Seq`, "dump matches");
 });
 
         </script>

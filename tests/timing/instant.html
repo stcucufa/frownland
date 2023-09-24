@@ -22,7 +22,9 @@ test("Code generation", t => {
     const vm = VM();
     const instant = vm.add(Instant((x, t) => t * (x ?? 2)), 17);
     vm.clock.seek(18);
-    t.equal(instant.t, 17, "end time after execution");
+    t.equal(vm.t, 17, "current vm time");
+    t.equal(instant.begin, 17, "thread begin");
+    t.equal(instant.end, 17, "thread end");
     t.equal(instant.value, 34, "end value");
     t.equal(instant.dump(), "+ 17/0 Instant", "dump matches");
 });
