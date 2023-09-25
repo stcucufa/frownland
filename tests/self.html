@@ -104,6 +104,7 @@ fail("t.warns()", t => { t.warns(nop, "Did not warn"); });
 skip("t.skip()", t => { t.skip(); });
 
 fail("console.assert failure", t => { console.assert(false); });
+fail("console.warn failure", t => { console.warn("Don’t ignore this warning"); });
 
 pass("no timeout", async t => {
     await new Promise(resolve => setTimeout(resolve, 100));

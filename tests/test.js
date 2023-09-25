@@ -46,6 +46,11 @@ const TestCase = assign(properties => create(properties).call(TestCase), {
             this.assert.call(console, p, ...rest);
             this.expect(p, [() => "assertion failed"], true);
         };
+        this.warn = console.warn;
+        console.warn = (...args) => {
+            this.warn.apply(console, args);
+            this.expect(false, [() => `warning (${args[0]})`], true);
+        };
         this.not = new Proxy(this, {
             get(that, property) {
                 if (property === "not") {
@@ -64,6 +69,7 @@ const TestCase = assign(properties => create(properties).call(TestCase), {
 
     done(...args) {
         console.assert = this.assert;
+        console.warn = this.warn;
         postMessage(...args);
     },
 
