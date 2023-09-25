@@ -42,13 +42,13 @@ test("Do, undo, redo", t => {
     console.log("*** FORWARD: 0 -> 111");
     vm.clock.seek(111);
     t.equal(repeat.value, 4, "do (4 iterations)");
-    console.log("*** BACKWARD: 111 -> 79");
-    vm.clock.seek(79);
-    /*t.equal(repeat.value, 3, "undo (-1 iteration)");
-    vm.clock.seek(17);
+    console.log("*** BACKWARD: 111 -> 89");
+    vm.clock.seek(89);
+    t.equal(repeat.value, 3, "undo (-1 iteration)");
+    vm.clock.seek(0);
     t.undefined(repeat.value, "complete undo");
     vm.clock.seek(111);
-    t.equal(repeat.value, 4, "redo");*/
+    t.equal(repeat.value, 4, "redo");
 });
 
 test("Zero duration repeat error", t => {

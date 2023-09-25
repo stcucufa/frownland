@@ -52,8 +52,8 @@ test("Non-empty, non-zero duration seq", t => {
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Delay(23)
-* 40/1 Instant
-* 40/2 [end] Seq`, "dump matches");
+* 40/2 Instant
+* 40/3 [end] Seq`, "dump matches");
 });
 
 test("Nesting", t => {
