@@ -66,8 +66,8 @@ test("Non-empty, non-zero duration par", t => {
 `+ 17/0 [begin] Par
     + 17/0 [begin] Seq
     * 17/0 Delay(23)
-    * 40/1 Instant
-    * 40/2 [end] Seq
+    * 40/2 Instant
+    * 40/3 [end] Seq
     + 17/0 Instant
 * 40/5 [end] Par`, "dump matches");
 });
@@ -104,8 +104,8 @@ test("Input value", t => {
 * 17/1 [begin] Par
     + 17/0 [begin] Seq
     * 17/0 Delay(23)
-    * 40/1 Instant
-    * 40/2 [end] Seq
+    * 40/2 Instant
+    * 40/3 [end] Seq
     + 17/0 Instant
 * 40/6 [end] Par
 * 40/6 [end] Seq`, "dump matches");
@@ -166,11 +166,11 @@ test("Unresolved durations within Par", t => {
     + 17/0 [begin] Seq
     * 17/0 Instant
     * 17/1 Delay()
-    * #/2 [end] Seq
+    * #/3 [end] Seq
     + 17/0 [begin] Seq
     * 17/0 Instant
     * 17/1 Delay()
-    * #/2 [end] Seq
+    * #/3 [end] Seq
 * #/5 [end] Par`, "dump matches");
 });
 
@@ -187,11 +187,11 @@ test("Unresolved durations within Par (other way around)", t => {
     + 17/0 [begin] Seq
     * 17/0 Instant
     * 17/1 Delay()
-    * #/2 [end] Seq
+    * #/3 [end] Seq
     + 17/0 [begin] Seq
     * 17/0 Instant
     * 17/1 Delay()
-    * #/2 [end] Seq
+    * #/3 [end] Seq
 * #/5 [end] Par`, "dump matches");
 });
 

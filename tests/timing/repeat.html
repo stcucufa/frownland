@@ -31,9 +31,9 @@ test("Repeat", t => {
 `+ 17/0 [begin] Repeat
 * 17/1 [begin] Seq
 * 17/1 Delay(23)
-* 40/2 Instant
-* 40/3 [end] Seq
-* ∞/3 [end] Repeat`, "dump matches");
+* 40/3 Instant
+* 40/4 [end] Seq
+* ∞/4 [end] Repeat`, "dump matches");
 });
 
 test("Do, undo, redo", t => {
@@ -63,11 +63,11 @@ test("After repeat", t => {
 * 17/0 [begin] Repeat
 * 17/1 [begin] Seq
 * 17/1 Delay(23)
-* 40/2 Instant
-* 40/3 [end] Seq
-* ∞/3 [end] Repeat
-* ∞/4 Instant
-* ∞/5 [end] Seq`, "dump matches");
+* 40/3 Instant
+* 40/4 [end] Seq
+* ∞/4 [end] Repeat
+* ∞/5 Instant
+* ∞/6 [end] Seq`, "dump matches");
 });
 
         </script>

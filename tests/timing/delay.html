@@ -103,6 +103,13 @@ test("Variable delay (errors)", t => {
     t.warns(() => vm.clock.seek(52), "Invalid value for delay");
 });
 
+test("Consecutive delays", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K("one"), Delay(23), K("two"), Delay(31), K("three")), 17);
+    vm.clock.seek(72);
+    t.equal(seq.value, "three", "value");
+});
+
 test("Consecutive variable delays", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay(), K(31), Delay()), 17);

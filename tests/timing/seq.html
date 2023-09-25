@@ -56,35 +56,6 @@ test("Non-empty, non-zero duration seq", t => {
 * 40/3 [end] Seq`, "dump matches");
 });
 
-test("Nesting", t => {
-    const vm = VM();
-    const seq = vm.add(Seq(Delay(23), Seq((x, t) => t * (x ?? 2), Delay(19))), 17);
-    vm.clock.seek(60);
-    t.equal(seq.end, 59, "end time");
-    t.equal(seq.value, 80, "end value");
-    t.equal(seq.dump(),
-`+ 17/0 [begin] Seq
-* 17/0 Delay(23)
-* 40/1 [begin] Seq
-* 40/1 Instant
-* 40/2 Delay(19)
-* 59/3 [end] Seq
-* 59/3 [end] Seq`, "dump matches");
-});
-
-test("Unresolved duration within Seq", t => {
-    const vm = VM();
-    const seq = vm.add(Seq(K(23), Delay(), (x, t) => t * (x ?? 2)), 17);
-    vm.clock.seek(41);
-    t.equal(seq.value, 920, "end value");
-    t.equal(seq.dump(),
-`+ 17/0 [begin] Seq
-* 17/0 Instant
-* 17/1 Delay()
-* #/2 Instant
-* #/3 [end] Seq`, "dump matches");
-});
-
 test("Do, undo, redo (resolved duration)", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(31), Delay(23), (x, t) => t * x), 17);
@@ -96,6 +67,35 @@ test("Do, undo, redo (resolved duration)", t => {
     t.undefined(seq.value, "back to the beginning");
     vm.clock.seek(41);
     t.equal(seq.value, 1240, "end value for seq again");
+});
+
+test("Nesting", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Delay(23), Seq((x, t) => t * (x ?? 2), Delay(19))), 17);
+    vm.clock.seek(60);
+    t.equal(seq.end, 59, "end time");
+    t.equal(seq.value, 80, "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Delay(23)
+* 40/2 [begin] Seq
+* 40/2 Instant
+* 40/3 Delay(19)
+* 59/5 [end] Seq
+* 59/5 [end] Seq`, "dump matches");
+});
+
+test("Unresolved duration within Seq", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Delay(), (x, t) => t * (x ?? 2)), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, 920, "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 Delay()
+* #/3 Instant
+* #/4 [end] Seq`, "dump matches");
 });
 
 test("Do, undo, redo (unresolved duration)", t => {
