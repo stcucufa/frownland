@@ -90,6 +90,14 @@ test("Consecutive variable delays", t => {
 * #/4 [end] Seq`, "dump matches");
 });
 
+test("Rewind", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K("ok"), Delay(23)), 17);
+    vm.clock.seek(31);
+    t.equal(seq.value, "ok", "has a value");
+    vm.clock.seek(0);
+});
+
         </script>
     </head>
     <body>
