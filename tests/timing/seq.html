@@ -52,8 +52,8 @@ test("Non-empty, non-zero duration seq", t => {
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Delay(23)
-* 40/2 Instant
-* 40/3 [end] Seq`, "dump matches");
+* 40/1 Instant
+* 40/2 [end] Seq`, "dump matches");
 });
 
 test("Do, undo, redo (resolved duration)", t => {
@@ -78,11 +78,11 @@ test("Nesting", t => {
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Delay(23)
-* 40/2 [begin] Seq
-* 40/2 Instant
-* 40/3 Delay(19)
-* 59/5 [end] Seq
-* 59/5 [end] Seq`, "dump matches");
+* 40/1 [begin] Seq
+* 40/1 Instant
+* 40/2 Delay(19)
+* 59/3 [end] Seq
+* 59/3 [end] Seq`, "dump matches");
 });
 
 test("Unresolved duration within Seq", t => {
@@ -94,8 +94,8 @@ test("Unresolved duration within Seq", t => {
 `+ 17/0 [begin] Seq
 * 17/0 Instant
 * 17/1 Delay()
-* #/3 Instant
-* #/4 [end] Seq`, "dump matches");
+* #/2 Instant
+* #/3 [end] Seq`, "dump matches");
 });
 
 test("Do, undo, redo (unresolved duration)", t => {

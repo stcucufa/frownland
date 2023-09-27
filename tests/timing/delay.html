@@ -70,7 +70,7 @@ test("Variable delay", t => {
 `+ 17/0 [begin] Seq
 * 17/0 Instant
 * 17/1 Delay()
-* #/3 [end] Seq`, "dump matches");
+* #/2 [end] Seq`, "dump matches");
 });
 
 test("Do, undo, redo (variable delay)", t => {
@@ -92,7 +92,7 @@ test("Variable delay (indefinite)", t => {
 `+ 17/0 [begin] Seq
 * 17/0 Instant
 * 17/1 Delay()
-* #/3 [end] Seq`, "dump matches");
+* #/2 [end] Seq`, "dump matches");
 });
 
 test("Variable delay (errors)", t => {
@@ -118,9 +118,20 @@ test("Consecutive variable delays", t => {
 `+ 17/0 [begin] Seq
 * 17/0 Instant
 * 17/1 Delay()
-* #/3 Instant
-* #/4 Delay()
-* #/6 [end] Seq`, "dump matches");
+* #/2 Instant
+* #/3 Delay()
+* #/4 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo (consecutive variable delays)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Delay(), K(31), Delay()), 17);
+    vm.clock.seek(72);
+    t.equal(seq.value, 31, "do: end value");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo: no value");
+    vm.clock.seek(72);
+    t.equal(seq.value, 31, "redo: end value");
 });
 
         </script>
