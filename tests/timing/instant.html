@@ -25,6 +25,7 @@ test("Code generation", t => {
     t.equal(vm.t, 17, "current vm time");
     t.equal(instant.begin, 17, "thread begin");
     t.equal(instant.end, 17, "thread end");
+    t.equal(instant.t, 17, "thread progress");
     t.equal(instant.value, 34, "end value");
     t.equal(instant.dump(), "+ 17/0 Instant", "dump matches");
 });
