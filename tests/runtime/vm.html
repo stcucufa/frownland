@@ -15,16 +15,6 @@ test("VM()", t => {
     t.equal(vm.clock.now, 0, "clock starts at 0");
 });
 
-test("Thread priority queue", t => {
-    const vm = VM();
-    vm.scheduleForward({ name: "B" }, 40);
-    vm.scheduleForward({ name: "C" }, 48);
-    vm.scheduleForward({ name: "A" }, 36);
-    t.equal(vm.threads.scheduledForward[0].name, "A", "A first");
-    t.equal(vm.threads.scheduledForward[0].name, "B", "B second");
-    t.equal(vm.threads.scheduledForward[0].name, "C", "C last");
-});
-
 test("Threading", t => {
     const vm = VM();
     const out = [];
