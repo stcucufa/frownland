@@ -39,16 +39,12 @@ test("Repeat", t => {
 test("Do, undo, redo", t => {
     const vm = VM();
     const repeat = vm.add(Repeat(Seq(Delay(23), (x = 0) => x + 1)), 17);
-    console.log("*** DO: 0 -> 111");
     vm.clock.seek(111);
     t.equal(repeat.value, 4, "do (4 iterations)");
-    console.log("*** UNDO: 111 -> 89");
     vm.clock.seek(89);
     t.equal(repeat.value, 3, "undo (-1 iteration)");
-    console.log("*** UNDO: 89 -> 0");
     vm.clock.seek(0);
     t.undefined(repeat.value, "complete undo");
-    console.log("*** REDO: 0 -> 111");
     vm.clock.seek(111);
     t.equal(repeat.value, 4, "redo");
 });
@@ -65,11 +61,11 @@ test("After repeat", t => {
 * 17/0 [begin] Repeat
 * 17/1 [begin] Seq
 * 17/1 Delay(23)
-* 40/3 Instant
-* 40/4 [end] Seq
+* 40/2 Instant
+* 40/3 [end] Seq
 * ∞/4 [end] Repeat
-* ∞/5 Instant
-* ∞/6 [end] Seq`, "dump matches");
+* ∞/4 Instant
+* ∞/5 [end] Seq`, "dump matches");
 });
 
         </script>
