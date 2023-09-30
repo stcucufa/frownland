@@ -45,7 +45,7 @@ test("Seq.dur() with unresolved duration, cutoff", t => {
 `+ 17/0 [begin] Seq
 * 17/0 Instant
 * 17/1 Delay()
-* 36/2 [end] Seq`, "dump matches");
+* 36/3 [end] Seq`, "dump matches");
 });
 
 test("Do, undo, redo: Seq.dur() with unresolved duration, cutoff", t => {
@@ -61,29 +61,29 @@ test("Do, undo, redo: Seq.dur() with unresolved duration, cutoff", t => {
 
 test("Seq.dur(), extended", t => {
     const vm = VM();
-    const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => t + x), 17);
+    const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => x + t), 17);
     vm.clock.seek(49);
-    t.equal(seq.value, 80, "end value");
+    t.equal(seq.value, 128, "end value");
     t.equal(seq.end, 48, "end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 [begin] Seq
 * 17/0 Delay(23)
 * 40/1 Instant
-* 48/2 [end] Seq
-* 48/2 Instant
-* 48/3 [end] Seq`, "dump matches");
+* 48/3 [end] Seq
+* 48/3 Instant
+* 48/4 [end] Seq`, "dump matches");
 });
 
 test("Do, undo, redo: Seq.dur(), extended", t => {
     const vm = VM();
     const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => t + x), 17);
     vm.clock.seek(49);
-    t.equal(vm.t, 48, "do");
+    t.equal(seq.value, 128, "do");
     vm.clock.seek(0);
-    t.equal(vm.t, 17, "undo");
+    t.undefined(seq.value, "undo");
     vm.clock.seek(49);
-    t.equal(vm.t, 48, "redo");
+    t.equal(seq.value, 128, "redo");
 });
 
 test("Seq.dur() with unresolved duration, extended", t => {
@@ -93,9 +93,20 @@ test("Seq.dur() with unresolved duration, extended", t => {
     t.equal(seq.end, 48, "end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
-* 17/1 Instant
-* 17/2 Delay()
-* 48/4 [end] Seq`, "dump matches");
+* 17/0 Instant
+* 17/1 Delay()
+* 48/3 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo: Seq.dur() with unresolved duration, extended", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Delay()).dur(31), 17);
+    vm.clock.seek(49);
+    t.equal(seq.value, 23, "do");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo");
+    vm.clock.seek(49);
+    t.equal(seq.value, 23, "redo");
 });
 
 test("Par.dur(), cutoff", t => {
