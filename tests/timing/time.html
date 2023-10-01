@@ -24,6 +24,7 @@ test("time.add(x, y)", t => {
     t.equal(time.add(Infinity, 23), Infinity, "x indefinite, y definite");
     t.equal(time.add(Infinity, v), Infinity, "x indefinite, y unresolved");
     t.equal(time.add(Infinity, Infinity), Infinity, "x indefinite, y indefinite");
+    t.equal(time.isUnresolved(time.add(17)), true, "x definite, y missing");
 });
 
 test("time.cmp(x, y)", t => {
@@ -45,6 +46,13 @@ test("time.isUnresolved(t)", t => {
     t.equal(time.isUnresolved(time.unresolved()), true, "unresolved time");
     t.equal(time.isUnresolved(17), false, "definite time");
     t.equal(time.isUnresolved(Infinity), false, "indefinite time");
+});
+
+test("time.isResolved(t)", t => {
+    t.equal(time.isResolved(), false, "no time");
+    t.equal(time.isResolved(time.unresolved()), false, "unresolved time");
+    t.equal(time.isResolved(17), true, "definite time");
+    t.equal(time.isResolved(Infinity), true, "indefinite time");
 });
 
 test("time.isDefinite(t)", t => {
