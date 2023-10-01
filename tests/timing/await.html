@@ -40,6 +40,19 @@ test("Code generation", async t => {
 * #/1 [end] Await`, "dump matches");
 });
 
+test("Do, undo, redo", async t => {
+    const vm = VM();
+    const item = vm.add(Await(() => fetch("../icons.svg")), 17);
+    vm.clock.seek(18);
+    const { value } = await notification(vm, "promise");
+    vm.clock.seek(19);
+    t.equal(item.value, value, "do");
+    vm.clock.seek(0);
+    t.undefined(item.value, "undo");
+    vm.clock.seek(19);
+    t.equal(item.value, value, "redo");
+});
+
         </script>
     </head>
     <body>
