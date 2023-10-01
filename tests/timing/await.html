@@ -69,6 +69,12 @@ test("Await()", async t => {
 * #/2 [end] Seq`, "dump matches");
 });
 
+test("Await(f), parameter error", t => {
+    const vm = VM();
+    const item = vm.add(Await(() => "../icons.svg"), 17);
+    t.warns(() => { vm.clock.seek(18); }, "parameter is not async");
+});
+
 test("Await(), input error", t => {
     const vm = VM();
     const seq = vm.add(Seq(() => "../icons.svg", Await()), 17);

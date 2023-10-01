@@ -8,8 +8,10 @@
 
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
-import { Instant, Delay, Seq, Par, Repeat } from "../../lib/timing.js";
+import { notification } from "../../lib/events.js";
+import { Instant, Delay, Seq, Par, Repeat, Await } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
+import { Timeout } from "../../lib/runtime/vm.js";
 
 test("Seq.dur(), cutoff", t => {
     const vm = VM();
@@ -241,6 +243,52 @@ test("Do, undo, redo: Repeat.dur()", t => {
     t.undefined(repeat.value, "undo");
     vm.clock.seek(197);
     t.equal(repeat.value, 3, "redo");
+});
+
+test("Await.dur(), cutoff", async t => {
+    const vm = VM();
+    const item = vm.add(Await(() => fetch("../icons.svg")).dur(19), 17);
+    vm.clock.seek(37);
+    t.equal(item.t, 36, "thread end");
+    t.equal(item.value, Timeout, "thread value");
+    await notification(vm, "promise");
+    vm.clock.seek(38);
+    t.equal(item.t, 36, "thread still ended");
+    t.equal(item.value, Timeout, "thread still timed out");
+});
+
+test("Do, undo, redo: Await.dur(), cutoff", async t => {
+    const vm = VM();
+    const item = vm.add(Await(() => fetch("../icons.svg")).dur(19), 17);
+    vm.clock.seek(37);
+    t.equal(item.value, Timeout, "do");
+    vm.clock.seek(0);
+    t.undefined(item.value, "undo");
+    vm.clock.seek(37);
+    t.equal(item.value, Timeout, "redo");
+});
+
+test("Await.dur(), extended", async t => {
+    const vm = VM();
+    const item = vm.add(Await(() => fetch("../icons.svg")).dur(23), 17);
+    vm.clock.seek(31);
+    const { value } = await notification(vm, "promise");
+    vm.clock.seek(41);
+    t.equal(item.t, 40, "thread end");
+    t.equal(item.value, value, "thread value");
+});
+
+test("Do, undo, redo: Await.dur(), extended", async t => {
+    const vm = VM();
+    const item = vm.add(Await(() => fetch("../icons.svg")).dur(23), 17);
+    vm.clock.seek(31);
+    const { value } = await notification(vm, "promise");
+    vm.clock.seek(41);
+    t.equal(item.value, value, "do");
+    vm.clock.seek(0);
+    t.undefined(item.value, "undo");
+    vm.clock.seek(41);
+    t.equal(item.value, value, "redo");
 });
 
 test("dur(0) still allows instants", t => {
