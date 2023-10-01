@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Await</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { notification } from "../../lib/events.js";
+import { Await } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+import * as time from "../../lib/timing/time.js";
+
+test("Await(f)", t => {
+    const f = async () => fetch("../icons.svg");
+    const item = Await(f);
+    t.equal(item.tag, "Await", "tag");
+    t.equal(item.f, f, "f");
+});
+
+test("Code generation", async t => {
+    const vm = VM();
+    const item = vm.add(Await(() => fetch("../icons.svg")), 17);
+    vm.clock.seek(18);
+    t.equal(vm.t, 17, "current vm time");
+    t.equal(item.begin, 17, "thread begin");
+    t.equal(time.isUnresolved(item.end), true, "unresolved thread end");
+    t.equal(item.t, 17, "thread progress");
+    t.undefined(item.value, "no value yet");
+
+    const { thread, value } = await notification(vm, "promise");
+    t.equal(thread, item, "got a value for the thread");
+    vm.clock.seek(19);
+    t.equal(item.t, 18, "thread end");
+    t.equal(item.value, value, "thread value");
+
+    t.equal(item.dump(),
+`+ 17/0 [begin] Await
+* #/1 [end] Await`, "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
