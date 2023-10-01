@@ -8,7 +8,7 @@
 
 import { test } from "../test.js";
 import { notification } from "../../lib/events.js";
-import { Await } from "../../lib/timing.js";
+import { Seq, Await } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 import * as time from "../../lib/timing/time.js";
 
@@ -51,6 +51,56 @@ test("Do, undo, redo", async t => {
     t.undefined(item.value, "undo");
     vm.clock.seek(19);
     t.equal(item.value, value, "redo");
+});
+
+test("Await()", async t => {
+    const vm = VM();
+    const seq = vm.add(Seq(() => fetch("../icons.svg"), Await()), 17);
+    vm.clock.seek(18);
+    const { value } = await notification(vm, "promise");
+    vm.clock.seek(19);
+    t.equal(seq.t, 18, "thread end");
+    t.equal(seq.value, value, "thread value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Await
+* #/2 [end] Await
+* #/2 [end] Seq`, "dump matches");
+});
+
+test("Await(), input error", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(() => "../icons.svg", Await()), 17);
+    t.warns(() => { vm.clock.seek(18); }, "input is not a promise");
+    vm.clock.seek(0);
+    const item = vm.add(Await(), 17);
+    t.warns(() => { vm.clock.seek(18); }, "no input");
+});
+
+test("Wrap", async t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        async () => fetch("../icons.svg"),
+        async response => response.text(),
+        xml => /^<svg\b/.test(xml)
+    ), 17);
+    vm.clock.seek(18);
+    await notification(vm, "promise");
+    vm.clock.seek(19);
+    await notification(vm, "promise");
+    vm.clock.seek(20);
+    console.log(seq.value);
+    t.equal(seq.t, 19, "thread end");
+    t.equal(seq.value, true, "thread value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 [begin] Await
+* #/1 [end] Await
+* #/1 [begin] Await
+* #/2 [end] Await
+* #/2 Instant
+* #/3 [end] Seq`, "dump matches");
 });
 
         </script>
