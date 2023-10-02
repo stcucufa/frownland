@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Event</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { Event } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+import * as time from "../../lib/timing/time.js";
+
+test("Event(target, type)", t => {
+    const event = Event(window, "synth");
+    t.equal(event.tag, "Event", "show");
+    t.equal(event.target, window, "target");
+    t.equal(event.type, "synth", "type");
+});
+
+test("Code generation", t => {
+    const vm = VM();
+    const event = vm.add(Event(window, "synth"), 17);
+    vm.clock.seek(18);
+    t.equal(vm.t, 17, "current vm time");
+    t.equal(event.begin, 17, "thread begin");
+    t.equal(event.end, time.unresolved, "unresolved thread end");
+    t.equal(event.t, 17, "thread progress");
+    t.undefined(event.value, "no value yet");
+
+    const e = new window.Event("synth");
+    window.dispatchEvent(e);
+    vm.clock.seek(19);
+    t.equal(event.t, 18, "thread end");
+    t.equal(event.value, e, "thread value");
+    t.equal(event.dump(), "+ 17/0 Event(synth)", "dump matches");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
