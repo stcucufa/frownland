@@ -68,6 +68,20 @@ test("After repeat", t => {
 * ∞/5 [end] Seq`, "dump matches");
 });
 
+test("Variable delays", t => {
+    const vm = VM();
+    const repeat = vm.add(Seq(K(23), Repeat(Seq(Delay(), (x, t) => x + t))), 17);
+    vm.clock.seek(101);
+    t.equal(repeat.t, 40, "first iteration time");
+    t.equal(repeat.value, 63, "first iteration value");
+    vm.clock.seek(104);
+    t.equal(repeat.t, 103, "second iteration time");
+    t.equal(repeat.value, 166, "second iteration value");
+    vm.clock.seek(333);
+    t.equal(repeat.t, 269, "third iteration time");
+    t.equal(repeat.value, 435, "third iteration value");
+});
+
         </script>
     </head>
     <body>
