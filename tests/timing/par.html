@@ -42,6 +42,17 @@ test("Non-empty, zero duration par", t => {
 * 17/3 [end] Par`, "dump matches");
 });
 
+test("Do, undo, redo (zero duration)", t => {
+    const vm = VM();
+    const par = vm.add(Par((x, t) => t * (x ?? 2), (x, t) => t + (x ?? 3)), 17);
+    vm.clock.seek(18);
+    t.equal(par.value, [34, 20], "do: end value");
+    vm.clock.seek(17);
+    t.undefined(par.value, "undo: no value");
+    vm.clock.seek(18);
+    t.equal(par.value, [34, 20], "redo: end value");
+});
+
 test("Non-empty, non-zero duration par", t => {
     const vm = VM();
     const par = vm.add(Par(
@@ -59,6 +70,20 @@ test("Non-empty, non-zero duration par", t => {
     * 40/2 [end] Seq
     + 17/0 Instant
 * 40/4 [end] Par`, "dump matches");
+});
+
+test("Do, undo, redo (non-zero duration)", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Seq(Delay(23), (x, t) => t * (x ?? 2)),
+        (x, t) => t + (x ?? 3)
+    ), 17);
+    vm.clock.seek(41);
+    t.equal(par.value, [80, 20], "do: end value");
+    vm.clock.seek(17);
+    t.undefined(par.value, "undo: no value");
+    vm.clock.seek(41);
+    t.equal(par.value, [80, 20], "redo: end value");
 });
 
 test("Input value", t => {
@@ -117,6 +142,17 @@ test("Unresolved duration within Par", t => {
 * #/5 [end] Seq`, "dump matches");
 });
 
+test("Do, undo, redo (unresolved duration within Par)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Par(Delay(), (x, t) => t * (x ?? 2))), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, [23, 391], "do: end value");
+    vm.clock.seek(17);
+    t.undefined(seq.value, "undo: no value");
+    vm.clock.seek(41);
+    t.equal(seq.value, [23, 391], "redo: end value");
+});
+
 test("Unresolved durations within Par", t => {
     const vm = VM();
     const par = vm.add(Par(
@@ -163,6 +199,7 @@ test("Indefinite duration within Par", t => {
     const vm = VM();
     const seq = vm.add(Seq(Par(Delay(Infinity), Delay(23)), xs => xs.length), 17);
     vm.clock.seek(41);
+    t.undefined(seq.value, "No value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 [begin] Par

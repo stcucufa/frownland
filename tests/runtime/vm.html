@@ -8,20 +8,23 @@
 
 import { test } from "../test.js";
 import { VM } from "../../lib/runtime.js";
+import { Par, Seq, Delay } from "../../lib/timing.js";
 
 test("VM()", t => {
     const vm = VM();
     t.equal(vm.clock.now, 0, "clock starts at 0");
 });
 
-test("Thread priority queue", t => {
+test("Threading", t => {
     const vm = VM();
-    vm.schedule({ name: "B" }, 40);
-    vm.schedule({ name: "C" }, 48);
-    vm.schedule({ name: "A" }, 36);
-    t.equal(vm.futureQueue.remove().name, "A", "A first");
-    t.equal(vm.futureQueue.remove().name, "B", "B second");
-    t.equal(vm.futureQueue.remove().name, "C", "C last");
+    const out = [];
+    const p = x => () => (out.push(x), x);
+    const par = vm.add(Par(
+        Seq(p("A"), Delay(7), p("C"), Delay(7), p("E")),
+        Seq(Delay(3), p("B"), Delay(7), p("D"), Delay(7), p("F")),
+    ), 17);
+    vm.clock.seek(35);
+    t.equal(out, ["A", "B", "C", "D", "E", "F"], "execution order");
 });
 
         </script>

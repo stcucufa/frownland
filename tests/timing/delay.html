@@ -31,6 +31,21 @@ test("Non-zero delay", t => {
     t.equal(delay.dump(), "+ 17/0 Delay(23)", "dump matches");
 });
 
+test("Do, undo, redo (non-zero, definite delay)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K("ready"), Delay(23), K("ok")), 17);
+    vm.clock.seek(31);
+    t.equal(seq.value, "ready", "do (mid-delay)");
+    vm.clock.seek(41);
+    t.equal(seq.value, "ok", "do (after delay)");
+    vm.clock.seek(23);
+    t.equal(seq.value, "ready", "undo (mid-delay)");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo (before delay)");
+    vm.clock.seek(41);
+    t.equal(seq.value, "ok", "redo");
+});
+
 test("Infinite delay", t => {
     const vm = VM();
     const delay = vm.add(Delay(Infinity), 17);
@@ -58,6 +73,17 @@ test("Variable delay", t => {
 * #/2 [end] Seq`, "dump matches");
 });
 
+test("Do, undo, redo (variable delay)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Delay()), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, 23, "do");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo");
+    vm.clock.seek(41);
+    t.equal(seq.value, 23, "redo");
+});
+
 test("Variable delay (indefinite)", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(Infinity), Delay()), 17);
@@ -77,6 +103,13 @@ test("Variable delay (errors)", t => {
     t.warns(() => vm.clock.seek(52), "Invalid value for delay");
 });
 
+test("Consecutive delays", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K("one"), Delay(23), K("two"), Delay(31), K("three")), 17);
+    vm.clock.seek(72);
+    t.equal(seq.value, "three", "value");
+});
+
 test("Consecutive variable delays", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay(), K(31), Delay()), 17);
@@ -88,6 +121,17 @@ test("Consecutive variable delays", t => {
 * #/2 Instant
 * #/3 Delay()
 * #/4 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo (consecutive variable delays)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Delay(), K(31), Delay()), 17);
+    vm.clock.seek(72);
+    t.equal(seq.value, 31, "do: end value");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo: no value");
+    vm.clock.seek(72);
+    t.equal(seq.value, 31, "redo: end value");
 });
 
         </script>

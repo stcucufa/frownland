@@ -25,8 +25,26 @@ test("Code generation", t => {
     t.equal(vm.t, 17, "current vm time");
     t.equal(instant.begin, 17, "thread begin");
     t.equal(instant.end, 17, "thread end");
+    t.equal(instant.t, 17, "thread progress");
     t.equal(instant.value, 34, "end value");
     t.equal(instant.dump(), "+ 17/0 Instant", "dump matches");
+});
+
+test("Do, undo, redo", t => {
+    const vm = VM();
+    let callCount = 0;
+    const instant = vm.add(Instant((x, t) => {
+        callCount += 1;
+        return t * (x ?? 2);
+    }), 17);
+    vm.clock.seek(18);
+    t.equal(instant.value, 34, "value");
+    t.equal(callCount, 1, "instant function was called");
+    vm.clock.seek(17);
+    t.undefined(instant.value, "no value");
+    vm.clock.seek(18);
+    t.equal(instant.value, 34, "redo");
+    t.equal(callCount, 1, "instant function was not called again");
 });
 
         </script>

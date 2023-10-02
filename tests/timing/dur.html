@@ -16,40 +16,74 @@ test("Seq.dur(), cutoff", t => {
     const seq = vm.add(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(19), 17);
     vm.clock.seek(37);
     t.undefined(seq.value, "no value");
-    t.equal(seq.timeout, 36, "timed out");
+    t.equal(seq.t, 36, "timed out");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
-* 17/1 Delay(23)
-* 40/2 Instant
-* 36/3 [end] Seq`, "dump matches");
+* 17/0 Delay(23)
+* 40/1 Instant
+* 36/2 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo: Seq.dur(), cutoff", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(19), 17);
+    vm.clock.seek(37);
+    t.equal(seq.t, 36, "do: timed out");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo");
+    vm.clock.seek(40);
+    t.equal(vm.t, 17, "redo (time)");
+    t.undefined(seq.value, "redo (value)");
 });
 
 test("Seq.dur() with unresolved duration, cutoff", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay()).dur(19), 17);
     vm.clock.seek(37);
-    t.equal(seq.timeout, 36, "timed out");
+    t.equal(seq.t, 36, "timed out");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
-* 17/1 Instant
-* 17/2 Delay()
-* 36/4 [end] Seq`, "dump matches");
+* 17/0 Instant
+* 17/1 Delay()
+* 36/3 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo: Seq.dur() with unresolved duration, cutoff", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Delay()).dur(19), 17);
+    vm.clock.seek(37);
+    t.equal(seq.t, 36, "do: timed out");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo");
+    vm.clock.seek(40);
+    t.equal(vm.t, 17, "redo");
 });
 
 test("Seq.dur(), extended", t => {
     const vm = VM();
-    const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => t + x), 17);
+    const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => x + t), 17);
     vm.clock.seek(49);
-    t.equal(seq.value, 80, "end value");
+    t.equal(seq.value, 128, "end value");
     t.equal(seq.end, 48, "end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 [begin] Seq
-* 17/1 Delay(23)
-* 40/2 Instant
-* 48/4 [end] Seq
-* 48/4 Instant
-* 48/5 [end] Seq`, "dump matches");
+* 17/0 Delay(23)
+* 40/1 Instant
+* 48/3 [end] Seq
+* 48/3 Instant
+* 48/4 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo: Seq.dur(), extended", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => t + x), 17);
+    vm.clock.seek(49);
+    t.equal(seq.value, 128, "do");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo");
+    vm.clock.seek(49);
+    t.equal(seq.value, 128, "redo");
 });
 
 test("Seq.dur() with unresolved duration, extended", t => {
@@ -59,9 +93,20 @@ test("Seq.dur() with unresolved duration, extended", t => {
     t.equal(seq.end, 48, "end time");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
-* 17/1 Instant
-* 17/2 Delay()
-* 48/4 [end] Seq`, "dump matches");
+* 17/0 Instant
+* 17/1 Delay()
+* 48/3 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo: Seq.dur() with unresolved duration, extended", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Delay()).dur(31), 17);
+    vm.clock.seek(49);
+    t.equal(seq.value, 23, "do");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo");
+    vm.clock.seek(49);
+    t.equal(seq.value, 23, "redo");
 });
 
 test("Par.dur(), cutoff", t => {
@@ -74,8 +119,8 @@ test("Par.dur(), cutoff", t => {
         ).dur(19)
     ), 17);
     vm.clock.seek(37);
-    t.equal(par.value, 7, "Par input value");
-    t.equal(par.timeout, 36, "timed out");
+    t.equal(par.value, 7, "Par value");
+    t.equal(par.t, 36, "timed out");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -85,8 +130,8 @@ test("Par.dur(), cutoff", t => {
     * 40/1 Instant
     * 40/2 [end] Seq
     + 17/0 Instant
-* 36/6 [end] Par
-* 36/6 [end] Seq`, "dump matches");
+* 36/5 [end] Par
+* 36/5 [end] Seq`, "dump matches");
 });
 
 test("Par.dur() with unresolved duration, cutoff", t => {
@@ -99,8 +144,8 @@ test("Par.dur() with unresolved duration, cutoff", t => {
         ).dur(19)
     ), 17);
     vm.clock.seek(37);
-    t.equal(par.value, 7, "Par input value");
-    t.equal(par.timeout, 36, "timed out");
+    t.equal(par.value, 7, "Par (input) value");
+    t.equal(par.t, 36, "timed out");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -111,8 +156,8 @@ test("Par.dur() with unresolved duration, cutoff", t => {
     * #/2 Instant
     * #/3 [end] Seq
     + 17/0 Instant
-* 36/6 [end] Par
-* 36/6 [end] Seq`, "dump matches");
+* 36/5 [end] Par
+* 36/5 [end] Seq`, "dump matches");
 });
 
 test("Par.dur(), extended", t => {
@@ -126,7 +171,7 @@ test("Par.dur(), extended", t => {
     ), 17);
     vm.clock.seek(49);
     t.equal(par.value, [280, 24], "end value");
-    t.equal(par.end, 48, "end time");
+    t.equal(par.t, 48, "end time");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -136,8 +181,8 @@ test("Par.dur(), extended", t => {
     * 40/1 Instant
     * 40/2 [end] Seq
     + 17/0 Instant
-* 48/6 [end] Par
-* 48/6 [end] Seq`, "dump matches");
+* 48/5 [end] Par
+* 48/5 [end] Seq`, "dump matches");
 });
 
 test("Par.dur() with unresolved duration, extended", t => {
@@ -151,7 +196,6 @@ test("Par.dur() with unresolved duration, extended", t => {
     ), 17);
     vm.clock.seek(49);
     t.equal(par.value, [920, 24], "end value");
-    t.equal(par.end, 48, "end time");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -162,15 +206,22 @@ test("Par.dur() with unresolved duration, extended", t => {
     * #/2 Instant
     * #/3 [end] Seq
     + 17/0 Instant
-* 48/6 [end] Par
-* 48/6 [end] Seq`, "dump matches");
+* 48/5 [end] Par
+* 48/5 [end] Seq`, "dump matches");
+});
+
+test("Par.dur(), cutoff child", t => {
+    const vm = VM();
+    const par = vm.add(Par(Seq(Delay(31), (x, t) => t * (x ?? 2)).dur(23)), 17);
+    vm.clock.seek(49);
+    t.equal(par.value, [], "Child cutoff");
 });
 
 test("Repeat.dur()", t => {
     const vm = VM();
     const repeat = vm.add(Repeat(Seq(Delay(23), (x = 0) => x + 1)).dur(79), 17);
     vm.clock.seek(97);
-    t.equal(repeat.timeout, 96, "timed out");
+    t.equal(repeat.t, 96, "timed out");
     t.equal(repeat.value, 3, "thread value");
     t.equal(repeat.dump(),
 `+ 17/0 [begin] Repeat
@@ -178,7 +229,18 @@ test("Repeat.dur()", t => {
 * 17/1 Delay(23)
 * 40/2 Instant
 * 40/3 [end] Seq
-* 96/3 [end] Repeat`, "dump matches");
+* 96/4 [end] Repeat`, "dump matches");
+});
+
+test("Do, undo, redo: Repeat.dur()", t => {
+    const vm = VM();
+    const repeat = vm.add(Repeat(Seq(Delay(23), (x = 0) => x + 1)).dur(79), 17);
+    vm.clock.seek(197);
+    t.equal(repeat.value, 3, "do");
+    vm.clock.seek(0);
+    t.undefined(repeat.value, "undo");
+    vm.clock.seek(197);
+    t.equal(repeat.value, 3, "redo");
 });
 
 test("dur(0) still allows instants", t => {
@@ -186,12 +248,12 @@ test("dur(0) still allows instants", t => {
     const seq = vm.add(Seq((x, t) => t * (x ?? 2), Delay(23)).dur(0), 17);
     vm.clock.seek(18);
     t.equal(seq.value, 34, "seq value");
-    t.equal(seq.timeout, 17, "timed out");
+    t.equal(seq.t, 17, "timed out");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
-* 17/1 Instant
-* 17/2 Delay(23)
-* 17/3 [end] Seq`, "dump matches");
+* 17/0 Instant
+* 17/1 Delay(23)
+* 17/2 [end] Seq`, "dump matches");
 });
 
         </script>
