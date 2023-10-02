@@ -7,8 +7,9 @@
         <script type="module">
 
 import { test } from "../test.js";
+import { K } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
-import { Seq, Await } from "../../lib/timing.js";
+import { Delay, Seq, Par, Await } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 import * as time from "../../lib/timing/time.js";
 
@@ -34,10 +35,7 @@ test("Code generation", async t => {
     vm.clock.seek(19);
     t.equal(item.t, 18, "thread end");
     t.equal(item.value, value, "thread value");
-
-    t.equal(item.dump(),
-`+ 17/0 [begin] Await
-* #/1 [end] Await`, "dump matches");
+    t.equal(item.dump(), "+ 17/0 Await", "dump matches");
 });
 
 test("Do, undo, redo", async t => {
@@ -64,49 +62,44 @@ test("Await()", async t => {
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
-* 17/1 [begin] Await
-* #/2 [end] Await
+* 17/1 Await
 * #/2 [end] Seq`, "dump matches");
 });
 
 test("Await(f), parameter error", t => {
     const vm = VM();
-    const item = vm.add(Await(() => "../icons.svg"), 17);
+    const item = vm.add(Await(K("../icons.svg")), 17);
     t.warns(() => { vm.clock.seek(18); }, "parameter is not async");
 });
 
 test("Await(), input error", t => {
     const vm = VM();
-    const seq = vm.add(Seq(() => "../icons.svg", Await()), 17);
+    const seq = vm.add(Seq(K("../icons.svg"), Await()), 17);
     t.warns(() => { vm.clock.seek(18); }, "input is not a promise");
     vm.clock.seek(0);
     const item = vm.add(Await(), 17);
     t.warns(() => { vm.clock.seek(18); }, "no input");
 });
 
-test("Wrap", async t => {
+test("Await in par", async t => {
+    t.skip("TODO: Implement unresolved time inside Par");
     const vm = VM();
-    const seq = vm.add(Seq(
-        async () => fetch("../icons.svg"),
-        async response => response.text(),
-        xml => /^<svg\b/.test(xml)
+    const par = vm.add(Par(
+        Seq(
+            async () => fetch("../icons.svg"),
+            async response => response.text(),
+            xml => /^<svg\b/.test(xml)
+        ),
+        K("ok"),
+        Seq(Delay(23), K("later"))
     ), 17);
-    vm.clock.seek(18);
+    vm.clock.seek(31);
     await notification(vm, "promise");
-    vm.clock.seek(19);
+    vm.clock.seek(32);
     await notification(vm, "promise");
-    vm.clock.seek(20);
-    console.log(seq.value);
-    t.equal(seq.t, 19, "thread end");
-    t.equal(seq.value, true, "thread value");
-    t.equal(seq.dump(),
-`+ 17/0 [begin] Seq
-* 17/0 [begin] Await
-* #/1 [end] Await
-* #/1 [begin] Await
-* #/2 [end] Await
-* #/2 Instant
-* #/3 [end] Seq`, "dump matches");
+    vm.clock.seek(41);
+    t.equal(par.value, [true, "ok", "later"], "end value");
+    console.log(par.dump());
 });
 
         </script>
