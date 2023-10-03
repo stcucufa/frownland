@@ -54,7 +54,7 @@ test("Infinite delay", t => {
     t.equal(delay.dump(), "+ 17/0 Delay(∞)", "dump matches");
 });
 
-test("Error: zero duration delay", t => {
+test("Error: invalid duration delay", t => {
     t.throws(() => { VM().add(Delay("zero"), 17); }, "invalid delay duration");
     t.throws(() => { VM().add(Delay(0), 17); }, "zero duration");
     t.throws(() => { VM().add(Delay(-Infinity), 17); }, "negative duration");
