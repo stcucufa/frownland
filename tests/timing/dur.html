@@ -145,7 +145,7 @@ test("Par.dur() with unresolved duration, cutoff", t => {
     ), 17);
     vm.clock.seek(37);
     t.equal(par.value, 7, "Par (input) value");
-    t.equal(par.t, 36, "timed out");
+    t.equal(par.t, 17, "thread is suspended");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
