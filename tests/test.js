@@ -344,7 +344,7 @@ function initFrame(tests) {
                         this.failures > 0 || missing > 0 ? "fail" :
                         this.timeouts > 0 ? "timeout" :
                         this.skips > 0 ? "skip" : "pass"
-                    )} Done, ${escapeMarkup(reports.join(", "))}.`;
+                    )} Done, ${escapeMarkup(reports.join(", ") || "no test")}.`;
                 } else {
                     status.querySelector("span.results").innerHTML = `${icon(
                         this.failures > 0 || missing > 0 ? "fail" :
@@ -534,7 +534,7 @@ function initTest() {
                 this.failures > 0 ? "fail" :
                 this.timeouts > 0 ? "timeout" :
                 this.skips > 0 ? "skip" : "pass",
-                `Done, ${reports.join(", ")}.`
+                `Done, ${reports.join(", ") || "no test"}.`
             );
             notify(window, "tests:done", { handler: this });
         },
