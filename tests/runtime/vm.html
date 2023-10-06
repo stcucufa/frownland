@@ -15,6 +15,13 @@ test("VM()", t => {
     t.equal(vm.clock.now, 0, "clock starts at 0");
 });
 
+test("Add an item", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Delay(23), () => "ok"));
+    vm.clock.seek(24);
+    t.equal(seq.value, "ok", "item value");
+});
+
 test("Threading", t => {
     const vm = VM();
     const out = [];
