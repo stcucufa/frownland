@@ -9,7 +9,7 @@
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
-import { Instant, Delay, Seq, Par, Repeat, Await } from "../../lib/timing.js";
+import { Instant, Delay, Seq, Par, Repeat, Await, Event } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 import { Timeout } from "../../lib/runtime/vm.js";
 
@@ -264,6 +264,8 @@ test("Do, undo, redo: Await.dur(), cutoff", async t => {
     t.equal(item.value, Timeout, "do");
     vm.clock.seek(0);
     t.undefined(item.value, "undo");
+    vm.clock.seek(31);
+    await notification(vm, "promise");
     vm.clock.seek(37);
     t.equal(item.value, Timeout, "redo");
 });
@@ -289,6 +291,57 @@ test("Do, undo, redo: Await.dur(), extended", async t => {
     t.undefined(item.value, "undo");
     vm.clock.seek(41);
     t.equal(item.value, value, "redo");
+});
+
+test("Event.dur(), cutoff", async t => {
+    const vm = VM();
+    const item = vm.add(Event(window, "synth").dur(19), 17);
+    vm.clock.seek(37);
+    t.equal(item.t, 36, "thread end");
+    t.equal(item.value, Timeout, "thread value");
+    const e = new window.Event("synth");
+    window.dispatchEvent(e);
+    vm.clock.seek(38);
+    t.equal(item.t, 36, "thread still ended");
+    t.equal(item.value, Timeout, "thread still timed out");
+});
+
+test("Do, undo, redo: Event.dur(), cutoff", async t => {
+    const vm = VM();
+    const item = vm.add(Event(window, "synth").dur(19), 17);
+    vm.clock.seek(37);
+    t.equal(item.value, Timeout, "do");
+    vm.clock.seek(0);
+    t.undefined(item.value, "undo");
+    vm.clock.seek(31);
+    window.dispatchEvent(new window.Event("synth"));
+    vm.clock.seek(37);
+    t.equal(item.value, Timeout, "redo");
+});
+
+test("Event.dur(), extended", t => {
+    const vm = VM();
+    const item = vm.add(Event(window, "synth").dur(23), 17);
+    vm.clock.seek(31);
+    const e = new window.Event("synth");
+    window.dispatchEvent(e);
+    vm.clock.seek(41);
+    t.equal(item.t, 40, "thread end");
+    t.equal(item.value, e, "thread value");
+});
+
+test("Do, undo, redo: Event.dur(), extended", t => {
+    const vm = VM();
+    const item = vm.add(Event(window, "synth").dur(23), 17);
+    vm.clock.seek(31);
+    const e = new window.Event("synth");
+    window.dispatchEvent(e);
+    vm.clock.seek(41);
+    t.equal(item.value, e, "do");
+    vm.clock.seek(0);
+    t.undefined(item.value, "undo");
+    vm.clock.seek(41);
+    t.equal(item.value, e, "redo");
 });
 
 test("dur(0) still allows instants", t => {
