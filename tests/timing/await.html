@@ -98,7 +98,6 @@ test("Await in par", async t => {
     await notification(vm, "promise");
     vm.clock.seek(41);
     t.equal(par.value, [true, "ok", "later"], "end value");
-    console.log(par.dump());
 });
 
         </script>

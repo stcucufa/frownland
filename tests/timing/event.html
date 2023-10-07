@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Event</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { Delay, Par, Seq, Event } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+import * as time from "../../lib/timing/time.js";
+
+test("Event(target, type)", t => {
+    const event = Event(window, "synth");
+    t.equal(event.tag, "Event", "show");
+    t.equal(event.target, window, "target");
+    t.equal(event.type, "synth", "type");
+});
+
+test("Code generation", t => {
+    const vm = VM();
+    const event = vm.add(Event(window, "synth"), 17);
+    vm.clock.seek(18);
+    t.equal(vm.t, 17, "current vm time");
+    t.equal(event.begin, 17, "thread begin");
+    t.equal(event.end, time.unresolved, "unresolved thread end");
+    t.equal(event.t, 17, "thread progress");
+    t.undefined(event.value, "no value yet");
+
+    const e = new window.Event("synth");
+    window.dispatchEvent(e);
+    vm.clock.seek(19);
+    t.equal(event.t, 18, "thread end");
+    t.equal(event.value, e, "thread value");
+    t.equal(e.defaultPrevented, false, "default not prevented");
+    t.equal(event.dump(), "+ 17/0 Event(synth)", "dump matches");
+});
+
+test("Do, undo, redo", t => {
+    const vm = VM();
+    const item = vm.add(Event(window, "synth"), 17);
+    vm.clock.seek(18);
+
+    const e = new window.Event("synth");
+    window.dispatchEvent(e);
+    vm.clock.seek(19);
+    t.equal(item.value, e, "do");
+    vm.clock.seek(0);
+    t.undefined(item.value, "undo");
+    vm.clock.seek(19);
+    t.equal(item.value, e, "redo");
+});
+
+test("Event in par", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Seq(
+            Event(window, "synth"),
+            event => event.target
+        ),
+        K("ok"),
+        Seq(Delay(23), K("later"))
+    ), 17);
+    vm.clock.seek(31);
+    const e = new window.Event("synth");
+    window.dispatchEvent(e);
+    vm.clock.seek(41);
+    t.equal(par.value, [window, "ok", "later"], "end value");
+});
+
+test("Event().preventDefault()", t => {
+    const vm = VM();
+    const event = vm.add(Event(window, "synth").preventDefault(), 17);
+    vm.clock.seek(18);
+    const e = new window.Event("synth", { cancelable: true });
+    window.dispatchEvent(e);
+    vm.clock.seek(19);
+    t.equal(event.value, e, "thread value");
+    t.equal(e.defaultPrevented, true, "default prevented");
+});
+
+test("Event().stopImmediatePropagation()", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Event(window, "synth").stopImmediatePropagation(),
+        Event(window, "synth"),
+    ), 17);
+    vm.clock.seek(18);
+    document.body.dispatchEvent(new window.Event("synth", { bubbles: true }));
+    vm.clock.seek(19);
+    t.undefined(par.value, "thread value");
+});
+
+test("Event bubbling", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Event(document.body, "synth"),
+        Event(window, "synth"),
+    ), 17);
+    vm.clock.seek(18);
+    const e = new window.Event("synth", { bubbles: true });
+    document.body.dispatchEvent(e);
+    vm.clock.seek(19);
+    t.equal(par.value, [e, e], "thread value");
+});
+
+test("Event().stopPropagation()", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Event(document.body, "synth").stopPropagation(),
+        Event(window, "synth"),
+    ), 17);
+    vm.clock.seek(18);
+    document.body.dispatchEvent(new window.Event("synth", { bubbles: true }));
+    vm.clock.seek(19);
+    t.undefined(par.value, "thread value");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
