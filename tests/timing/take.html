@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Take modifier</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { Instant, Delay, Seq, Par, Repeat, Await, Event } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+import { Timeout } from "../../lib/runtime/vm.js";
+
+test("Par.take(n = ∞)", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(), 17);
+    vm.clock.seek(41);
+    t.equal(par.value, [34, undefined], "values in dynamic order");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 Delay(23)
+    + 17/0 Instant
+* 40/4 [end] Par`, "dump matches");
+});
+
+test("Do, undo, redo: Par.take(n = ∞)", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(), 17);
+    vm.clock.seek(41);
+    t.equal(par.value, [34, undefined], "do: values in dynamic order");
+    vm.clock.seek(0);
+    t.undefined(par.value, "undo");
+    vm.clock.seek(41);
+    t.equal(par.value, [34, undefined], "redo");
+});
+
+test("Par.take(0)", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(0), 17);
+    vm.clock.seek(18);
+    t.equal(par.value, [], "empty list (no child value)");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+* 17/1 [end] Par`, "dump matches");
+});
+
+test("Do, undo, redo: Par.take(0)", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(0), 17);
+    vm.clock.seek(18);
+    t.equal(par.value, [], "do: empty list (no child value)");
+    vm.clock.seek(0);
+    t.undefined(par.value, "undo");
+    vm.clock.seek(18);
+    t.equal(par.value, [], "redo");
+});
+
+test("Par.take(n), n = #children", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(2), 17);
+    vm.clock.seek(41);
+    t.equal(par.value, [34, undefined], "values in dynamic order");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 Delay(23)
+    + 17/0 Instant
+* 40/4 [end] Par`, "dump matches");
+});
+
+test("Do, undo, redo: Par.take(n), n = #children", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(2), 17);
+    vm.clock.seek(41);
+    t.equal(par.value, [34, undefined], "values in dynamic order");
+    vm.clock.seek(0);
+    t.undefined(par.value, "undo");
+    vm.clock.seek(41);
+    t.equal(par.value, [34, undefined], "redo");
+});
+
+test("Par.take(n), n < #children", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Seq(Delay(23), K("second")),
+        Seq(Delay(19), K("first")),
+        Seq(Delay(31), K("wrong!"))
+    ).take(2), 17);
+    vm.clock.seek(41);
+    t.equal(par.value, ["first", "second"], "values in dynamic order");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 [begin] Seq
+    * 17/0 Delay(23)
+    * 40/1 Instant
+    * 40/2 [end] Seq
+    + 17/0 [begin] Seq
+    * 17/0 Delay(19)
+    * 36/1 Instant
+    * 36/2 [end] Seq
+    + 17/0 [begin] Seq
+    * 17/0 Delay(31)
+    * 48/1 Instant
+    * 48/2 [end] Seq
+* #/5 [end] Par`, "dump matches");
+});
+
+test("Do, undo, redo: Par.take(n), n < #children", t => {
+    const vm = VM();
+    const par = vm.add(Par(
+        Seq(Delay(23), K("second")),
+        Seq(Delay(19), K("first")),
+        Seq(Delay(31), K("wrong!"))
+    ).take(2), 17);
+    vm.clock.seek(41);
+    t.equal(par.value, ["first", "second"], "do: values in dynamic order");
+    vm.clock.seek(0);
+    t.undefined(par.value, "undo");
+    vm.clock.seek(41);
+    t.equal(par.value, ["first", "second"], "redo");
+});
+
+test("Par.take(n), n < #children, children finish in zero duration.", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(1), 17);
+    vm.clock.seek(18);
+    t.equal(par.value, [34], "values in dynamic order");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
+    + 17/0 Delay(23)
+    + 17/0 Instant
+* #/4 [end] Par`, "dump matches");
+});
+
+test("Do, undo, redo: Par.take(n), n < #children, children finish in zero duration.", t => {
+    const vm = VM();
+    const par = vm.add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(1), 17);
+    vm.clock.seek(18);
+    t.equal(par.value, [34], "do: values in dynamic order");
+    vm.clock.seek(0);
+    t.undefined(par.value, "undo");
+    vm.clock.seek(18);
+    t.equal(par.value, [34], "redo");
+});
+
+test("Par.take(n), n > #children", t => {
+    t.throws(() => {
+        const par = VM().add(Par(Delay(23), (x, t) => t * (x ?? 2)).take(3), 17);
+    }, "Not enough children to take");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
