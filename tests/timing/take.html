@@ -150,6 +150,56 @@ test("Par.take(n), n > #children", t => {
     }, "Not enough children to take");
 });
 
+test("Par.take().dur(), cutoff", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        Par(
+            Seq(Delay(23), K("second")),
+            Seq(Delay(31), () => { throw Error("!!!"); }),
+            Seq(Delay(19), K("first"))
+        ).take(2).dur(13),
+        (xs, t) => [t, ...xs]
+    ), 17);
+    vm.clock.seek(37);
+    t.equal(seq.value, [36, 34], "seq value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 [begin] Par
+    + 17/0 [begin] Seq
+    * 17/0 Delay(23)
+    * 40/1 Instant
+    * 40/2 [end] Seq
+    + 17/0 [begin] Seq
+    * 17/0 Delay(31)
+    * 48/1 Instant
+    * 48/2 [end] Seq
+    + 17/0 [begin] Seq
+    * 17/0 Delay(19)
+    * 30/1 Instant
+    * 30/2 [end] Seq
+* 30/5 [end] Par
+* 30/5 Instant
+* 30/6 [end] Seq`, "dump matches");
+});
+
+test("Par.take().dur(), cutoff", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        Par(Delay(23), (x, t) => t * (x ?? 2)).take(1).dur(19),
+        (xs, t) => [t, ...xs]
+    ), 17);
+    vm.clock.seek(37);
+    t.equal(seq.value, [36, 34], "seq value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 [begin] Par
+    + 17/0 Delay(23)
+    + 17/0 Instant
+* 36/4 [end] Par
+* 36/4 Instant
+* 36/5 [end] Seq`, "dump matches");
+});
+
         </script>
     </head>
     <body>
