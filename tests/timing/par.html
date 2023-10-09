@@ -127,6 +127,20 @@ test("Nesting", t => {
 * 48/4 [end] Par`, "dump matches");
 });
 
+test("Do, undo, redo: Nesting", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        Par(Seq(Delay(19), K("A")), Seq(Delay(23), K("B"))),
+        Par(Seq(Delay(31), K("x")), Seq(Delay(23), K("y")), Seq(Delay(19), K("z"))),
+    ), 17);
+    vm.clock.seek(72);
+    t.equal(seq.value, ["x", "y", "z"], "Do");
+    vm.clock.seek(51);
+    t.equal(seq.value, ["A", "B"], "Undo (partially)");
+    vm.clock.seek(72);
+    t.equal(seq.value, ["x", "y", "z"], "Redo");
+});
+
 test("Unresolved duration within Par", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Par(Delay(), (x, t) => t * (x ?? 2))), 17);
