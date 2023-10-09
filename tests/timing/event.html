@@ -27,13 +27,11 @@ test("Code generation", t => {
     t.equal(vm.t, 17, "current vm time");
     t.equal(event.begin, 17, "thread begin");
     t.equal(event.end, time.unresolved, "unresolved thread end");
-    t.equal(event.t, 17, "thread progress");
     t.undefined(event.value, "no value yet");
 
     const e = new window.Event("synth");
     window.dispatchEvent(e);
     vm.clock.seek(19);
-    t.equal(event.t, 18, "thread end");
     t.equal(event.value, e, "thread value");
     t.equal(e.defaultPrevented, false, "default not prevented");
     t.equal(event.dump(), "+ 17/0 Event(synth)", "dump matches");

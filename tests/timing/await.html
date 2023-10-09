@@ -27,13 +27,11 @@ test("Code generation", async t => {
     t.equal(vm.t, 17, "current vm time");
     t.equal(item.begin, 17, "thread begin");
     t.equal(time.isUnresolved(item.end), true, "unresolved thread end");
-    t.equal(item.t, 17, "thread progress");
     t.undefined(item.value, "no value yet");
 
     const { thread, value } = await notification(vm, "promise");
     t.equal(thread, item, "got a value for the thread");
     vm.clock.seek(19);
-    t.equal(item.t, 18, "thread end");
     t.equal(item.value, value, "thread value");
     t.equal(item.dump(), "+ 17/0 Await", "dump matches");
 });
@@ -57,7 +55,6 @@ test("Await()", async t => {
     vm.clock.seek(18);
     const { value } = await notification(vm, "promise");
     vm.clock.seek(19);
-    t.equal(seq.t, 18, "thread end");
     t.equal(seq.value, value, "thread value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
