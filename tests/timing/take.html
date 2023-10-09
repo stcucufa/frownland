@@ -152,19 +152,16 @@ test("Par.take(n), n > #children", t => {
 
 test("Par.take().dur(), cutoff", t => {
     const vm = VM();
-    const seq = vm.add(Seq(
-        Par(
-            Seq(Delay(23), K("second")),
-            Seq(Delay(31), () => { throw Error("!!!"); }),
-            Seq(Delay(19), K("first"))
-        ).take(2).dur(13),
-        (xs, t) => [t, ...xs]
-    ), 17);
-    vm.clock.seek(37);
-    t.equal(seq.value, [36, 34], "seq value");
-    t.equal(seq.dump(),
-`+ 17/0 [begin] Seq
-* 17/0 [begin] Par
+    const par = vm.add(Par(
+        Seq(Delay(23), K("second")),
+        Seq(Delay(31), () => { throw Error("!!!"); }),
+        Seq(Delay(19), K("first"))
+    ).take(2).dur(13), 17);
+    vm.clock.seek(41);
+    t.equal(par.end, 30, "cutoff time");
+    t.undefined(par.value, "no value");
+    t.equal(par.dump(),
+`+ 17/0 [begin] Par
     + 17/0 [begin] Seq
     * 17/0 Delay(23)
     * 40/1 Instant
@@ -175,17 +172,15 @@ test("Par.take().dur(), cutoff", t => {
     * 48/2 [end] Seq
     + 17/0 [begin] Seq
     * 17/0 Delay(19)
-    * 30/1 Instant
-    * 30/2 [end] Seq
-* 30/5 [end] Par
-* 30/5 Instant
-* 30/6 [end] Seq`, "dump matches");
+    * 36/1 Instant
+    * 36/2 [end] Seq
+* 30/5 [end] Par`, "dump matches");
 });
 
-test("Par.take().dur(), cutoff", t => {
+test("Par.take().dur(), extend zero dur", t => {
     const vm = VM();
     const seq = vm.add(Seq(
-        Par(Delay(23), (x, t) => t * (x ?? 2)).take(1).dur(19),
+        Par(Delay(23), (x, t) => t * (x ?? 2), () => { throw Error("Augh!") }).take(1).dur(19),
         (xs, t) => [t, ...xs]
     ), 17);
     vm.clock.seek(37);
@@ -195,9 +190,24 @@ test("Par.take().dur(), cutoff", t => {
 * 17/0 [begin] Par
     + 17/0 Delay(23)
     + 17/0 Instant
-* 36/4 [end] Par
-* 36/4 Instant
-* 36/5 [end] Seq`, "dump matches");
+    + 17/0 Instant
+* 36/5 [end] Par
+* 36/5 Instant
+* 36/6 [end] Seq`, "dump matches");
+});
+
+test("Par.take().dur(), extend non-zero dur", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        Par(
+            Seq(Delay(23), K("second")),
+            Seq(Delay(31), () => { throw Error("Augh!"); }),
+            Seq(Delay(19), K("first"))
+        ).take(2).dur(53),
+        (xs, t) => [t, ...xs]
+    ), 17);
+    vm.clock.seek(71);
+    t.equal(seq.value, [70, "first", "second"], "thread value");
 });
 
         </script>
