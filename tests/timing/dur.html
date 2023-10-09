@@ -52,7 +52,7 @@ test("Seq.dur() with unresolved duration, cutoff", t => {
 
 test("Do, undo, redo: Seq.dur() with unresolved duration, cutoff", t => {
     const vm = VM();
-    const seq = vm.add(Seq(K(23), Delay()).dur(19), 17);
+    const seq = vm.add(Seq(K(23), Delay(), () => { throw Error("Augh!"); }).dur(19), 17);
     vm.clock.seek(37);
     t.equal(seq.end, 36, "do: timed out");
     vm.clock.seek(0);
@@ -141,7 +141,7 @@ test("Par.dur() with unresolved duration, cutoff", t => {
     const par = vm.add(Seq(
         K(7),
         Par(
-            Seq(K(23), Delay(), (x, t) => t * (x ?? 2)),
+            Seq(K(23), Delay(), () => { throw Error("Augh!"); }),
             (x, t) => t + (x ?? 3)
         ).dur(19)
     ), 17);
