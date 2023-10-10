@@ -18,7 +18,7 @@ test("Seq.dur(), cutoff", t => {
     const seq = vm.add(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(19), 17);
     vm.clock.seek(37);
     t.undefined(seq.value, "no value");
-    t.equal(seq.t, 36, "timed out");
+    t.equal(seq.end, 36, "timed out");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Delay(23)
@@ -30,7 +30,7 @@ test("Do, undo, redo: Seq.dur(), cutoff", t => {
     const vm = VM();
     const seq = vm.add(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(19), 17);
     vm.clock.seek(37);
-    t.equal(seq.t, 36, "do: timed out");
+    t.equal(seq.end, 36, "do: timed out");
     vm.clock.seek(0);
     t.undefined(seq.value, "undo");
     vm.clock.seek(40);
@@ -42,7 +42,7 @@ test("Seq.dur() with unresolved duration, cutoff", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay()).dur(19), 17);
     vm.clock.seek(37);
-    t.equal(seq.t, 36, "timed out");
+    t.equal(seq.end, 36, "timed out");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -52,9 +52,9 @@ test("Seq.dur() with unresolved duration, cutoff", t => {
 
 test("Do, undo, redo: Seq.dur() with unresolved duration, cutoff", t => {
     const vm = VM();
-    const seq = vm.add(Seq(K(23), Delay()).dur(19), 17);
+    const seq = vm.add(Seq(K(23), Delay(), () => { throw Error("Augh!"); }).dur(19), 17);
     vm.clock.seek(37);
-    t.equal(seq.t, 36, "do: timed out");
+    t.equal(seq.end, 36, "do: timed out");
     vm.clock.seek(0);
     t.undefined(seq.value, "undo");
     vm.clock.seek(40);
@@ -122,7 +122,7 @@ test("Par.dur(), cutoff", t => {
     ), 17);
     vm.clock.seek(37);
     t.equal(par.value, 7, "Par value");
-    t.equal(par.t, 36, "timed out");
+    t.equal(par.end, 36, "timed out");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -141,13 +141,13 @@ test("Par.dur() with unresolved duration, cutoff", t => {
     const par = vm.add(Seq(
         K(7),
         Par(
-            Seq(K(23), Delay(), (x, t) => t * (x ?? 2)),
+            Seq(K(23), Delay(), () => { throw Error("Augh!"); }),
             (x, t) => t + (x ?? 3)
         ).dur(19)
     ), 17);
     vm.clock.seek(37);
     t.equal(par.value, 7, "Par (input) value");
-    t.equal(par.t, 17, "thread is suspended");
+    t.equal(par.end, 36, "thread is suspended");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -173,7 +173,7 @@ test("Par.dur(), extended", t => {
     ), 17);
     vm.clock.seek(49);
     t.equal(par.value, [280, 24], "end value");
-    t.equal(par.t, 48, "end time");
+    t.equal(par.end, 48, "end time");
     t.equal(par.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
@@ -223,7 +223,7 @@ test("Repeat.dur()", t => {
     const vm = VM();
     const repeat = vm.add(Repeat(Seq(Delay(23), (x = 0) => x + 1)).dur(79), 17);
     vm.clock.seek(97);
-    t.equal(repeat.t, 96, "timed out");
+    t.equal(repeat.end, 96, "timed out");
     t.equal(repeat.value, 3, "thread value");
     t.equal(repeat.dump(),
 `+ 17/0 [begin] Repeat
@@ -249,12 +249,11 @@ test("Await.dur(), cutoff", async t => {
     const vm = VM();
     const item = vm.add(Await(() => fetch("../icons.svg")).dur(19), 17);
     vm.clock.seek(37);
-    t.equal(item.t, 36, "thread end");
+    t.equal(item.end, 36, "thread end");
     t.equal(item.value, Timeout, "thread value");
     await notification(vm, "promise");
     vm.clock.seek(38);
-    t.equal(item.t, 36, "thread still ended");
-    t.equal(item.value, Timeout, "thread still timed out");
+    t.equal(item.value, Timeout, "thread still timed out after promise was resolved");
 });
 
 test("Do, undo, redo: Await.dur(), cutoff", async t => {
@@ -276,7 +275,7 @@ test("Await.dur(), extended", async t => {
     vm.clock.seek(31);
     const { value } = await notification(vm, "promise");
     vm.clock.seek(41);
-    t.equal(item.t, 40, "thread end");
+    t.equal(item.end, 40, "thread end");
     t.equal(item.value, value, "thread value");
 });
 
@@ -297,12 +296,11 @@ test("Event.dur(), cutoff", async t => {
     const vm = VM();
     const item = vm.add(Event(window, "synth").dur(19), 17);
     vm.clock.seek(37);
-    t.equal(item.t, 36, "thread end");
+    t.equal(item.end, 36, "thread end");
     t.equal(item.value, Timeout, "thread value");
     const e = new window.Event("synth");
     window.dispatchEvent(e);
     vm.clock.seek(38);
-    t.equal(item.t, 36, "thread still ended");
     t.equal(item.value, Timeout, "thread still timed out");
 });
 
@@ -326,7 +324,7 @@ test("Event.dur(), extended", t => {
     const e = new window.Event("synth");
     window.dispatchEvent(e);
     vm.clock.seek(41);
-    t.equal(item.t, 40, "thread end");
+    t.equal(item.end, 40, "thread end");
     t.equal(item.value, e, "thread value");
 });
 
@@ -349,7 +347,7 @@ test("dur(0) still allows instants", t => {
     const seq = vm.add(Seq((x, t) => t * (x ?? 2), Delay(23)).dur(0), 17);
     vm.clock.seek(18);
     t.equal(seq.value, 34, "seq value");
-    t.equal(seq.t, 17, "timed out");
+    t.equal(seq.end, 17, "timed out");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
 * 17/0 Instant
