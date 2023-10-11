@@ -13,7 +13,7 @@ import {
     imagePromise, isAsync, isEmpty, isIterable, isNumber, isObject, K, mapdel,
     mapit, mod, nop, normalizeWhitespace, parseTime, partition, push, range,
     remove, removeChildren, reverse, safe, shuffle, sign, single, snd,
-    timecount, timeout, todo, typeOf, zip, zipo
+    timecount, timeout, todo, typeOf, values, zip, zipo
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -499,6 +499,13 @@ test("typeOf(x)", t => {
     t.equal(typeOf(new Set()), "set");
     t.equal(typeof({ foo: 1, bar: 2 }), "object");
     t.equal(typeOf(Object.create(x => x + 1)), "object/function", "function object");
+});
+
+test("values(object)", t => {
+    t.equal(values({}), [], "no values");
+    t.equal(values({ foo: 1, bar: 2 }).toSorted(), [1, 2], "simple object");
+    t.equal(values(Object.assign(Object.create({ foo: 1, bar: 2 }), { bar: "fum", baz: 3 })).toSorted(),
+        [1, 3, "fum"], "complex object");
 });
 
 test("zip(xs, ys)", t => {
