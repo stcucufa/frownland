@@ -224,6 +224,17 @@ test("Indefinite duration within Par", t => {
 * ∞/5 [end] Seq`, "dump matches");
 });
 
+test("Named par", t => {
+    const vm = VM();
+    const par = vm.add(Par({
+        foo: Seq(Delay(23), K(1)),
+        bar: K(2)
+    }), 17);
+    vm.clock.seek(41);
+    t.equal(par.end, 40, "end time");
+    t.equal(par.value, { foo: 1, bar: 2 }, "end value");
+});
+
         </script>
     </head>
     <body>
