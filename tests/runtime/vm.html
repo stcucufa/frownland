@@ -7,6 +7,7 @@
         <script type="module">
 
 import { test } from "../test.js";
+import { notification } from "../../lib/events.js";
 import { VM } from "../../lib/runtime.js";
 import { Par, Seq, Delay } from "../../lib/timing.js";
 
@@ -15,11 +16,25 @@ test("VM()", t => {
     t.equal(vm.clock.now, 0, "clock starts at 0");
 });
 
+test("Start the clock", async t => {
+    const vm = VM().start();
+    await notification(vm.clock, "update");
+    t.above(vm.clock.now, 0, `clock started (${vm.clock.now})`);
+});
+
 test("Add an item", t => {
     const vm = VM();
-    const seq = vm.add(Seq(Delay(23), () => "ok"));
+    const at = value => (_, t) => `${value}@${t}`;
+    const a = vm.add(Seq(Delay(23), at("A")));
     vm.clock.seek(24);
-    t.equal(seq.value, "ok", "item value");
+    t.equal(a.value, "A@23", "a added at 0 (now)");
+    const b = vm.add(Seq(Delay(19), at("B")));
+    const c = vm.add(Seq(Delay(31), at("C")), 29);
+    // d should not be added
+    const d = vm.add(() => { throw Error("Augh!"); }, 17);
+    vm.clock.seek(61);
+    t.equal(b.value, "B@43", "b added at 24 (new now)");
+    t.equal(c.value, "C@60", "c added at 29 (future)");
 });
 
 test("Threading", t => {
