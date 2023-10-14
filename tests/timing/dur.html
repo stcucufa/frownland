@@ -61,6 +61,17 @@ test("Do, undo, redo: Seq.dur() with unresolved duration, cutoff", t => {
     t.equal(vm.t, 17, "redo");
 });
 
+test("Seq.dur(): cutoff within thread", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        Seq(K("ok"), Delay(31), K("ko")).dur(23),
+        x => x + "!"
+    ), 17);
+    vm.clock.seek(49);
+    console.log(seq.dump());
+    t.equal(seq.value, "ok!", "inner seq was cut off");
+});
+
 test("Seq.dur(), extended", t => {
     const vm = VM();
     const seq = vm.add(Seq(Seq(Delay(23), (x, t) => t * (x ?? 2)).dur(31), (x, t) => x + t), 17);
