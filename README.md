@@ -1,9 +1,9 @@
 > My SMIL is stuck  
 > I cannot go back to your frownland
 
-Frownland is an experimental library for the development of Web applications with rich user interactions.
-This is very much a work in progress and this document will evolve to reflect changes in design and
-implementation. RIYL [SMIL](https://www.w3.org/AudioVideo/), [synchronous programming
+Frownland is an **experimental** library for the development of Web applications with rich user
+interactions. This is very much a work in progress and this document will evolve to reflect changes in
+design and implementation. RIYL [SMIL](https://www.w3.org/AudioVideo/), [synchronous programming
 languages](https://en.wikipedia.org/wiki/Synchronous_programming_language), or [Captain
 Beefheart](https://www.youtube.com/watch?v=-FhhB9teHqU).
 
@@ -31,7 +31,7 @@ complex Web applications.
 
 ### In a nutshell
 
-The model is based on primitive items for computation (transforming an input value into an output value),
+The model is based on primitive _items_ for computation (transforming an input value into an output value),
 waiting (letting time pass), and synchronization:
 
 * `Instant(f)` and `Await(f)` are primitives for function calls that end instantly or after some amount of
@@ -40,7 +40,8 @@ time;
 an event to occur;
 * `Par(x, y, ...)` begins _x_, _y_, ... at the same instant and ends when all items have ended (so they run
 in parallel);
-* `Seq(x, y, ...)` begins _x_, then _y_ when _x_ ends, and ends when the last item ends;
+* `Seq(x, y, ...)` begins _x_, then _y_ when _x_ ends, and ends when the last item ends (so they run in
+sequence);
 * `Repeat(x)` begins _x_, then _x_ again when it ends, and so on, forever.
 
 While containers (Par, Seq and Repeat) seem to introduce a tree structure, the same item can be referenced
@@ -49,9 +50,9 @@ acyclic (but Repeat allows repetition without the need for cycles).
 
 Additionally, *modifiers* allow controlling how long an item can actually run:
 
-* `dur()` sets the duration of the item, cutting it off or timing out when setting a duration shorter than
+* `dur(d)` sets the duration of the item, cutting it off or timing out when setting a duration shorter than
 the natural duration of the item, or extending if further;
-* `take()` sets the duration of a container by limiting the number of iterations (for Repeat) or items
+* `take(n)` sets the duration of a container by limiting the number of iterations (for Repeat) or items
 (for Par), and ending when the expected number of items have ended.
 
 The execution model is based on a scheduler and a clock that maps the physical time that the user and the
@@ -100,11 +101,11 @@ outermost Seq again, and waiting for the buttons to be pressed.
 
 This example can easily be extended: a new C button can be simply added to the innermost Par to turn this
 example into ABCRO; the system could reset automatically after some amount of time by changing duration of
-the Seq and/or the R event to finite amounts of time.
+the Seq and/or the R event to finite amounts of time, and so on.
 
 ## Goals
 
-The main goals of Frownland, broadly speaking are:
+The main goals of Frownland, broadly speaking, are:
 
 * Simplifying the development of complex user interactions and the synchronization of multiple asynchronous
 processes.
@@ -132,8 +133,9 @@ Finally, the project can grow in different directions.
 needs to be a core aspect of the solution proposed here.
 * Common usage patterns can be extracted into more and more complex items (such as First, which is derived
 from Par), and common Web APIs can be wrapped into new items to build a convenient standard library.
-* The declarative nature of the model makes it suitable for defining the timing graph visually, making
-an approachable interaction design tool for non-programmers.
+* The declarative nature of the model makes it suitable for defining the timing graph visually, enabling
+the creation of approachable interaction authoring tools for designers or artists who may not consider
+themselves programmers.
 * The model itself, if successful, can be ported outside of the Web environment, as the basic concepts are
 not specific to Web development and could apply in other contexts (_e.g._ for concurrent programming).
 
