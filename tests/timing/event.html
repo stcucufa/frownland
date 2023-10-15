@@ -117,6 +117,22 @@ test("Event().stopPropagation()", t => {
     t.undefined(par.value, "thread value");
 });
 
+test("Event within a longer thread", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Seq(Event(window, "synth"), K("ok")).dur(23), x => x + "!"), 17);
+    vm.clock.seek(31);
+    window.dispatchEvent(new window.Event("synth"));
+    vm.clock.seek(41);
+    t.equal(seq.value, "ok!", "end value");
+});
+
+test("Event within a longer thread (timeout)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Seq(K("ko"), Event(window, "synth"), K("ok")).dur(23), x => x + "!"), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, "ko!", "end value");
+});
+
         </script>
     </head>
     <body>
