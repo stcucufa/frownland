@@ -9,7 +9,7 @@
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
-import { Delay, Par, Seq, Event } from "../../lib/timing.js";
+import { Delay, Par, Seq, Repeat, Event } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 import * as time from "../../lib/timing/time.js";
 
@@ -139,6 +139,40 @@ test("Event within a longer thread (timeout)", t => {
     const seq = vm.add(Seq(Seq(K("ko"), Event(window, "synth"), K("ok")).dur(23), x => x + "!"), 17);
     vm.clock.seek(41);
     t.equal(seq.value, "ko!", "end value");
+    vm.shutdown();
+});
+
+test("Event within a longer thread", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Seq(Event(window, "synth"), K("ok")).dur(23), x => x + "!"), 17);
+    vm.clock.seek(31);
+    window.dispatchEvent(new window.Event("synth"));
+    vm.clock.seek(41);
+    t.equal(seq.value, "ok!", "end value");
+    vm.shutdown();
+});
+
+test("Event within a longer thread (timeout)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(Seq(K("ko"), Event(window, "synth"), K("ok")).dur(23), x => x + "!"), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, "ko!", "end value");
+    vm.shutdown();
+});
+
+test("Repeated event", t => {
+    const vm = VM();
+    const ts = [];
+    const repeat = vm.add(Repeat(Seq(Event(window, "synth"), (_, t) => { ts.push(t); })), 17);
+
+    vm.clock.seek(23);
+    window.dispatchEvent(new window.Event("synth"));
+    vm.clock.seek(31);
+    t.equal(ts, [23], "first occurrence");
+    window.dispatchEvent(new window.Event("synth"));
+    vm.clock.seek(32);
+    t.equal(ts, [23, 31], "second occurrence");
+
     vm.shutdown();
 });
 
