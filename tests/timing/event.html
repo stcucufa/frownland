@@ -35,6 +35,7 @@ test("Code generation", t => {
     t.equal(event.value, e, "thread value");
     t.equal(e.defaultPrevented, false, "default not prevented");
     t.equal(event.dump(), "+ 17/0 Event(synth)", "dump matches");
+    vm.shutdown();
 });
 
 test("Do, undo, redo", t => {
@@ -50,6 +51,7 @@ test("Do, undo, redo", t => {
     t.undefined(item.value, "undo");
     vm.clock.seek(19);
     t.equal(item.value, e, "redo");
+    vm.shutdown();
 });
 
 test("Event in par", t => {
@@ -67,6 +69,7 @@ test("Event in par", t => {
     window.dispatchEvent(e);
     vm.clock.seek(41);
     t.equal(par.value, [window, "ok", "later"], "end value");
+    vm.shutdown();
 });
 
 test("Event().preventDefault()", t => {
@@ -78,6 +81,7 @@ test("Event().preventDefault()", t => {
     vm.clock.seek(19);
     t.equal(event.value, e, "thread value");
     t.equal(e.defaultPrevented, true, "default prevented");
+    vm.shutdown();
 });
 
 test("Event().stopImmediatePropagation()", t => {
@@ -90,6 +94,7 @@ test("Event().stopImmediatePropagation()", t => {
     document.body.dispatchEvent(new window.Event("synth", { bubbles: true }));
     vm.clock.seek(19);
     t.undefined(par.value, "thread value");
+    vm.shutdown();
 });
 
 test("Event bubbling", t => {
@@ -103,6 +108,7 @@ test("Event bubbling", t => {
     document.body.dispatchEvent(e);
     vm.clock.seek(19);
     t.equal(par.value, [e, e], "thread value");
+    vm.shutdown();
 });
 
 test("Event().stopPropagation()", t => {
@@ -115,6 +121,7 @@ test("Event().stopPropagation()", t => {
     document.body.dispatchEvent(new window.Event("synth", { bubbles: true }));
     vm.clock.seek(19);
     t.undefined(par.value, "thread value");
+    vm.shutdown();
 });
 
 test("Event within a longer thread", t => {
@@ -124,6 +131,7 @@ test("Event within a longer thread", t => {
     window.dispatchEvent(new window.Event("synth"));
     vm.clock.seek(41);
     t.equal(seq.value, "ok!", "end value");
+    vm.shutdown();
 });
 
 test("Event within a longer thread (timeout)", t => {
@@ -131,6 +139,7 @@ test("Event within a longer thread (timeout)", t => {
     const seq = vm.add(Seq(Seq(K("ko"), Event(window, "synth"), K("ok")).dur(23), x => x + "!"), 17);
     vm.clock.seek(41);
     t.equal(seq.value, "ko!", "end value");
+    vm.shutdown();
 });
 
         </script>
