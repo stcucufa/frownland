@@ -10,7 +10,7 @@ import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
 import { Delay, Par, Seq, Repeat, Event } from "../../lib/timing.js";
-import { VM } from "../../lib/runtime.js";
+import { Timeout, VM } from "../../lib/runtime/vm.js";
 import * as time from "../../lib/timing/time.js";
 
 test("Event(target, type)", t => {
@@ -164,7 +164,6 @@ test("Repeated event", t => {
     const vm = VM();
     const ts = [];
     const repeat = vm.add(Repeat(Seq(Event(window, "synth"), (_, t) => { ts.push(t); })), 17);
-
     vm.clock.seek(23);
     window.dispatchEvent(new window.Event("synth"));
     vm.clock.seek(31);
@@ -172,7 +171,21 @@ test("Repeated event", t => {
     window.dispatchEvent(new window.Event("synth"));
     vm.clock.seek(32);
     t.equal(ts, [23, 31], "second occurrence");
+    vm.shutdown();
+});
 
+test("Repeated event (with timeout)", t => {
+    const vm = VM();
+    const ts = [];
+    const repeat = vm.add(Repeat(Seq(Event(window, "synth").dur(19), (input, t) => {
+        ts.push([input === Timeout ? "ko" : "ok", t]);
+    })), 17);
+    vm.clock.seek(23);
+    window.dispatchEvent(new window.Event("synth"));
+    vm.clock.seek(71);
+    window.dispatchEvent(new window.Event("synth"));
+    vm.clock.seek(75);
+    t.equal(ts, [["ok", 36], ["ko", 55], ["ok", 74]], "two occurrences, one timeout");
     vm.shutdown();
 });
 
