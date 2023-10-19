@@ -7,6 +7,7 @@
         <script type="module">
 
 import { test } from "../test.js";
+import { K } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
 import { VM } from "../../lib/runtime.js";
 import { Par, Seq, Delay } from "../../lib/timing.js";
@@ -47,6 +48,16 @@ test("Threading", t => {
     ), 17);
     vm.clock.seek(35);
     t.equal(out, ["A", "B", "C", "D", "E", "F"], "execution order");
+});
+
+test("Queuing order", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        Par(K("ok"), Seq(Delay(23), K("later"))),
+        vs => vs.join(" ")
+    ), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, "ok later", "end value");
 });
 
         </script>
