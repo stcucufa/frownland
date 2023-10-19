@@ -8,7 +8,7 @@
 
 import { test } from "../test.js";
 import { K, typeOf } from "../../lib/util.js";
-import { Instant, Delay, Seq, Par } from "../../lib/timing.js";
+import { Instant, Delay, Seq, Par, Repeat } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Par(...children)", t => {
@@ -233,6 +233,15 @@ test("Named par", t => {
     vm.clock.seek(41);
     t.equal(par.end, 40, "end time");
     t.equal(par.value, { foo: 1, bar: 2 }, "end value");
+});
+
+test("Repeat par", t => {
+    const vm = VM();
+    const repeat = vm.add(Repeat(Par((x = [0, 0]) => {
+        return x[0] + 1;
+    }, Delay(23))), 17);
+    vm.clock.seek(111);
+    t.equal(repeat.value, [4, undefined], "end value after 4 repeats");
 });
 
         </script>
