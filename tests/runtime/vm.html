@@ -50,10 +50,20 @@ test("Threading", t => {
     t.equal(out, ["A", "B", "C", "D", "E", "F"], "execution order");
 });
 
-test("Queuing order", t => {
+test("Topological sort", t => {
     const vm = VM();
     const seq = vm.add(Seq(
         Par(K("ok"), Seq(Delay(23), K("later"))),
+        vs => vs.join(" ")
+    ), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, "ok later", "end value");
+});
+
+test("Thread cutoff", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        Par(K("ok"), Seq(Delay(23), K("later"))).dur(23),
         vs => vs.join(" ")
     ), 17);
     vm.clock.seek(41);
