@@ -63,11 +63,11 @@ test("Topological sort", t => {
 test("Thread cutoff", t => {
     const vm = VM();
     const seq = vm.add(Seq(
-        Par(K("ok"), Seq(Delay(23), K("later"))).dur(23),
+        Par(K("ok"), Seq(K(23), Delay())),
         vs => vs.join(" ")
-    ), 17);
+    ).dur(23), 17);
     vm.clock.seek(41);
-    t.equal(seq.value, "ok later", "end value");
+    t.equal(seq.value, "ok 23", "end value");
 });
 
         </script>
