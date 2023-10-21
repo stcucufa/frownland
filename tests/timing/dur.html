@@ -121,6 +121,25 @@ test("Do, undo, redo: Seq.dur(), extended", t => {
     t.equal(seq.value, 80, "redo");
 });
 
+test("Seq.dur(), extended (indefinite duration)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        Seq(Delay(23), (x, t) => t * (x ?? 2)).dur("∞"),
+        (x, t) => { throw Error(`Augh! ${x}, t=${t}`); }
+    ), 17);
+    vm.clock.seek(1e51);
+    t.equal(seq.value, 80, "seq value");
+    t.equal(seq.end, Infinity, "end time");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 [begin] Seq
+* 17/0 Delay(23)
+* 40/1 Instant
+* ∞/3 [end] Seq
+* ∞/3 Instant
+* ∞/4 [end] Seq`, "dump matches");
+});
+
 test("Seq.dur() with unresolved duration, extended", t => {
     const vm = VM();
     const seq = vm.add(Seq(K(23), Delay()).dur(31), 17);

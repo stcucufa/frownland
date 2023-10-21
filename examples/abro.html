@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ABRO</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="examples.css"/>
+        <style>
+
+.O {
+    padding: .5rem 1rem;
+    background-color: #f8f9f0;
+}
+
+.on {
+    background-color: lime;
+}
+
+        </style>
+        <script type="module">
+
+import { VM } from "../lib/runtime.js";
+import { Repeat, Seq, First, Par, Event } from "../lib/timing.js";
+
+const A = document.querySelector(`button[name="A"]`);
+const B = document.querySelector(`button[name="B"]`);
+const R = document.querySelector(`button[name="R"]`);
+const O = document.querySelector(".O");
+
+// ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
+
+VM().start().add(
+    Repeat(Seq(
+        () => { O.classList.remove("on"); },
+        First(
+            Seq(
+                Par(Event(A, "click"), Event(B, "click")),
+                () => { O.classList.add("on"); }
+            ).dur("∞"),
+            Event(R, "click")
+        )
+    ))
+);
+
+// ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+        <h1>ABRO</h1>
+        <p>This is adapted from the “Hello, world!” example of the synchronous programming language
+        <a href="https://en.wikipedia.org/wiki/Esterel">Esterel</a>: ”The output O should occur when
+        inputs A and B have both arrived. The R input should restart this behavior.”</p>
+        <p>
+            <button type="button" name="A">A</button>
+            <button type="button" name="B">B</button>
+            <button type="button" name="R">R</button>
+            <span class="O">O</div>
+        </p>
+        <script src="source.js" type="module"></script>
+    </body>
+</html>

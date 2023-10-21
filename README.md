@@ -143,4 +143,5 @@ not specific to Web development and could apply in other contexts (_e.g._ for co
 
 To run the test suite, start a Web server in the frownland repo (_e.g._, `python3 -m http.server 7890`),
 then visit [http://localhost:7890/tests/index.html](http://localhost:7890/tests/index.html) in a Web
-browser. The test page should give an indication of the current implementation status.
+browser. The test page should give an indication of the current implementation status and point to
+examples.
