@@ -22,7 +22,7 @@ test("Par.take(n = ∞)", t => {
 `+ 17/0 [begin] Par
     + 17/0 Delay(23)
     + 17/0 Instant
-* 40/4 [end] Par`, "dump matches");
+* 40/5 [end] Par`, "dump matches");
 });
 
 test("Do, undo, redo: Par.take(n = ∞)", t => {
@@ -43,7 +43,7 @@ test("Par.take(0)", t => {
     t.equal(par.value, [], "empty list (no child value)");
     t.equal(par.dump(),
 `+ 17/0 [begin] Par
-* 17/1 [end] Par`, "dump matches");
+* 17/2 [end] Par`, "dump matches");
 });
 
 test("Do, undo, redo: Par.take(0)", t => {
@@ -66,7 +66,7 @@ test("Par.take(n), n = #children", t => {
 `+ 17/0 [begin] Par
     + 17/0 Delay(23)
     + 17/0 Instant
-* 40/4 [end] Par`, "dump matches");
+* 40/5 [end] Par`, "dump matches");
 });
 
 test("Do, undo, redo: Par.take(n), n = #children", t => {
@@ -103,7 +103,7 @@ test("Par.take(n), n < #children", t => {
     * 17/0 Delay(31)
     * 48/1 Instant
     * 48/2 [end] Seq
-* #/5 [end] Par`, "dump matches");
+* #/6 [end] Par`, "dump matches");
 });
 
 test("Do, undo, redo: Par.take(n), n < #children", t => {
@@ -130,7 +130,7 @@ test("Par.take(n), n < #children, children finish in zero duration.", t => {
 `+ 17/0 [begin] Par
     + 17/0 Delay(23)
     + 17/0 Instant
-* #/4 [end] Par`, "dump matches");
+* #/5 [end] Par`, "dump matches");
 });
 
 test("Do, undo, redo: Par.take(n), n < #children, children finish in zero duration.", t => {
@@ -174,7 +174,7 @@ test("Par.take().dur(), cutoff", t => {
     * 17/0 Delay(19)
     * 36/1 Instant
     * 36/2 [end] Seq
-* 30/5 [end] Par`, "dump matches");
+* 30/6 [end] Par`, "dump matches");
 });
 
 test("Par.take().dur(), extend zero dur", t => {
@@ -191,9 +191,9 @@ test("Par.take().dur(), extend zero dur", t => {
     + 17/0 Delay(23)
     + 17/0 Instant
     + 17/0 Instant
-* 36/5 [end] Par
-* 36/5 Instant
-* 36/6 [end] Seq`, "dump matches");
+* 36/6 [end] Par
+* 36/6 Instant
+* 36/7 [end] Seq`, "dump matches");
 });
 
 test("Par.take().dur(), extend non-zero dur", t => {
