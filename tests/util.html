@@ -9,10 +9,10 @@
 import { test } from "./test.js";
 import {
     add, addBy, assign, assoc, assoco, clamp, clockTime, create, cycle, del,
-    escapeMarkup, extend, filterit, flip, foldit, fold1, get, html, I,
+    escapeMarkup, everyof, extend, filterit, flip, foldit, fold1, get, html, I,
     imagePromise, isAsync, isEmpty, isIterable, isNumber, isObject, K, mapdel,
     mapit, mod, nop, normalizeWhitespace, parseTime, partition, push, range,
-    remove, removeChildren, reverse, safe, shuffle, sign, single, snd,
+    remove, removeChildren, reverse, safe, shuffle, sign, single, snd, someof,
     timecount, timeout, todo, typeOf, values, zip, zipo
 } from "../lib/util.js";
 
@@ -139,6 +139,17 @@ test("del(object, key)", t => {
 test("escapeMarkup(string)", t => {
     t.equal(escapeMarkup("foo"), "foo", "no markup");
     t.equal(escapeMarkup("<a && b>"), "&lt;a &amp;&amp; b&gt;", "some markup");
+});
+
+test("everyof(it, p, that)", t => {
+    t.equal(everyof(new Set(), x => x % 2 === 0), true, "empty set");
+    t.equal(everyof(new Set([2, 4, 6, 8, 10]), x => x % 2 === 0), true, "all even numbers");
+    t.equal(everyof(new Set([2, 4, 7, 8, 10]), x => x % 2 === 0), false, "not all even numbers");
+    t.equal(everyof(new Set([1, 3, 5, 7, 9]), x => x % 2 === 0), false, "no even number");
+    const lookup = { one: 1, two: 2, three: 3, four: 4 };
+    t.equal(everyof(new Set(["two", "four"]), function(x) {
+        return this[x] % 2 === 0;
+    }, lookup), true, "this");
 });
 
 test("extend(object, ...properties)", t => {
@@ -450,6 +461,17 @@ test("single(x)", t => {
 
 test("snd(x, y)", t => {
     t.equal(snd("one", "two"), "two");
+});
+
+test("someof(it, p, that)", t => {
+    t.equal(someof(new Set(), x => x % 2 === 0), false, "empty set");
+    t.equal(someof(new Set([2, 4, 6, 8, 10]), x => x % 2 === 0), true, "all even numbers");
+    t.equal(someof(new Set([2, 4, 7, 8, 10]), x => x % 2 === 0), true, "not all even numbers");
+    t.equal(someof(new Set([1, 3, 5, 7, 9]), x => x % 2 === 0), false, "no even number");
+    const lookup = { one: 1, two: 2, three: 3, four: 4 };
+    t.equal(someof(new Set(["two", "four"]), function(x) {
+        return this[x] % 2 === 0;
+    }, lookup), true, "this");
 });
 
 test("timecount(t)", t => {
