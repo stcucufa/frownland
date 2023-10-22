@@ -8,7 +8,7 @@
 
 import { test } from "../test.js";
 import { K, typeOf } from "../../lib/util.js";
-import { Instant, Delay, Seq, Par } from "../../lib/timing.js";
+import { Instant, Delay, Seq, Par, Repeat } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Par(...children)", t => {
@@ -26,7 +26,7 @@ test("Empty par", t => {
     t.equal(par.begin, 17, "begin time");
     t.equal(par.end, 17, "end time");
     t.equal(par.value, [], "end value");
-    t.equal(par.dump(), "+ 17/0 [begin] Par\n* 17/1 [end] Par", "dump matches");
+    t.equal(par.dump(), "+ 17/0 [begin] Par\n* 17/2 [end] Par", "dump matches");
 });
 
 test("Non-empty, zero duration par", t => {
@@ -39,7 +39,7 @@ test("Non-empty, zero duration par", t => {
 `+ 17/0 [begin] Par
     + 17/0 Instant
     + 17/0 Instant
-* 17/4 [end] Par`, "dump matches");
+* 17/5 [end] Par`, "dump matches");
 });
 
 test("Do, undo, redo (zero duration)", t => {
@@ -69,7 +69,7 @@ test("Non-empty, non-zero duration par", t => {
     * 40/1 Instant
     * 40/2 [end] Seq
     + 17/0 Instant
-* 40/4 [end] Par`, "dump matches");
+* 40/5 [end] Par`, "dump matches");
 });
 
 test("Do, undo, redo (non-zero duration)", t => {
@@ -107,8 +107,8 @@ test("Input value", t => {
     * 40/1 Instant
     * 40/2 [end] Seq
     + 17/0 Instant
-* 40/5 [end] Par
-* 40/5 [end] Seq`, "dump matches");
+* 40/6 [end] Par
+* 40/6 [end] Seq`, "dump matches");
 });
 
 test("Nesting", t => {
@@ -123,8 +123,8 @@ test("Nesting", t => {
     + 17/0 [begin] Par
         + 17/0 Delay(31)
         + 17/0 Delay(19)
-    * 48/4 [end] Par
-* 48/4 [end] Par`, "dump matches");
+    * 48/5 [end] Par
+* 48/5 [end] Par`, "dump matches");
 });
 
 test("Do, undo, redo: Nesting", t => {
@@ -152,8 +152,8 @@ test("Unresolved duration within Par", t => {
 * 17/1 [begin] Par
     + 17/0 Delay()
     + 17/0 Instant
-* #/5 [end] Par
-* #/5 [end] Seq`, "dump matches");
+* #/6 [end] Par
+* #/6 [end] Seq`, "dump matches");
 });
 
 test("Do, undo, redo (unresolved duration within Par)", t => {
@@ -185,7 +185,7 @@ test("Unresolved durations within Par", t => {
     * 17/0 Instant
     * 17/1 Delay()
     * #/2 [end] Seq
-* #/4 [end] Par`, "dump matches");
+* #/5 [end] Par`, "dump matches");
 });
 
 test("Unresolved durations within Par (other way around)", t => {
@@ -206,7 +206,7 @@ test("Unresolved durations within Par (other way around)", t => {
     * 17/0 Instant
     * 17/1 Delay()
     * #/2 [end] Seq
-* #/4 [end] Par`, "dump matches");
+* #/5 [end] Par`, "dump matches");
 });
 
 test("Indefinite duration within Par", t => {
@@ -219,9 +219,9 @@ test("Indefinite duration within Par", t => {
 * 17/0 [begin] Par
     + 17/0 Delay(∞)
     + 17/0 Delay(23)
-* ∞/4 [end] Par
-* ∞/4 Instant
-* ∞/5 [end] Seq`, "dump matches");
+* ∞/5 [end] Par
+* ∞/5 Instant
+* ∞/6 [end] Seq`, "dump matches");
 });
 
 test("Named par", t => {
@@ -233,6 +233,16 @@ test("Named par", t => {
     vm.clock.seek(41);
     t.equal(par.end, 40, "end time");
     t.equal(par.value, { foo: 1, bar: 2 }, "end value");
+});
+
+test("Repeat par", t => {
+    const vm = VM();
+    const repeat = vm.add(Seq(
+        K([0]),
+        Repeat(Par(([x]) => x + 1, Delay(23)))
+    ), 17);
+    vm.clock.seek(111);
+    t.equal(repeat.value, [4, [3, [2, [1, [0]]]]], "end value after 4 repeats");
 });
 
         </script>
