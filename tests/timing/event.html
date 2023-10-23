@@ -122,7 +122,7 @@ test("Event in par with take (ends after all resolved children)", t => {
     const e = new window.Event("synth");
     window.dispatchEvent(e);
     vm.clock.seek(52);
-    t.equal(par.end, 40, "end time");
+    t.equal(par.effectiveEnd, 40, "effective end time");
     t.equal(par.value, ["ok", "later"], "end value");
     vm.shutdown();
 });

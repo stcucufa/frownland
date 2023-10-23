@@ -24,7 +24,7 @@ test(`First with dur("∞")`, t => {
     vm.clock.seek(41);
     window.dispatchEvent(new window.Event("B"));
     vm.clock.seek(42);
-    t.equal(seq.end, 41, "end time");
+    t.equal(seq.effectiveEnd, 41, "effective end time");
     t.equal(seq.value, "B", "end value");
     t.equal(seq.dump(),
 `+ 17/0 [begin] Seq
@@ -56,7 +56,7 @@ test("ABRO (one iteration)", t => {
     t.undefined(seq.value, "seq still has no value");
     window.dispatchEvent(new window.Event("R"));
     vm.clock.seek(52);
-    t.equal(seq.end, 51, "thread ended");
+    t.equal(seq.effectiveEnd, 51, "thread ended");
     t.equal(seq.value, "ok", "with expected value");
     vm.shutdown();
 });
@@ -80,7 +80,7 @@ test("ABRO (one iteration, other way around)", t => {
     t.undefined(seq.value, "seq still has no value");
     window.dispatchEvent(new window.Event("R"));
     vm.clock.seek(52);
-    t.equal(seq.end, 51, "thread ended");
+    t.equal(seq.effectiveEnd, 51, "thread ended");
     t.equal(seq.value, "ok", "with expected value");
     vm.shutdown();
 });
