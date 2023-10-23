@@ -9,7 +9,7 @@
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
 import { notification } from "../../lib/events.js";
-import { Delay, Par, Seq, Repeat, Event } from "../../lib/timing.js";
+import { Delay, Par, First, Seq, Repeat, Event } from "../../lib/timing.js";
 import { Timeout, VM } from "../../lib/runtime/vm.js";
 import * as time from "../../lib/timing/time.js";
 
@@ -241,6 +241,23 @@ test("Repeated event (with timeout)", t => {
     window.dispatchEvent(new window.Event("synth"));
     vm.clock.seek(75);
     t.equal(ts, [["ok", 36], ["ko", 55], ["ok", 74]], "two occurrences, one timeout");
+    vm.shutdown();
+});
+
+test("Event cancellation when thread is cancelled", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        First(
+            Seq(Event(window, "A"), () => "ok"),
+            Seq(Event(window, "B"), () => { throw new Error("Augh!"); })
+        ),
+        x => x + "!"
+    ), 17);
+    vm.clock.seek(23);
+    window.dispatchEvent(new window.Event("A"));
+    vm.clock.seek(31);
+    t.equal(seq.value, "ok!", "end value");
+    window.dispatchEvent(new window.Event("B"));
     vm.shutdown();
 });
 

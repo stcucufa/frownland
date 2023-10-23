@@ -71,21 +71,16 @@ by setting its class to `on`.
 
 ```javascript
 VM().start().add(
-    Repeat(
-        Seq(
-            First(
-                Seq(
-                    Par(
-                        Event(A, "click"),
-                        Event(B, "click")
-                    ),
-                    () => { O.classList.add("on"); }
-                ).dur("∞"),
-                Event(R, "click")
-            ),
-            () => { O.classList.remove("on"); },
+    Repeat(Seq(
+        () => { O.classList.remove("on"); },
+        First(
+            Seq(
+                Par(Event(A, "click"), Event(B, "click")),
+                () => { O.classList.add("on"); }
+            ).dur("∞"),
+            Event(R, "click")
         )
-    )
+    ))
 );
 ```
 

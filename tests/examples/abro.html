@@ -85,34 +85,40 @@ test("ABRO (one iteration, other way around)", t => {
     vm.shutdown();
 });
 
-test("With repetition", t => {
+test("Full ABRO", t => {
     const vm = VM();
-    const Os = [];
-    const iterations = [];
-    vm.add(Repeat(
-        Seq(
+    const times = [];
+    let o = false;
+    const abro = vm.add(
+        Repeat(Seq(
+            () => { o = false; },
             First(
-                Seq(Par(Event(window, "A"), Event(window, "B")), (_, t) => { Os.push(t); }).dur("∞"),
+                Seq(
+                    Par(Event(window, "A"), Event(window, "B")),
+                    (_, t) => {
+                        o = true;
+                        times.push(t);
+                    }
+                ).dur("∞"),
                 Event(window, "R")
-            ),
-            (_, t) => { iterations.push(t); }
-        )
-    ), 17);
-    vm.clock.seek(31);
-    window.dispatchEvent(new window.Event("B"));
-    vm.clock.seek(41);
-    window.dispatchEvent(new window.Event("A"));
-    vm.clock.seek(51);
-    t.equal(Os, [41], "O first occurrence");
-    t.equal(iterations, [], "no R yet");
-    window.dispatchEvent(new window.Event("R"));
-    vm.clock.seek(52);
-    t.equal(iterations, [51], "first iteration done");
-    vm.clock.seek(61);
-    window.dispatchEvent(new window.Event("R"));
-    vm.clock.seek(62);
-    t.equal(Os, [41], "still one O");
-    t.equal(iterations, [51, 61], "two resets");
+            )
+        )), 17
+    );
+
+    const events = [
+        [19, "R"],
+        [23, "A"], [29, "B"], [31, "R"],
+        [41, "B"], [47, "B"], [51, "A"], [57, "A"], [61, "R"],
+        [71, "R"],
+        [73, "R"],
+        [81, "A"], [82, "A"], [83, "A"], [84, "R"],
+        [85, "B"], [86, "B"], [87, "A"], [88, "R"],
+    ];
+    for (const [time, event] of events) {
+        vm.clock.seek(time);
+        window.dispatchEvent(new window.Event(event));
+    }
+    t.equal(times, [29, 51, 87], "O times are correct");
     vm.shutdown();
 });
 
