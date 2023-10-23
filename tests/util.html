@@ -457,6 +457,9 @@ test("single(x)", t => {
     t.equal(single([17]), 17, "return the single value");
     t.throws(() => single([]), "no value");
     t.throws(() => single([17, 23, 31]), "too many values");
+    const object = { foo: "bar" };
+    t.equal(single(Object.keys(object)), "foo", "single key from object");
+    t.equal(single(Object.values(object)), "bar", "single value from object");
 });
 
 test("snd(x, y)", t => {

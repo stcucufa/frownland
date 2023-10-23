@@ -62,6 +62,16 @@ test("First().dur()", t => {
     t.equal(seq.value, "ok!", "end value");
 });
 
+test("Named First", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        First({ ok: K("ok"), ko: () => { throw Error("Augh!"); } }),
+        x => x + "!"
+    ), 17);
+    vm.clock.seek(18);
+    t.equal(seq.value, "ok!", "end value");
+});
+
         </script>
     </head>
     <body>
