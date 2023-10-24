@@ -7,7 +7,8 @@
         <script type="module">
 
 import { test } from "../test.js";
-import { Effect } from "../../lib/timing.js";
+import { K } from "../../lib/util.js";
+import { Effect, Seq } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Effect(f)", t => {
@@ -43,6 +44,21 @@ test("Do, undo, redo (default)", t => {
     vm.clock.seek(18);
     t.undefined(effect.value, "redo (no value)");
     t.equal(acc, 3, "redo (effect)");
+});
+
+test("Do, undo, redo (default undo/redo)", t => {
+    const vm = VM();
+    let acc = 0;
+    const effect = vm.add(Effect(() => { acc += 1; }).undo().redo(), 17);
+    vm.clock.seek(18);
+    t.undefined(effect.value, "do (value)");
+    t.equal(acc, 1, "do (effect)");
+    vm.clock.seek(17);
+    t.undefined(effect.value, "undo (no value)");
+    t.equal(acc, 1, "undo (no effect)");
+    vm.clock.seek(18);
+    t.undefined(effect.value, "redo (no value)");
+    t.equal(acc, 1, "redo (no effect)");
 });
 
 test("Effect(f).undo(g)", t => {
@@ -94,6 +110,15 @@ test("Effect(f).undo(g).redo(h)", t => {
     vm.clock.seek(18);
     t.undefined(effect.value, "redo (no value)");
     t.equal(acc, ["do", "undo", "redo"], "redo (effect)");
+});
+
+test("Inside Seq", t => {
+    const vm = VM();
+    const acc = [];
+    const seq = vm.add(Seq(K("ok"), Effect(x => { acc.push(x); })), 17);
+    vm.clock.seek(18);
+    t.equal(acc, ["ok"], "effect");
+    t.equal(seq.value, "ok", "end value");
 });
 
         </script>
