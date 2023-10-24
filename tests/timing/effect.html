@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Effect</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { Effect } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+
+test("Effect(f)", t => {
+    const f = () => {};
+    const effect = Effect(f);
+    t.equal(effect.tag, "Effect", "tag");
+    t.equal(effect.f, f, "f");
+});
+
+test("Code generation", t => {
+    const vm = VM();
+    let acc = 0;
+    const effect = vm.add(Effect(() => { acc += 1; }), 17);
+    vm.clock.seek(18);
+    t.equal(vm.t, 17, "current vm time");
+    t.equal(effect.begin, 17, "thread begin");
+    t.equal(effect.end, 17, "thread end");
+    t.undefined(effect.value, "end value");
+    t.equal(acc, 1, "effect took place");
+    t.equal(effect.dump(), "+ 17/0 Effect", "dump matches");
+});
+
+test("Do, undo, redo (default)", t => {
+    const vm = VM();
+    let acc = 0;
+    const effect = vm.add(Effect(() => { acc += 1; }), 17);
+    vm.clock.seek(18);
+    t.undefined(effect.value, "do (value)");
+    t.equal(acc, 1, "do (effect)");
+    vm.clock.seek(17);
+    t.undefined(effect.value, "undo (no value)");
+    t.equal(acc, 2, "undo (effect)");
+    vm.clock.seek(18);
+    t.undefined(effect.value, "redo (no value)");
+    t.equal(acc, 3, "redo (effect)");
+});
+
+test("Effect(f).undo(g)", t => {
+    const vm = VM();
+    let acc = 0;
+    const effect = vm.add(Effect(() => { acc += 1; }).undo(() => { acc -= 1; }), 17);
+    vm.clock.seek(18);
+    t.undefined(effect.value, "do (value)");
+    t.equal(acc, 1, "do (effect)");
+    vm.clock.seek(17);
+    t.undefined(effect.value, "undo (no value)");
+    t.equal(acc, 0, "undo (effect)");
+    vm.clock.seek(18);
+    t.undefined(effect.value, "redo (no value)");
+    t.equal(acc, 1, "redo (effect)");
+});
+
+test("Effect(f).redo(g)", t => {
+    const vm = VM();
+    const acc = [];
+    const effect = vm.add(Effect(() => { acc.push("do/undo"); }).redo(() => { acc.push("redo"); }), 17);
+    vm.clock.seek(18);
+    t.undefined(effect.value, "do (value)");
+    t.equal(acc, ["do/undo"], "do (effect)");
+    vm.clock.seek(17);
+    t.undefined(effect.value, "undo (no value)");
+    t.equal(acc, ["do/undo", "do/undo"], "undo (effect)");
+    vm.clock.seek(18);
+    t.undefined(effect.value, "redo (no value)");
+    t.equal(acc, ["do/undo", "do/undo", "redo"], "redo (effect)");
+});
+
+test("Effect(f).undo(g).redo(h)", t => {
+    const vm = VM();
+    const acc = [];
+    const effect = vm.add(Effect(
+        () => { acc.push("do"); }
+    ).undo(
+        () => { acc.push("undo"); }
+    ).redo(
+        () => { acc.push("redo"); }
+    ), 17);
+    vm.clock.seek(18);
+    t.undefined(effect.value, "do (value)");
+    t.equal(acc, ["do"], "do (effect)");
+    vm.clock.seek(17);
+    t.undefined(effect.value, "undo (no value)");
+    t.equal(acc, ["do", "undo"], "undo (effect)");
+    vm.clock.seek(18);
+    t.undefined(effect.value, "redo (no value)");
+    t.equal(acc, ["do", "undo", "redo"], "redo (effect)");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
