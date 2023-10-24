@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ABRO</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { Instant, Delay, Seq, Par, First, Repeat, Await, Event } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+import { Timeout } from "../../lib/runtime/vm.js";
+
+test(`First with dur("∞")`, t => {
+    const vm = VM();
+    const seq = vm.add(Seq(
+        First(Event(window, "A").dur("∞"), Event(window, "B")),
+        event => event.type
+    ), 17);
+    vm.clock.seek(31);
+    window.dispatchEvent(new window.Event("A"));
+    vm.clock.seek(41);
+    window.dispatchEvent(new window.Event("B"));
+    vm.clock.seek(42);
+    t.equal(seq.effectiveEnd, 41, "effective end time");
+    t.equal(seq.value, "B", "end value");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 [begin] First
+    + 17/0 Event(A)
+    + 17/0 Event(B)
+* #/5 [end] First
+* #/5 Instant
+* #/6 [end] Seq`, "dump matches");
+    vm.shutdown();
+});
+
+test("ABRO (one iteration)", t => {
+    const vm = VM();
+    let O = false;
+    const seq = vm.add(Seq(
+        First(
+            Seq(Par(Event(window, "A"), Event(window, "B")), (_, t) => { O = t; }).dur("∞"),
+            Event(window, "R")
+        ),
+        K("ok")
+    ), 17);
+    vm.clock.seek(31);
+    window.dispatchEvent(new window.Event("A"));
+    vm.clock.seek(41);
+    window.dispatchEvent(new window.Event("B"));
+    vm.clock.seek(51);
+    t.equal(O, 41, "O occurred at the expected time");
+    t.undefined(seq.value, "seq still has no value");
+    window.dispatchEvent(new window.Event("R"));
+    vm.clock.seek(52);
+    t.equal(seq.effectiveEnd, 51, "thread ended");
+    t.equal(seq.value, "ok", "with expected value");
+    vm.shutdown();
+});
+
+test("ABRO (one iteration, other way around)", t => {
+    const vm = VM();
+    let O = false;
+    const seq = vm.add(Seq(
+        First(
+            Seq(Par(Event(window, "A"), Event(window, "B")), (_, t) => { O = t; }).dur("∞"),
+            Event(window, "R")
+        ),
+        K("ok")
+    ), 17);
+    vm.clock.seek(31);
+    window.dispatchEvent(new window.Event("B"));
+    vm.clock.seek(41);
+    window.dispatchEvent(new window.Event("A"));
+    vm.clock.seek(51);
+    t.equal(O, 41, "O occurred at the expected time");
+    t.undefined(seq.value, "seq still has no value");
+    window.dispatchEvent(new window.Event("R"));
+    vm.clock.seek(52);
+    t.equal(seq.effectiveEnd, 51, "thread ended");
+    t.equal(seq.value, "ok", "with expected value");
+    vm.shutdown();
+});
+
+test("Full ABRO", t => {
+    const vm = VM();
+    const times = [];
+    let o = false;
+    const abro = vm.add(
+        Repeat(Seq(
+            () => { o = false; },
+            First(
+                Seq(
+                    Par(Event(window, "A"), Event(window, "B")),
+                    (_, t) => {
+                        o = true;
+                        times.push(t);
+                    }
+                ).dur("∞"),
+                Event(window, "R")
+            )
+        )), 17
+    );
+
+    const events = [
+        [19, "R"],
+        [23, "A"], [29, "B"], [31, "R"],
+        [41, "B"], [47, "B"], [51, "A"], [57, "A"], [61, "R"],
+        [71, "R"],
+        [73, "R"],
+        [81, "A"], [82, "A"], [83, "A"], [84, "R"],
+        [85, "B"], [86, "B"], [87, "A"], [88, "R"],
+    ];
+    for (const [time, event] of events) {
+        vm.clock.seek(time);
+        window.dispatchEvent(new window.Event(event));
+    }
+    t.equal(times, [29, 51, 87], "O times are correct");
+    vm.shutdown();
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
