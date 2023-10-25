@@ -34,8 +34,8 @@ complex Web applications.
 The model is based on primitive _items_ for computation (transforming an input value into an output value),
 waiting (letting time pass), and synchronization:
 
-* `Instant(f)` and `Await(f)` are primitives for function calls that end instantly or after some amount of
-time;
+* `Instant(f)`, `Effect(f)` and `Await(f)` are primitives for function calls that end instantly (with a
+value for Instant or an effect for Effect), or after some amount of time (for Await);
 * `Delay(d)` and `Event(target, type)` are primitives to wait for a specific amout of time to pass or for
 an event to occur;
 * `Par(x, y, ...)` begins _x_, _y_, ... at the same instant and ends when all items have ended (so they run
