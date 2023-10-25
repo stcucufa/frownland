@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Counter</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { Repeat, Seq, Gate, Event, Effect } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+
+test("Counter", t => {
+    const vm = VM();
+    let text = "";
+    const counter = vm.add(Repeat(
+        Seq(
+            Gate(Event(window, "button"), (x = 0) => x + 1),
+            Effect(x => { text = x.toString(); })
+        )
+    ), 17);
+    vm.clock.seek(31);
+    window.dispatchEvent(new window.Event("button"));
+    vm.clock.seek(41);
+    t.equal(counter.value, 1, "count = 1");
+    t.equal(text, "1", "showing count (1)");
+    window.dispatchEvent(new window.Event("button"));
+    vm.clock.seek(51);
+    window.dispatchEvent(new window.Event("button"));
+    vm.clock.seek(61);
+    window.dispatchEvent(new window.Event("button"));
+    vm.clock.seek(71);
+    t.equal(counter.value, 4, "count = 4");
+    t.equal(text, "4", "showing count (4)");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
