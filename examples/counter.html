@@ -4,6 +4,17 @@
         <title>Counter</title>
         <meta charset="utf8">
         <link rel="stylesheet" href="examples.css"/>
+        <style>
+
+.count {
+    display: inline-block;
+    width: 2rem;
+    text-align: right;
+    background-color: #ffffcc;
+    padding: 4px;
+}
+
+        </style>
         <script type="module">
 
 import { VM } from "../lib/runtime.js";
@@ -30,6 +41,10 @@ VM().start().add(
     <body>
         <p><a href="index.html">Back</a></p>
         <h1>Counter</h1>
+        <p>This is an implementation of the <a
+            href="https://eugenkiss.github.io/7guis/tasks#counter">Counter</a>
+        task from 7GUIs. Gate and Effect allow the counter value to flow through
+        every repeat, so no extra storage is necessary.</p>
         <p>
             <button type="button">Count</button>
             <span class="count">0</span>
