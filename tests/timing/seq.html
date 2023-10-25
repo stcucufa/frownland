@@ -8,7 +8,7 @@
 
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
-import { Instant, Delay, Seq } from "../../lib/timing.js";
+import { Instant, Delay, Seq, Gate, Event } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Seq(...children)", t => {
@@ -109,6 +109,15 @@ test("Do, undo, redo (unresolved duration)", t => {
     t.undefined(seq.value, "back to the beginning");
     vm.clock.seek(41);
     t.equal(seq.value, 920, "end value for seq again");
+});
+
+test("Gate(x, y)", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Gate(Event(window, "synth"), x => x + 8)), 17);
+    vm.clock.seek(41);
+    window.dispatchEvent(new window.Event("synth"));
+    vm.clock.seek(42);
+    t.equal(seq.value, 31, "event value was ignored");
 });
 
         </script>
