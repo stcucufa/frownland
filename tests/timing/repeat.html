@@ -79,6 +79,148 @@ test("Variable delays", t => {
     t.equal(repeat.value, 435, "third iteration value");
 });
 
+test("Repeat.take(0)", t => {
+    const vm = VM();
+    const repeat = vm.add(Repeat(Delay(23), (x, t) => t * (x ?? 2)).take(0), 17);
+    vm.clock.seek(18);
+    t.undefined(repeat.value, "empty list (no child value)");
+    t.equal(repeat.dump(),
+`+ 17/0 [begin] Repeat
+* 17/0 [end] Repeat`, "dump matches");
+});
+
+test("Do, undo, redo: Repeat.take(0)", t => {
+    const vm = VM();
+    const repeat = vm.add(Repeat(Delay(23), (x, t) => t * (x ?? 2)).take(0), 17);
+    vm.clock.seek(18);
+    t.undefined(repeat.value, "do");
+    vm.clock.seek(0);
+    t.undefined(repeat.value, "undo");
+    vm.clock.seek(18);
+    t.undefined(repeat.value, "redo");
+});
+
+test("Repeat.take(), zero duration", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(1), Repeat(x => x * 2).take(3), x => x - 1), 17);
+    vm.clock.seek(18);
+    t.equal(seq.value, 7, "three iterations, minus 1");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Repeat
+* 17/2 Instant
+* 17/4 [end] Repeat
+* 17/4 Instant
+* 17/5 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo: Repeat.take(), zero duration", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(1), Repeat((x = 1) => x * 2).take(3), x => x - 1), 17);
+    vm.clock.seek(18);
+    t.equal(seq.value, 7, "do");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo");
+    vm.clock.seek(18);
+    t.equal(seq.value, 7, "redo");
+});
+
+test("Repeat.take(), non-zero duration", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(1), Repeat(Seq(Delay(23), x => x * 2)).take(3), x => x - 1), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, 2, "first iteration");
+    vm.clock.seek(64);
+    t.equal(seq.value, 4, "second iteration");
+    vm.clock.seek(87);
+    t.equal(seq.end, 86, "end time");
+    t.equal(seq.value, 7, "three iterations, minus 1");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Repeat
+* 17/2 [begin] Seq
+* 17/2 Delay(23)
+* 40/3 Instant
+* 40/4 [end] Seq
+* 86/5 [end] Repeat
+* 86/5 Instant
+* 86/6 [end] Seq`, "dump matches");
+});
+
+test("Do, undo, redo: Repeat.take(), non-zero duration", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(1), Repeat(Seq(Delay(23), x => x * 2)).take(3), x => x - 1), 17);
+    vm.clock.seek(87);
+    t.equal(seq.value, 7, "do");
+    vm.clock.seek(71);
+    t.equal(seq.value, 4, "undo (partial)");
+    vm.clock.seek(0);
+    t.undefined(seq.value, "undo (complete)");
+    vm.clock.seek(31);
+    t.equal(seq.value, 1, "redo (partial)");
+    vm.clock.seek(87);
+    t.equal(seq.value, 7, "redo (complete)");
+});
+
+test("Repeat.take(), unresolved duration", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Repeat(Seq(Delay(), x => x + 1)).take(3), x => x * 2), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, 24, "first iteration");
+    vm.clock.seek(65);
+    t.equal(seq.value, 25, "second iteration");
+    vm.clock.seek(90);
+    t.equal(seq.end, 89, "end time");
+    t.equal(seq.value, 52, "three iterations, times 2");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Repeat
+* 17/2 [begin] Seq
+* 17/2 Delay()
+* #/3 Instant
+* #/4 [end] Seq
+* #/5 [end] Repeat
+* #/5 Instant
+* #/6 [end] Seq`, "dump matches");
+});
+
+test("Repeat.take().dur(), unresolved duration, cutoff", t => {
+    t.skip();
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Repeat(Seq(Delay(), x => x + 1)).take(3).dur(51), x => x * 2), 17);
+    vm.clock.seek(41);
+    t.equal(seq.value, 24, "first iteration");
+    vm.clock.seek(65);
+    t.equal(seq.value, 25, "second iteration");
+    vm.clock.seek(90);
+    t.equal(seq.end, 68, "end time");
+    t.equal(seq.value, 50, "only two iterations, times 2");
+});
+
+test("Repeat.take().dur(), zero duration (extended)", t => {
+    t.skip();
+    const vm = VM();
+    const seq = vm.add(Seq(K(1), Repeat(x => x * 2).take(3).dur(23), x => x - 1), 17);
+    vm.clock.seek(41);
+    t.equal(seq.end, 40, "end time");
+    t.equal(seq.value, 7, "three iterations, minus 1");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Repeat
+* 17/2 Instant
+* 40/5 [end] Repeat
+* 40/5 Instant
+* 40/6 [end] Seq`, "dump matches");
+});
+
+test("Error: Repeat.take(n=∞), zero duration", t => {
+    t.throws(() => VM().add(Repeat((x = 1) => x * 2), 17).take(), "caught infinite loop");
+});
+
         </script>
     </head>
     <body>
