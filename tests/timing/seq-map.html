@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Seq/map</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Instant, Delay, Seq, Gate, Event } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+
+test("Seq.map(item)", t => {
+    const d = Delay();
+    const seq = Seq.map(d);
+    t.equal(seq.tag, "Seq/map", "tag");
+    t.equal(seq.children, [d], "children");
+});
+
+test("No input", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K([]), Seq.map(Delay())), 17);
+    vm.clock.seek(18);
+    t.equal(seq.value, [], "end value");
+    t.equal(seq.effectiveEnd, 17, "end time");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Seq/map
+* 17/3 Delay()
+* #/5 [end] Seq`, "dump matches");
+});
+
+test("Regular input", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K([23, 19, 31]), Seq.map(Delay())), 17);
+    vm.clock.seek(91);
+    t.equal(seq.value, [], "end value");
+    t.equal(seq.effectiveEnd, 90, "end time");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Seq/map
+* 17/3 Delay()
+* #/5 [end] Seq`, "dump matches");
+});
+
+test("Invalid input", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K(23), Seq.map(Delay())), 17);
+    t.warns(() => { vm.clock.seek(18); }, "not an array");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
