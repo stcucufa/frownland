@@ -163,6 +163,36 @@ test("Do, undo, redo: Seq.dur() with unresolved duration, extended", t => {
     t.equal(seq.value, 23, "redo");
 });
 
+test("Seq.map.dur(), extended", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K([23, 19, 31]), Seq.map(Delay()).dur(77)), 17);
+    vm.clock.seek(95);
+    t.equal(seq.value, [], "end value");
+    t.equal(seq.effectiveEnd, 94, "end time (extended)");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Seq/map
+* 17/4 Delay()
+* 94/7 [end] Seq/map
+* 94/7 [end] Seq`, "dump matches");
+});
+
+test("Seq.map.dur(), cutoff", t => {
+    const vm = VM();
+    const seq = vm.add(Seq(K([23, 19, 31]), Seq.map(Delay()).dur(37)), 17);
+    vm.clock.seek(55);
+    t.equal(seq.value, [], "end value");
+    t.equal(seq.effectiveEnd, 54, "end time (extended)");
+    t.equal(seq.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Seq/map
+* 17/4 Delay()
+* 54/7 [end] Seq/map
+* 54/7 [end] Seq`, "dump matches");
+});
+
 test("Par.dur(), cutoff", t => {
     const vm = VM();
     const par = vm.add(Seq(
