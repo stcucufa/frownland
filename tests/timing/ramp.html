@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ramp</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { Ramp } from "../../lib/timing.js";
+import { VM } from "../../lib/runtime.js";
+
+test("Ramp(f)", t => {
+    const f = () => {};
+    const ramp = Ramp(f);
+    t.equal(ramp.tag, "Ramp", "tag");
+    t.equal(ramp.f, f, "f");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>
