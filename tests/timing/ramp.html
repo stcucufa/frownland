@@ -8,7 +8,7 @@
 
 import { test } from "../test.js";
 import { K } from "../../lib/util.js";
-import { Ramp } from "../../lib/timing.js";
+import { Ramp, Delay, Seq, First } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Ramp(f)", t => {
@@ -37,6 +37,27 @@ test("Code generation", t => {
     t.equal(ramp.dump(),
 `+ 17/0 [begin] Ramp
 * 48/2 [end] Ramp`, "dump matches");
+});
+
+test("Ramp cancellation", t => {
+    const vm = VM();
+    const effects = [];
+    const seq = vm.add(Seq(
+        First(
+            Delay(23),
+            Ramp((p, t) => { effects.push([p, t]); }).dur(31)
+        ),
+        K("ok")
+    ), 17);
+    vm.clock.seek(23);
+    const p = (23 - 17) / 31;
+    vm.clock.seek(37);
+    const q = (37 - 17) / 31;
+    t.equal(effects, [[p, 23], [q, 37]], "ramp in progress");
+    vm.clock.seek(41);
+    t.equal(effects, [[p, 23], [q, 37]], "ramp is done");
+    t.equal(seq.value, "ok", "end value");
+    t.equal(seq.effectiveEnd, 40, "end time");
 });
 
         </script>
