@@ -7,7 +7,7 @@
         <script type="module">
 
 import { test } from "../test.js";
-import { K } from "../../lib/util.js";
+import { html, K } from "../../lib/util.js";
 import { Ramp, Delay, Seq, First } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
@@ -58,6 +58,36 @@ test("Code generation (definite duration)", t => {
 * 17/1 [begin] Ramp
 * 48/3 [end] Ramp
 * 48/3 [end] Seq`, "dump matches");
+});
+
+test("Ramp(f).set(target).property(p)", t => {
+    const vm = VM();
+    const target = { value: 0 };
+    const ramp = vm.add(Ramp((_, p) => p).dur(31).set(target).property("value"), 17);
+    vm.clock.seek(17);
+    t.equal(target.value, 0, "no ramp yet");
+    vm.clock.seek(23);
+    t.equal(target.value, (23 - 17) / 31, "ramp in progress");
+    vm.clock.seek(41);
+    t.equal(target.value, (41 - 17) / 31, "ramp still in progress");
+    vm.clock.seek(49);
+    t.equal(target.value, 1, "ramp is done");
+});
+
+test("Ramp(f).set(target).attribute(p)", t => {
+    const vm = VM();
+    const target = html("input", { type: "range", value: "0" });
+    const ramp = vm.add(Ramp(
+        (_, p) => Math.round(100 * p).toString()
+    ).dur(31).set(target).attribute("value"), 17);
+    vm.clock.seek(17);
+    t.equal(target.value, "0", "no ramp yet");
+    vm.clock.seek(23);
+    t.equal(target.value, "19", "ramp in progress");
+    vm.clock.seek(41);
+    t.equal(target.value, "77", "ramp still in progress");
+    vm.clock.seek(49);
+    t.equal(target.value, "100", "ramp is done");
 });
 
 test("Ramp cancellation", t => {
