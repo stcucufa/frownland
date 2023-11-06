@@ -10,10 +10,10 @@ import { test } from "./test.js";
 import {
     add, addBy, assign, assoc, assoco, clamp, clockTime, create, cycle, del,
     escapeMarkup, everyof, extend, filterit, flip, foldit, fold1, get, html, I,
-    imagePromise, isAsync, isEmpty, isIterable, isNumber, isObject, K, mapdel,
-    mapit, mod, nop, normalizeWhitespace, parseTime, partition, push, range,
-    remove, removeChildren, reverse, safe, shuffle, sign, single, snd, someof,
-    timecount, timeout, todo, typeOf, values, zip, zipo
+    imagePromise, intersperse, isAsync, isEmpty, isIterable, isNumber, isObject,
+    K, mapdel, mapit, mod, nop, normalizeWhitespace, parseTime, partition, push,
+    range, remove, removeChildren, reverse, safe, shuffle, sign, single, snd,
+    someof, timecount, timeout, todo, typeOf, values, zip, zipo
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -222,6 +222,12 @@ test("imagePromise(url)", async t => {
     } catch (e) {
         t.instanceof(e, Error, "missing image was caught");
     }
+});
+
+test("intersperse(xs, y)", t => {
+    t.equal(intersperse([], ","), [], "empty list");
+    t.equal(intersperse([1], ","), [1], "single element");
+    t.equal(intersperse([1, 2, 3], ","), [1, ",", 2, ",", 3], "several elements");
 });
 
 test("isAsync(f)", t => {
