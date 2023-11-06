@@ -18,25 +18,46 @@ test("Ramp(f)", t => {
     t.equal(ramp.f, f, "f");
 });
 
-test("Code generation", t => {
+test("Code generation (default indefinite duration)", t => {
     const vm = VM();
     const effects = [];
-    const ramp = vm.add(Ramp((p, t) => {
-        effects.push([p, t]);
-    }).dur(31), 17);
+    const ramp = vm.add(Ramp((_, p, t) => { effects.push([p, t]); }), 17);
     vm.clock.seek(17);
     t.equal(effects, [], "no ramp yet");
     vm.clock.seek(23);
-    const p = (23 - 17) / 31;
-    t.equal(effects, [[p, 23]], "ramp in progress");
+    t.equal(effects, [[0, 23]], "ramp in progress");
     vm.clock.seek(41);
-    const q = (41 - 17) / 31;
-    t.equal(effects, [[p, 23], [q, 41]], "ramp still in progress");
+    t.equal(effects, [[0, 23], [0, 41]], "ramp still in progress");
     vm.clock.seek(49);
-    t.equal(effects, [[p, 23], [q, 41]], "ramp is done");
+    t.equal(effects, [[0, 23], [0, 41], [0, 49]], "ramp keeps going");
     t.equal(ramp.dump(),
 `+ 17/0 [begin] Ramp
-* 48/2 [end] Ramp`, "dump matches");
+* ∞/2 [end] Ramp`, "dump matches");
+});
+
+test("Code generation (definite duration)", t => {
+    const vm = VM();
+    const effects = [];
+    const ramp = vm.add(Seq(
+        K(100),
+        Ramp((v, p, t) => { effects.push([v * p, t]); }).dur(31)
+    ), 17);
+    vm.clock.seek(17);
+    t.equal(effects, [], "no ramp yet");
+    vm.clock.seek(23);
+    const p = 100 * (23 - 17) / 31;
+    t.equal(effects, [[p, 23]], "ramp in progress");
+    vm.clock.seek(41);
+    const q = 100 * (41 - 17) / 31;
+    t.equal(effects, [[p, 23], [q, 41]], "ramp still in progress");
+    vm.clock.seek(49);
+    t.equal(effects, [[p, 23], [q, 41], [100, 48]], "ramp is done");
+    t.equal(ramp.dump(),
+`+ 17/0 [begin] Seq
+* 17/0 Instant
+* 17/1 [begin] Ramp
+* 48/3 [end] Ramp
+* 48/3 [end] Seq`, "dump matches");
 });
 
 test("Ramp cancellation", t => {
@@ -45,7 +66,7 @@ test("Ramp cancellation", t => {
     const seq = vm.add(Seq(
         First(
             Delay(23),
-            Ramp((p, t) => { effects.push([p, t]); }).dur(31)
+            Ramp((_, p, t) => { effects.push([p, t]); }).dur(31)
         ),
         K("ok")
     ), 17);
@@ -58,6 +79,15 @@ test("Ramp cancellation", t => {
     t.equal(effects, [[p, 23], [q, 37]], "ramp is done");
     t.equal(seq.value, "ok", "end value");
     t.equal(seq.effectiveEnd, 40, "end time");
+});
+
+test("Short ramp (or long interval)", t => {
+    const vm = VM();
+    const effects = [];
+    const ramp = vm.add(Ramp((_, p, t) => { effects.push([p, t]); }).dur(23), 17);
+    vm.clock.seek(41);
+    t.equal(effects, [[1, 40]], "ramp began and ended in the interval");
+    t.equal(ramp.effectiveEnd, 40, "end time");
 });
 
         </script>
