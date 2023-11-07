@@ -7,8 +7,8 @@
         <script type="module">
 
 import { test } from "../test.js";
-import { html, K } from "../../lib/util.js";
-import { Ramp, Delay, Seq, First } from "../../lib/timing.js";
+import { html, K, snd } from "../../lib/util.js";
+import { Ramp, Repeat, Delay, Seq, First } from "../../lib/timing.js";
 import { VM } from "../../lib/runtime.js";
 
 test("Ramp(f)", t => {
@@ -62,10 +62,10 @@ test("Code generation (definite duration)", t => {
 
 test("Ramp(f).set(target).property(p)", t => {
     const vm = VM();
-    const target = { value: 0 };
-    const ramp = vm.add(Ramp((_, p) => p).dur(31).set(target).property("value"), 17);
+    const target = {};
+    const ramp = vm.add(Ramp(snd).dur(31).set(target).property("value"), 17);
     vm.clock.seek(17);
-    t.equal(target.value, 0, "no ramp yet");
+    t.undefined(target.value, "no ramp yet");
     vm.clock.seek(23);
     t.equal(target.value, (23 - 17) / 31, "ramp in progress");
     vm.clock.seek(41);
@@ -118,6 +118,18 @@ test("Short ramp (or long interval)", t => {
     vm.clock.seek(41);
     t.equal(effects, [[1, 40]], "ramp began and ended in the interval");
     t.equal(ramp.effectiveEnd, 40, "end time");
+});
+
+test("Repeat(Ramp(f))", t => {
+    const vm = VM();
+    const target = {};
+    const ramp = vm.add(Repeat(Ramp(snd).dur(23).set(target).property("value")), 17);
+    vm.clock.seek(17);
+    t.undefined(target.value, "no ramp yet");
+    vm.clock.seek(31);
+    t.equal(target.value, (31 - 17) / 23, "ramp in progress (first iteration)");
+    vm.clock.seek(51);
+    t.equal(target.value, (51 - 40) / 23, "ramp in progress (second iteration)");
 });
 
         </script>
