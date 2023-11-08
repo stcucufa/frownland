@@ -1,5 +1,5 @@
 import { VM } from "../../lib/runtime.js";
-import { Ramp, Par, Seq, Repeat } from "../../lib/timing.js";
+import { Ramp, First, Seq, Repeat, Effect } from "../../lib/timing.js";
 
 const vm = VM().start();
 
@@ -18,7 +18,7 @@ window.Turtle = {
     isPenUp: true,
     velocity: 2,
 
-    draw(position) {
+    draw() {
         canvas.width = WIDTH * window.devicePixelRatio;
         canvas.height = HEIGHT * window.devicePixelRatio;
 
@@ -36,9 +36,9 @@ window.Turtle = {
             context.stroke();
         }
 
-        if (position && !this.isPenUp) {
+        if (this.drawFrom && !this.isPenUp) {
             context.beginPath();
-            context.moveTo(position[0], position[1]);
+            context.moveTo(this.drawFrom[0], this.drawFrom[1]);
             context.lineTo(this.position[0], this.position[1]);
             context.strokeStyle = this.penColor;
             context.stroke();
@@ -67,19 +67,20 @@ window.Turtle = {
     forward(d) {
         const dur = d * this.velocity;
         return Seq(
-            () => ([this.position, d * Math.cos(this.theta), d * Math.sin(this.theta)]),
-            Par(
-                Ramp(
-                    ([position, dx, dy], p) => {
-                        const nextPosition = [position[0] + p * dx, position[1] + p * dy];
-                        if (p === 1) {
-                            this.paths.push([position.slice(), nextPosition.slice(), this.color]);
-                        }
-                        return nextPosition;
+            () => {
+                this.drawFrom = this.position;
+                return [this.position, d * Math.cos(this.theta), d * Math.sin(this.theta)]
+            },
+            Ramp(
+                ([position, dx, dy], p) => {
+                    const nextPosition = [position[0] + p * dx, position[1] + p * dy];
+                    if (p === 1) {
+                        this.paths.push([position.slice(), nextPosition.slice(), this.color]);
                     }
-                ).dur(dur).set(this).property("position"),
-                Ramp(([position]) => { this.draw(position); }).dur(dur)
-            ),
+                    return nextPosition;
+                }
+            ).dur(dur).set(this).property("position"),
+            Effect(() => { delete this.drawFrom; })
         );
     },
 
@@ -91,10 +92,7 @@ window.Turtle = {
         const dur = a * this.velocity;
         return Seq(
             () => this.heading,
-            Par(
-                Ramp((heading, p) => heading + p * a).dur(dur).set(this).property("heading"),
-                Ramp(() => { this.draw(); }).dur(dur)
-            )
+            Ramp((heading, p) => heading + p * a).dur(dur).set(this).property("heading"),
         );
     },
 
@@ -122,71 +120,26 @@ window.Turtle = {
     }
 }
 
-vm.add(Seq(
-    () => { Turtle.pendown(); },
-
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(50),
-    Turtle.right(90),
-    Turtle.forward(50),
-    Turtle.right(90),
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(25),
-    Turtle.right(90),
-    Turtle.forward(25),
-    Turtle.right(90),
-    Turtle.forward(100),
-
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(50),
-    Turtle.right(90),
-    Turtle.forward(50),
-    Turtle.right(90),
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(25),
-    Turtle.right(90),
-    Turtle.forward(25),
-    Turtle.right(90),
-    Turtle.forward(100),
-
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(50),
-    Turtle.right(90),
-    Turtle.forward(50),
-    Turtle.right(90),
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(25),
-    Turtle.right(90),
-    Turtle.forward(25),
-    Turtle.right(90),
-    Turtle.forward(100),
-
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(50),
-    Turtle.right(90),
-    Turtle.forward(50),
-    Turtle.right(90),
-    Turtle.forward(100),
-    Turtle.right(90),
-    Turtle.forward(25),
-    Turtle.right(90),
-    Turtle.forward(25),
-    Turtle.right(90),
-    Turtle.forward(100)
-
-));
+console.log(vm.add(First(
+    Seq(
+        Effect(() => { Turtle.pendown(); }),
+        Repeat(Seq(
+            Turtle.forward(100),
+            Turtle.right(90),
+            Turtle.forward(100),
+            Turtle.right(90),
+            Turtle.forward(50),
+            Turtle.right(90),
+            Turtle.forward(50),
+            Turtle.right(90),
+            Turtle.forward(100),
+            Turtle.right(90),
+            Turtle.forward(25),
+            Turtle.right(90),
+            Turtle.forward(25),
+            Turtle.right(90),
+            Turtle.forward(100)
+        ))
+    ),
+    Ramp((_, p, t) => { Turtle.draw(); })
+)).dump());
