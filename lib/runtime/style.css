@@ -1,0 +1,19 @@
+div.transport-bar svg {
+    display: block;
+}
+
+div.transport-bar button {
+    width: 2rem;
+    height: 2rem;
+    padding: 0.25rem;
+    margin: 0.25rem;
+}
+
+div.transport-bar button svg circle {
+    fill: #ff4040;
+}
+
+div.transport-bar button svg path {
+    fill: #102040;
+    stroke: #102040;
+}
