@@ -9,6 +9,24 @@ div.transport-bar button {
     margin: 0.25rem;
 }
 
+div.transport-bar span {
+    font-size: 1.5rem;
+    line-height: 2.5rem;
+    margin-left: 0.5rem;
+    background-color: #ffe;
+    display: inline-block;
+    font-family: ui-monospace, monospace;
+}
+
+div.transport-bar button[disabled] {
+    opacity: 0.2;
+}
+
+div.transport-bar button.pressed[disabled] {
+    opacity: 1;
+    outline: solid thin #ff4040;
+}
+
 div.transport-bar button svg circle {
     fill: #ff4040;
 }

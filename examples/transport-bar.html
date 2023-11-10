@@ -14,7 +14,7 @@ import { VM, TransportBar } from "../lib/runtime.js";
 
 // ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
 
-const vm = VM();
+const vm = VM().start();
 const transportBar = TransportBar(vm);
 document.body.appendChild(transportBar.element);
 
