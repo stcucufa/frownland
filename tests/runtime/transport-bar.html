@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Transport bar</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="../test.css">
+        <script type="module">
+
+import { test } from "../test.js";
+import { K } from "../../lib/util.js";
+import { notification } from "../../lib/events.js";
+import { TransportBar, VM } from "../../lib/runtime.js";
+
+test("TransportBar(vm)", t => {
+    const vm = VM();
+    const transportBar = TransportBar(vm);
+    t.equal(transportBar.vm, vm, "vm");
+    t.instanceof(transportBar.element, Element, "element");
+});
+
+test("Time display", t => {
+    const vm = VM();
+    vm.clock.seek(90000);
+    const transportBar = TransportBar(vm);
+    t.equal(transportBar.element.querySelector("span").textContent, "01:30", "same value as clock");
+    vm.clock.seek(91234);
+    t.equal(transportBar.element.querySelector("span").textContent, "01:31", "updated");
+});
+
+test("The transport bar follows the clock", t => {
+    const vm = VM().start();
+    const transportBar = TransportBar(vm);
+    t.equal(transportBar.state, "recording", "clock is running");
+    vm.clock.stop();
+    t.equal(transportBar.state, "stopped", "clock has stopped");
+});
+
+test("The clock follows the transport bar", t => {
+    const vm = VM();
+    const transportBar = TransportBar(vm);
+    transportBar.record();
+    t.equal(vm.clock.running, true, "clock is running");
+    transportBar.stop();
+    t.equal(vm.clock.running, false, "clock is stopped");
+});
+
+test("Pushing buttons", t => {
+    const vm = VM();
+    const transportBar = TransportBar(vm);
+    t.equal(vm.clock.running, false, "clock is stopped");
+    const recordButton = transportBar.element.querySelector(`button[name="Record"]`);
+    const stopButton = transportBar.element.querySelector(`button[name="Stop"]`);
+    recordButton.click();
+    t.equal(vm.clock.running, true, "clock is running");
+    t.equal(recordButton.disabled, true, "record button is disabled");
+    t.equal(recordButton.classList.contains("pressed"), true, "record button is pressed");
+    stopButton.click();
+    t.equal(vm.clock.running, false, "clock is stopped");
+    t.equal(recordButton.disabled, false, "record button is enabled");
+    t.equal(stopButton.disabled, true, "stop button is disabled");
+});
+
+        </script>
+    </head>
+    <body>
+        <p><a href="../index.html">Back</a></p>
+    </body>
+</html>

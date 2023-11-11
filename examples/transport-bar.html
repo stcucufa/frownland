@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Transport Bar</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="examples.css"/>
+        <link rel="stylesheet" href="../lib/runtime/style.css"/>
+        <style>
+
+        </style>
+        <script type="module">
+
+import { VM, TransportBar } from "../lib/runtime.js";
+
+// ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
+
+const vm = VM().start();
+const transportBar = TransportBar(vm);
+document.body.appendChild(transportBar.element);
+
+// ----8<--------8<--------8<--------8<--------8<--------8<--------8<----
+
+        </script>
+    </head>
+    <body>
+        <p><a href="index.html">Back</a></p>
+        <h1>Transport Bar</h1>
+        <p>The transport bar can be easily added to a page and allows
+        controlling the clock of the VM that it is connected to. TODO: rewind
+        (1P0V), play (1X0L), pause (2805), fast forward (2804), and step (1P0W).
+        <script src="source.js" type="module"></script>
+    </body>
+</html>
