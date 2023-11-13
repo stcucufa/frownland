@@ -45,13 +45,39 @@ test("Start and stop", async t => {
     const clock = Clock();
     const begin = 17;
     now = begin;
+    t.equal(clock.running, false, "clock is not running");
     clock.start();
+    t.equal(clock.running, true, "clock is running");
     t.equal(clock.now, 0, "start time");
     await advanceTime(begin + 23);
     t.equal(clock.now, 23, "time advanced");
     clock.stop();
+    t.equal(clock.running, false, "clock is not running anymore");
     await advanceTime(begin + 31);
     t.equal(clock.now, 23, "time did not advance after stopping");
+    clock.start();
+    t.equal(clock.now, 0, "restart time");
+});
+
+test("Pause and resume", async t => {
+    const clock = Clock();
+    const begin = 17;
+    now = begin;
+    t.equal(clock.paused, false, "clock is not paused (stopped)");
+    clock.start();
+    t.equal(clock.paused, false, "clock is not paused (running)");
+    t.equal(clock.now, 0, "start time");
+    await advanceTime(begin + 23);
+    t.equal(clock.now, 23, "time advanced");
+    now = begin + 31;
+    clock.pause();
+    t.equal(clock.paused, true, "clock is paused");
+    t.equal(clock.now, 23, "time does not advance while paused");
+    now = begin + 41;
+    clock.resume();
+    t.equal(clock.paused, false, "clock is not paused (resumed)");
+    await advanceTime(begin + 47);
+    t.equal(clock.now, 37, "time does advance again");
 });
 
 test("Updates", async t => {
