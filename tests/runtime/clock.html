@@ -39,6 +39,7 @@ async function advanceTime(t) {
 test("Clock()", t => {
     const clock = Clock();
     t.equal(clock.now, 0, "starts at 0");
+    t.equal(clock.rate, 1, "playback rate is 1");
 });
 
 test("Start and stop", async t => {
@@ -142,6 +143,27 @@ test("Seek after stop", async t => {
     clock.seek(41);
     t.equal(clock.now, 41, "clock advanced synchronously");
 });
+
+test("Playback rate", async t => {
+    const clock = Clock();
+    const begin = 17;
+    now = begin;
+    clock.start();
+    await advanceTime(begin + 23);
+    t.equal(clock.now, 23, "rate = 1");
+    clock.rate = 2;
+    await advanceTime(begin + 31);
+    t.equal(clock.now, 39, "rate = 2");
+    clock.rate = -0.5;
+    await advanceTime(begin + 41);
+    t.equal(clock.now, 34, "rate = -0.5");
+    clock.rate = 0;
+    await advanceTime(begin + 51);
+    t.equal(clock.now, 34, "rate = 0");
+    t.throws(() => { clock.rate = "fast"; }, "rate must be a number");
+    t.throws(() => { clock.rate = Infinity; }, "rate must be definite");
+});
+
 
         </script>
     </head>
