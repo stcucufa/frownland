@@ -30,9 +30,12 @@ test("Time display", t => {
 test("Rate display", t => {
     const vm = VM();
     const transportBar = TransportBar(vm);
-    t.equal(transportBar.element.querySelector("span.rate").textContent, "1", "clock rate");
+    const span = transportBar.element.querySelector("span.rate");
+    t.equal(span.textContent, "1", "clock rate");
+    t.equal(span.classList.contains("hidden"), true, "default rate is not displayed");
     vm.clock.rate = 2;
-    t.equal(transportBar.element.querySelector("span.rate").textContent, "2", "updated");
+    t.equal(span.textContent, "2", "updated");
+    t.equal(span.classList.contains("hidden"), false, "new rate is displayed");
 });
 
 test("The transport bar follows the clock", t => {
@@ -62,6 +65,7 @@ test("Pushing buttons", t => {
     t.equal(vm.clock.running, false, "clock is stopped");
     const recordButton = transportBar.element.querySelector(`button[name="Record"]`);
     const stopButton = transportBar.element.querySelector(`button[name="Stop"]`);
+    const ffwdButton = transportBar.element.querySelector(`button[name="Ffwd"]`);
     const pauseButton = transportBar.element.querySelector(`button[name="Pause"]`);
 
     recordButton.click();
@@ -69,6 +73,14 @@ test("Pushing buttons", t => {
     t.equal(recordButton.disabled, true, "record button is disabled");
     t.equal(vm.clock.running, true, "clock is running");
     t.equal(vm.clock.paused, false, "clock is not paused");
+
+    ffwdButton.click();
+    t.equal(vm.clock.rate, 2, "clock is running faster");
+    ffwdButton.click();
+    t.equal(vm.clock.rate, 4, "and faster");
+    vm.clock.rate = -2;
+    ffwdButton.click();
+    t.equal(vm.clock.rate, 1, "and back to normal speed");
 
     pauseButton.click();
     t.equal(pauseButton.classList.contains("pressed"), true, "pause button is pressed");
