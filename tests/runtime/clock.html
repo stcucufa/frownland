@@ -171,6 +171,28 @@ test("Playback rate", async t => {
     t.equal(clock.now, 171, "but the clock catches up");
 });
 
+test("Stop when reaching 0 (going backward)", async t => {
+    const clock = Clock();
+    const begin = 17;
+    now = begin;
+    clock.start();
+    await advanceTime(begin + 23);
+    t.equal(clock.now, 23, "forward");
+    clock.rate = -2;
+    await advanceTime(begin + 123);
+    t.equal(clock.now, 0, "went back to zero");
+    t.equal(clock.running, false, "and stopped");
+    t.equal(clock.rate, 1, "resetting rate");
+});
+
+test("Stop when reaching 0 (seeking)", t => {
+    const clock = Clock();
+    now = 17;
+    clock.seek(23);
+    t.equal(clock.now, 23, "clock advanced synchronously");
+    clock.seek(-31);
+    t.equal(clock.now, 0, "clock stopped at 0");
+});
 
         </script>
     </head>
