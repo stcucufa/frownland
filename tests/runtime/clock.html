@@ -162,6 +162,13 @@ test("Playback rate", async t => {
     t.equal(clock.now, 34, "rate = 0");
     t.throws(() => { clock.rate = "fast"; }, "rate must be a number");
     t.throws(() => { clock.rate = Infinity; }, "rate must be definite");
+    clock.rate = 10;
+    clock.pause();
+    clock.seek(71);
+    t.equal(clock.now, 71, "seek is not affected by rate");
+    clock.resume();
+    await advanceTime(begin + 61);
+    t.equal(clock.now, 171, "but the clock catches up");
 });
 
 

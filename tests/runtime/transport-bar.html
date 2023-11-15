@@ -22,9 +22,17 @@ test("Time display", t => {
     const vm = VM();
     vm.clock.seek(90000);
     const transportBar = TransportBar(vm);
-    t.equal(transportBar.element.querySelector("span").textContent, "01:30", "same value as clock");
+    t.equal(transportBar.element.querySelector("span.time").textContent, "01:30", "same value as clock");
     vm.clock.seek(91234);
-    t.equal(transportBar.element.querySelector("span").textContent, "01:31", "updated");
+    t.equal(transportBar.element.querySelector("span.time").textContent, "01:31", "updated");
+});
+
+test("Rate display", t => {
+    const vm = VM();
+    const transportBar = TransportBar(vm);
+    t.equal(transportBar.element.querySelector("span.rate").textContent, "1", "clock rate");
+    vm.clock.rate = 2;
+    t.equal(transportBar.element.querySelector("span.rate").textContent, "2", "updated");
 });
 
 test("The transport bar follows the clock", t => {
