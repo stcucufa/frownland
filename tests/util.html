@@ -13,7 +13,8 @@ import {
     imagePromise, intersperse, isAsync, isEmpty, isIterable, isNumber, isObject,
     K, mapdel, mapit, mod, nop, normalizeWhitespace, parseTime, partition, push,
     range, remove, removeChildren, reverse, safe, shuffle, sign, single, snd,
-    someof, timecount, timeout, todo, typeOf, values, zip, zipo
+    someof, timecount, timeout, todo, typeOf, values, zip, zipo,
+    XHTML_NS, SVG_NS
 } from "../lib/util.js";
 
 test("add(collection, item/key, value?)", t => {
@@ -553,6 +554,11 @@ test("zipo(keys, values)", t => {
     t.equal(zipo(["one", "two", "three", "four"], [1, 2, 3]), { one: 1, two: 2, three: 3 },
         "arrays of different length");
     t.equal(zipo(["one", "two", "three", "four"], []), {}, "arrays of different length (one empty)");
+});
+
+test("Namespaces", t => {
+    t.typeof(XHTML_NS, "string", "XHTML namespace");
+    t.typeof(SVG_NS, "string", "SVG namespace");
 });
 
         </script>
