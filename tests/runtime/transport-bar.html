@@ -65,8 +65,9 @@ test("Pushing buttons", t => {
     t.equal(vm.clock.running, false, "clock is stopped");
     const recordButton = transportBar.element.querySelector(`button[name="Record"]`);
     const stopButton = transportBar.element.querySelector(`button[name="Stop"]`);
-    const ffwdButton = transportBar.element.querySelector(`button[name="Ffwd"]`);
     const pauseButton = transportBar.element.querySelector(`button[name="Pause"]`);
+    const ffwdButton = transportBar.element.querySelector(`button[name="Ffwd"]`);
+    const rewindButton = transportBar.element.querySelector(`button[name="Rewind"]`);
 
     recordButton.click();
     t.equal(recordButton.classList.contains("pressed"), true, "record button is pressed");
@@ -81,6 +82,13 @@ test("Pushing buttons", t => {
     vm.clock.rate = -2;
     ffwdButton.click();
     t.equal(vm.clock.rate, 1, "and back to normal speed");
+
+    rewindButton.click();
+    t.equal(vm.clock.rate, -1, "clock is going backward");
+    rewindButton.click();
+    t.equal(vm.clock.rate, -2, "clock is going backward faster");
+    ffwdButton.click();
+    t.equal(vm.clock.rate, 1, "and back to normal speed again");
 
     pauseButton.click();
     t.equal(pauseButton.classList.contains("pressed"), true, "pause button is pressed");
