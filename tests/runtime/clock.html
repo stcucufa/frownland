@@ -54,10 +54,9 @@ test("Start and stop", async t => {
     t.equal(clock.now, 23, "time advanced");
     clock.stop();
     t.equal(clock.running, false, "clock is not running anymore");
+    t.equal(clock.now, 0, "reset time");
     await advanceTime(begin + 31);
-    t.equal(clock.now, 23, "time did not advance after stopping");
-    clock.start();
-    t.equal(clock.now, 0, "restart time");
+    t.equal(clock.now, 0, "time did not advance after stopping");
 });
 
 test("Pause and resume", async t => {
